@@ -2,16 +2,16 @@ GPS Receivers
 New: CONDOR C2626 / NMEA 0183 (2.8V TXD Pin 5 are 9600 baud 8-None-1)
 Old: Lassen iQ / TSIP (3.3V TXD Pin 1 are 9600 baud 8-odd-1)
 Hardware
-Arduino Nano v3.0 (ATmega328 16МГц 5V)
+Arduino Nano v3.0 (ATmega328 16РњР“С† 5V)
 
 
 =====================================================================
 TSIP packet structure
 <0x10> <id> <data string bytes> <0x10> <0x03>
-<id> любое значение, кроме <0x10> и <0x03>.
-0x10 в данных надо экранировать добавлением 0x10 ('stuffing') (!!!)
-<0x10> <0x03> означает конец, только если количество <0x10> четно.
-Порядок байт - со старшего
+<id> Р»СЋР±РѕРµ Р·РЅР°С‡РµРЅРёРµ, РєСЂРѕРјРµ <0x10> Рё <0x03>.
+0x10 РІ РґР°РЅРЅС‹С… РЅР°РґРѕ СЌРєСЂР°РЅРёСЂРѕРІР°С‚СЊ РґРѕР±Р°РІР»РµРЅРёРµРј 0x10 ('stuffing') (!!!)
+<0x10> <0x03> РѕР·РЅР°С‡Р°РµС‚ РєРѕРЅРµС†, С‚РѕР»СЊРєРѕ РµСЃР»Рё РєРѕР»РёС‡РµСЃС‚РІРѕ <0x10> С‡РµС‚РЅРѕ.
+РџРѕСЂСЏРґРѕРє Р±Р°Р№С‚ - СЃРѕ СЃС‚Р°СЂС€РµРіРѕ
 Single = Float
 
 0x41	GPS time	5 seconds
@@ -30,8 +30,8 @@ Byte			Item			Type	Units
 4-5	Extended GPS week number	INT16	weeks
 6-9	GPS UTC offset				Single	seconds
 UTC = (GPS time) - (GPS UTC offset).
-Неделя №0 началась 6 января 1980 года.
-Счет секунд начинается с «0» Каждое воскресенье В полночь
+РќРµРґРµР»СЏ в„–0 РЅР°С‡Р°Р»Р°СЃСЊ 6 СЏРЅРІР°СЂСЏ 1980 РіРѕРґР°.
+РЎС‡РµС‚ СЃРµРєСѓРЅРґ РЅР°С‡РёРЅР°РµС‚СЃСЏ СЃ В«0В» РљР°Р¶РґРѕРµ РІРѕСЃРєСЂРµСЃРµРЅСЊРµ Р’ РїРѕР»РЅРѕС‡СЊ
 
 Packet 0x46 - Health of Receiver
 Byte	Item			Value
@@ -46,23 +46,23 @@ Byte	Item			Value
 0x0A Only 2 usable satellites
 0x0B Only 3 usable satellites
 0x0C The chosen satellite is unusable 
-Биты в 1 байте сбрасываются только ресетом.
+Р‘РёС‚С‹ РІ 1 Р±Р°Р№С‚Рµ СЃР±СЂР°СЃС‹РІР°СЋС‚СЃСЏ С‚РѕР»СЊРєРѕ СЂРµСЃРµС‚РѕРј.
 
 
 =====================================================================
 NMEA 0183 Message Format
 $GP<MSG><,D1,D2,D3,D4,.......,Dn>*<CS>[CR][LF]
-MSG - индентификатор сообщения
-“,” - разделители полей данных
-Dn - данные
-CS - HЁX контрольная XOR-сумма всех байт в строке между «$» и «*»
+MSG - РёРЅРґРµРЅС‚РёС„РёРєР°С‚РѕСЂ СЃРѕРѕР±С‰РµРЅРёСЏ
+вЂњ,вЂќ - СЂР°Р·РґРµР»РёС‚РµР»Рё РїРѕР»РµР№ РґР°РЅРЅС‹С…
+Dn - РґР°РЅРЅС‹Рµ
+CS - HРЃX РєРѕРЅС‚СЂРѕР»СЊРЅР°СЏ XOR-СЃСѓРјРјР° РІСЃРµС… Р±Р°Р№С‚ РІ СЃС‚СЂРѕРєРµ РјРµР¶РґСѓ В«$В» Рё В«*В»
 
 GGA		Default	GPS fix data
 GSA		Default	GPS DOP and active satellites
 GSV		Default	GPS satellites in view
 RMC 	Default	Recommended minimum specific GPS/Transit data
 CHN		Other	GPS channel status
-GLL		Other	Geographic position – Latitude/Longitude
+GLL		Other	Geographic position вЂ“ Latitude/Longitude
 VTG		Other	Track Made Good and Ground Speed
 ZDA		Other	Time and date
 
