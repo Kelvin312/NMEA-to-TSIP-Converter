@@ -144,7 +144,13 @@
     <CleanTarget>clean</CleanTarget>
   </PropertyGroup>
   <ItemGroup>
-    <Compile Include="includefile.h">
+    <Compile Include="IUart.h">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="NemaParser.cpp">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="stdafx.h">
       <SubType>compile</SubType>
     </Compile>
     <Compile Include="main.cpp">
