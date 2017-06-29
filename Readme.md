@@ -3,6 +3,7 @@ New: CONDOR C2626 / NMEA 0183 (2.8V TXD Pin 5 are 9600 baud 8-None-1)
 Old: Lassen iQ / TSIP (3.3V TXD Pin 1 are 9600 baud 8-odd-1)
 Hardware
 Arduino Nano v3.0 (ATmega328 16МГц 5V)
+74LVC1G
 
 
 =====================================================================
