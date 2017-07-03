@@ -25,19 +25,19 @@
 
 ISR(TIMER1_CAPT_vect) //9600*3
 {
-  u8 data;
-  if(nmeaUart.RxProcessing(data))
-  {
-	    nmeaBuffer.Push(data);
-  }
+	u8 data;
+	if(nmeaUart.RxProcessing(data))
+	{
+		nmeaBuffer.Push(data);
+	}
 }
 
 void mainLoop()
 {
-  if(nmeaBuffer.Size())
-  {
-  parser.Parser(nmeaBuffer.Pop());
-  }
+	if(nmeaBuffer.Size())
+	{
+		parser.Parse(nmeaBuffer.Pop());
+	}
 }
 
 

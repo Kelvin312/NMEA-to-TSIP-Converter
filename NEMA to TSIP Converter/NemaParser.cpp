@@ -64,18 +64,16 @@ struct NmeaDate
 			
 			for(u8 i = 0; ;i++)
 			{
-				for(u8 j=0; ;j++)
+				switch(id)
 				{
+					case RMC:
 					
+					break;
+					case GGA:
+					break;
 				}
 			}
-			switch(id)
-			{
-				case RMC:
-				break;
-				case GGA:
-				break;
-			}
+			
 			
 		}
 		return 0;
