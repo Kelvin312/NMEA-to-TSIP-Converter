@@ -75,15 +75,17 @@ ZDA	|	Other	|  Time and date                                  |
 
 $GPGGA,hhmmss.ss,llll.lll,a,nnnnn.nnn,b,t,uu,v.v,w.w,M,x.x,M,y.y,zzzz*hh<CR><LF>
 
-1	UTC of Position (when UTC offset has been decoded by the receiver)
-2,3	Latitude, N (North) or S (South)
-4,5	Longitude, E (East) or W (West)
-6	GPS Quality Indicator: 0 = No GPS, 1 = GPS, 2 = DGPS
-7	Number of Satellites in Use
-8	Horizontal Dilution of Precision (HDOP)
-9, 10	Antenna Altitude in Meters, M = Meters
-11, 12	Geoidal Separation in Meters, M=Meters. Geoidal separation is the difference between the WGS-84 earth ellipsoid and mean-sea-level.
-13	Age of Differential GPS Data. Time in seconds since the last Type 1 or 9 Update
-14	Differential Reference Station ID (0000 to 1023)
-hh	Checksum
+|   | |
+|---|----------------|
+1	| UTC of Position (when UTC offset has been decoded by the receiver)                                                                     |
+2,3	| Latitude, N (North) or S (South)                                                                                                       |
+4,5	| Longitude, E (East) or W (West)                                                                                                        |
+6	| GPS Quality Indicator: 0 = No GPS, 1 = GPS, 2 = DGPS                                                                                   |
+7	| Number of Satellites in Use                                                                                                            |
+8	| Horizontal Dilution of Precision (HDOP)                                                                                                |
+9, 10	| Antenna Altitude in Meters, M = Meters                                                                                             |
+11, 12	| Geoidal Separation in Meters, M=Meters. Geoidal separation is the difference between the WGS-84 earth ellipsoid and mean-sea-level.|
+13	| Age of Differential GPS Data. Time in seconds since the last Type 1 or 9 Update                                                        |
+14	| Differential Reference Station ID (0000 to 1023)                                                                                       |
+hh	| Checksum                                                                                                                               |
 
