@@ -64,6 +64,8 @@ Packet 0x46 - Health of Receiver
     Dn - данные
     CS - HЁX контрольная XOR-сумма всех байт в строке между «$» и «*»
 
+| | | |
+|------|----------------|----------|
 GGA	|	Default | GPS fix data |
 GSA	|	Default | GPS DOP and active satellites |
 GSV	|	Default | GPS satellites in view |
