@@ -29,6 +29,7 @@ Arduino Nano v3.0 (ATmega328 16МГц 5V)
 Get GPS time 0x21
 
 Packet 0x41 - GPS Time 
+
 | Byte	|			Item			 | Type	    | Units      |
 |-------|----------------------------|----------|------------|
 | 0-3	|	GPS time of week		 | 	Single	|  seconds   |
