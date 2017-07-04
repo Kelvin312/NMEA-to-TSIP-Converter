@@ -60,7 +60,7 @@ ISR(TIMER1_CAPT_vect) //9600*3
 	}
 	if(outuart.TxProcessing())
 	{
-		outuart.Transmit(outBuffer.Pop());
+		if(outBuffer.Size()) outuart.Transmit(outBuffer.Pop());
 	}
 }
 
