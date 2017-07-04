@@ -162,6 +162,9 @@
     <Compile Include="HardwareUART.cpp">
       <SubType>compile</SubType>
     </Compile>
+    <Compile Include="NmeaParser.cpp">
+      <SubType>compile</SubType>
+    </Compile>
     <Compile Include="SoftwareUART.cpp">
       <SubType>compile</SubType>
     </Compile>

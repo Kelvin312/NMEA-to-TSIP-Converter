@@ -4,14 +4,14 @@
  * Created: 02.07.2017 20:51:05
  *  Author: Kelvin
  */ 
-
+#include "stdafx.h"
 
  class NmeaParser
  {
  #define MSG_ENCODE(_a,_b) ((_a)|(u16(_b)<<8))
 const bool Error = true;
 const bool Ok = false;
-const u16 DecimalDivisor[] = {1,10,100,1000,10000};
+const u16 DecimalDivisor[5] = {1,10,100,1000,10000};
 const u8 MaxDecimalDivisor = 4;
 bool globalError;
 u8 byteCount;
@@ -20,7 +20,7 @@ u8 charPoint;
 u8 checkSum;
 u8 data;
 
-static u8 Hex2Int(u8 c)
+u8 Hex2Int(u8 c)
 {
 	if (c >= '0' && c <= '9')
 	return c - '0';
@@ -202,7 +202,7 @@ void GetFloat(float &param)
 	{
 		case ' ':
 		case '+': break;
-		case '-' isSign = true; break;
+		case '-': isSign = true; break;
 		case '.': isDot = true; break;
 		default:
 		if(isDot)
@@ -211,7 +211,7 @@ void GetFloat(float &param)
 			{
 				++divisor;
 				float temp = Hex2Int(data);
-				temp /= DecimalDivisor(divisor);
+				temp /= DecimalDivisor[divisor];
 				if(isSign)
 				{
 					param -= temp;
@@ -295,11 +295,11 @@ bool Parse(u8 c)
 			}
 			
 			break;
-			case MSG_ENCODE('G','A')
+			case MSG_ENCODE('G','A'):
 			break;
-			case MSG_ENCODE('S','A')
+			case MSG_ENCODE('S','A'):
 			break;
-			case MSG_ENCODE('S','V')
+			case MSG_ENCODE('S','V'):
 			break;
 		}
 		++charPoint;

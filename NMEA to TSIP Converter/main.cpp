@@ -17,10 +17,10 @@
 #define SUART_RX_PORT PIND
 #define SUART_TX_PORT PORTD
 
- SoftUart nmeaUart(SUART_RX_PORT,SUART_RX_PIN,SUART_TX_PORT,SUART_TX_PIN);
- HardUart tsipUart();
- RingBuffer<120> nmeaBuffer();
- NmeaParser parser();
+ SoftUart nmeaUart = SoftUart(SUART_RX_PORT,SUART_RX_PIN,SUART_TX_PORT,SUART_TX_PIN);
+ HardUart tsipUart = HardUart();
+ RingBuffer<120> nmeaBuffer = RingBuffer<120>();
+ NmeaParser parser = NmeaParser();
 
 
 ISR(TIMER1_CAPT_vect) //9600*3
