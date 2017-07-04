@@ -16,14 +16,14 @@
     Single = Float
 	
 | | | |
-|------|----------------|----------|
-| 0x41 |	GPS time	| 5 seconds|
-| 0x42, 0x83, 0x4A(default), 0x84, 0x8F-20	| position (choose packet with I/O options)	| 1 second |
-| 0x43, 0x56(default), 0x8F-20	| velocity (choose packet with I/O options)	| 1 second |
-| 0x46	| health of receiver	| 5 seconds |
-| 0x4B	| machinecode/status (includes antenna fault detect)	| 5 seconds |
-| 0x6D	| all-in-view satellite selection, DOPs, Fix Mode	| 1 second |
-| 0x82	| DGPS position fix mode (only in DGPS mode)	| 1 second |
+|-------------------------------------------|----------------|----------|
+| 0x41 										| GPS time	| 5 seconds|
+| 0x42, 0x83, 0x4A(default), 0x84, 0x8F-20 	| position (choose packet with I/O options)	| 1 second |
+| 0x43, 0x56(default), 0x8F-20				| velocity (choose packet with I/O options)	| 1 second |
+| 0x46										| health of receiver	| 5 seconds |
+| 0x4B										| machinecode/status (includes antenna fault detect)	| 5 seconds |
+| 0x6D										| all-in-view satellite selection, DOPs, Fix Mode	| 1 second |
+| 0x82										| DGPS position fix mode (only in DGPS mode)	| 1 second |
 
 Get GPS time 0x21
 

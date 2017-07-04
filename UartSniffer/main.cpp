@@ -10,7 +10,6 @@
 #include "SoftwareUART.cpp"
 #include "HardwareUART.cpp"
 
-
 #define LED_PIN 5
 #define LED_PORT PORTB
 #define SUARTA_RX_PIN 2

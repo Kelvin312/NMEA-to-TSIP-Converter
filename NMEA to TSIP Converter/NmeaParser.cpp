@@ -50,6 +50,8 @@ struct
 	u8 latitudeDivisor;
 	s32 longitudeMinutes;
 	u8 longitudeDivisor;
+	float latitudeRadians;
+	float longitudeRadians;
 	float altitudeMeters;
 } nmeaPosition;
 

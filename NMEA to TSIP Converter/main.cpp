@@ -20,6 +20,7 @@
  SoftUart nmeaUart = SoftUart(SUART_RX_PORT,SUART_RX_PIN,SUART_TX_PORT,SUART_TX_PIN);
  HardUart tsipUart = HardUart();
  RingBuffer<120> nmeaBuffer = RingBuffer<120>();
+ RingBuffer<120> tsipBuffer = RingBuffer<120>();
  NmeaParser parser = NmeaParser();
 
 
@@ -30,6 +31,14 @@ ISR(TIMER1_CAPT_vect) //9600*3
 	{
 		nmeaBuffer.Push(data);
 	}
+	if(tsipUart.TxProcessing())
+	{
+		if(tsipBuffer.Size())
+		{
+			tsipUart.Transmit(tsipBuffer.Pop());
+		}
+	}
+	
 }
 
 void mainLoop()

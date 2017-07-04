@@ -31,20 +31,24 @@ class HardUart
    UBRR0L=0x67;
  }
 
-
  inline bool RxProcessing(u8 &data)
  {
-   char status;
-   if (((status=UCSR0A) & RX_COMPLETE)==0) return false;
-   data = UDR0;
-   if ((status & (FRAMING_ERROR | PARITY_ERROR | DATA_OVERRUN))==0) return true;
-   return false;
+	 char status;
+	 if (((status=UCSR0A) & RX_COMPLETE)==0) return false;
+	 data = UDR0;
+	 if ((status & (FRAMING_ERROR | PARITY_ERROR | DATA_OVERRUN))==0) return true;
+	 return false;
  }
  
- inline bool TxProcessing(u8 data)
+ inline bool TxProcessing()
  {
-   if((UCSR0A & DATA_REGISTER_EMPTY)==0) return false;
-   UDR0 = data;
-   return true;
+	 if((UCSR0A & DATA_REGISTER_EMPTY)==0) return false;
+	 return true;
+ }
+ 
+ inline void Transmit(u8 data)
+ {
+	 if((UCSR0A & DATA_REGISTER_EMPTY)==0) return;
+	 UDR0 = data;
  }
 };
