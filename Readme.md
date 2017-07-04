@@ -9,12 +9,12 @@ Arduino Nano v3.0 (ATmega328 16МГц 5V)
 
 ### TSIP packet structure
 
-* <0x10> <id> <data string bytes> <0x10> <0x03>
-* <id> любое значение, кроме <0x10> и <0x03>.
-* 0x10 в данных надо экранировать добавлением 0x10 ('stuffing') (!!!)
-* <0x10> <0x03> означает конец, только если количество <0x10> четно.
-* Порядок байт - со старшего
-* Single = Float
+    <0x10> <id> <data string bytes> <0x10> <0x03>
+    <id> любое значение, кроме <0x10> и <0x03>.
+    0x10 в данных надо экранировать добавлением 0x10 ('stuffing') (!!!)
+    <0x10> <0x03> означает конец, только если количество <0x10> четно.
+    Порядок байт - со старшего
+    Single = Float
 
 | 0x41 |	GPS time	| 5 seconds|
 | 0x42, 0x83, 0x4A(default), 0x84, 0x8F-20	| position (choose packet with I/O options)	| 1 second |
