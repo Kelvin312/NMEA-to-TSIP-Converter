@@ -1,3 +1,4 @@
+# NMEA to TSIP Converter
 GPS Receivers
 New: CONDOR C2626 / NMEA 0183 (2.8V TXD Pin 5 are 9600 baud 8-None-1)
 Old: Lassen iQ / TSIP (3.3V TXD Pin 1 are 9600 baud 8-odd-1)
@@ -5,9 +6,8 @@ Hardware
 Arduino Nano v3.0 (ATmega328 16МГц 5V)
 74LVC1G
 
-
-=====================================================================
 TSIP packet structure
+------------------------
 <0x10> <id> <data string bytes> <0x10> <0x03>
 <id> любое значение, кроме <0x10> и <0x03>.
 0x10 в данных надо экранировать добавлением 0x10 ('stuffing') (!!!)
@@ -49,9 +49,8 @@ Byte	Item			Value
 0x0C The chosen satellite is unusable 
 Биты в 1 байте сбрасываются только ресетом.
 
-
-=====================================================================
 NMEA 0183 Message Format
+------------------------
 $GP<MSG><,D1,D2,D3,D4,.......,Dn>*<CS>[CR][LF]
 MSG - индентификатор сообщения
 “,” - разделители полей данных
