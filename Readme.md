@@ -1,4 +1,5 @@
 # NMEA to TSIP Converter
+
 GPS Receivers
 New: CONDOR C2626 / NMEA 0183 (2.8V TXD Pin 5 are 9600 baud 8-None-1)
 Old: Lassen iQ / TSIP (3.3V TXD Pin 1 are 9600 baud 8-odd-1)
@@ -14,7 +15,7 @@ Arduino Nano v3.0 (ATmega328 16МГц 5V)
     <0x10> <0x03> означает конец, только если количество <0x10> четно.
     Порядок байт - со старшего
     Single = Float
-
+|------|----------------|----------|
 | 0x41 |	GPS time	| 5 seconds|
 | 0x42, 0x83, 0x4A(default), 0x84, 0x8F-20	| position (choose packet with I/O options)	| 1 second |
 | 0x43, 0x56(default), 0x8F-20	| velocity (choose packet with I/O options)	| 1 second |
