@@ -9,6 +9,8 @@
  class NmeaParser
  {
  #define MSG_ENCODE(_a,_b) ((_a)|(u16(_b)<<8))
+ #define DDF_MULTI(_x) (M_PI /180 /60 /DecimalDivisor[(_x)])
+ 
 const bool Error = true;
 const bool Ok = false;
 const u16 DecimalDivisor[5] = {1,10,100,1000,10000};
@@ -54,6 +56,12 @@ struct
 	float longitudeRadians;
 	float altitudeMeters;
 } nmeaPosition;
+
+void PositionCalc()
+{
+	nmeaPosition.latitudeRadians = nmeaPosition.latitudeMinutes * DDF_MULTI(nmeaPosition.latitudeDivisor);
+	nmeaPosition.longitudeRadians = nmeaPosition.longitudeMinutes * DDF_MULTI(nmeaPosition.longitudeDivisor);
+}
 
 void GetTime()
 {
