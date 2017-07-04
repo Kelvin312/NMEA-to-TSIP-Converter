@@ -28,16 +28,18 @@ Arduino Nano v3.0 (ATmega328 16МГц 5V)
 
 Get GPS time 0x21
 
-Packet 0x41 - GPS Time
-Byte			Item			Type	Units
-0-3	GPS time of week			Single	seconds
-4-5	Extended GPS week number	INT16	weeks
-6-9	GPS UTC offset				Single	seconds
-UTC = (GPS time) - (GPS UTC offset).
-Неделя №0 началась 6 января 1980 года.
-Счет секунд начинается с «0» Каждое воскресенье В полночь
+| Packet 0x41 - GPS Time |
+| Byte	|			Item			 | Type	    | Units      |
+|-------|----------------------------|----------|------------|
+| 0-3	|	GPS time of week		 | 	Single	|  seconds   |
+| 4-5	|	Extended GPS week number | 	INT16	|  weeks     |
+| 6-9	|	GPS UTC offset			 | 	Single	|  seconds   |
+* UTC = (GPS time) - (GPS UTC offset).
+* Неделя №0 началась 6 января 1980 года.
+* Счет секунд начинается с «0» Каждое воскресенье В полночь
 
 Packet 0x46 - Health of Receiver
+
 | Byte |	Item |	Value |
 |------|---------|--------|
 | 0	| Status code			| 0x00-0x0C                                                |
