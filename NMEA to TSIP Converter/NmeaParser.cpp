@@ -9,15 +9,11 @@
  class NmeaParser
  {
 	 public:
-	 void tsipPush(u8 x)
+	 void (*tsipPush)(u8);
+	 NmeaParser(void (*tsipPushi)(u8))
 	 {
-		 
+		 tsipPush = tsipPushi;
 	 }
-	 //void (*tsipPush)(u8);
-	 //NmeaParser(void (*tsipPushi)(u8))
-	 //{
-		 //tsipPush = tsipPushi;
-	 //}
 	 protected:
  #define MSG_ENCODE(_a,_b) ((_a)|(u16(_b)<<8))
  #define DDF_MULTI(_x) (M_PI /180 /60 /DecimalDivisor[(_x)])
