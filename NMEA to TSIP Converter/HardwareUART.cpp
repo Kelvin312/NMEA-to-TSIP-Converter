@@ -48,7 +48,6 @@ class HardUart
  
  inline void Transmit(u8 data)
  {
-	 if((UCSR0A & DATA_REGISTER_EMPTY)==0) return;
 	 UDR0 = data;
  }
 };
