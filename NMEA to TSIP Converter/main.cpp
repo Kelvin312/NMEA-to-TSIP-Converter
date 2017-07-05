@@ -21,7 +21,11 @@
  HardUart tsipUart = HardUart();
   RingBuffer<120> nmeaBuffer = RingBuffer<120>();
   RingBuffer<120> tsipBuffer = RingBuffer<120>();
- NmeaParser parser = NmeaParser();
+  inline void TsipPush(u8 data)
+  {
+	  tsipBuffer.Push(data);
+  }
+ NmeaParser parser = NmeaParser( &(TsipPush));
 
 
 ISR(TIMER1_CAPT_vect) //9600*3
@@ -47,9 +51,10 @@ void mainLoop()
 {
 	if(nmeaBuffer.Size())
 	{
-		parser.Parse(nmeaBuffer.Pop(), &tsipBuffer.Push);
+		parser.Parse(nmeaBuffer.Pop());
 	}
 }
+
 
 
 
@@ -158,6 +163,7 @@ int main()
 
   // Global enable interrupts
   sei();
+
 
   while (1)
   {

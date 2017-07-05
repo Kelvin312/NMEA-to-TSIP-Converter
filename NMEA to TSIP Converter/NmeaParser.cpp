@@ -8,12 +8,23 @@
 
  class NmeaParser
  {
+	 public:
+	 void tsipPush(u8 x)
+	 {
+		 
+	 }
+	 //void (*tsipPush)(u8);
+	 //NmeaParser(void (*tsipPushi)(u8))
+	 //{
+		 //tsipPush = tsipPushi;
+	 //}
+	 protected:
  #define MSG_ENCODE(_a,_b) ((_a)|(u16(_b)<<8))
  #define DDF_MULTI(_x) (M_PI /180 /60 /DecimalDivisor[(_x)])
  
 const u8 DLE = 0x10;
 const u8 ETX = 0x03;
-const float Zero = 0; 
+float Zero = 0; 
 const bool Error = true;
 const bool Ok = false;
 const u16 DecimalDivisor[5] = {1,10,100,1000,10000};
@@ -55,7 +66,75 @@ enum
 	UpdateVelocity = UpdateSpeed | UpdateCourse
 };
 
-struct 
+void GetFixedDigits(s32 &param, u8 &divisor, u8 first6, u8 size) //Чтение чисел с фиксированной целой частью
+{
+	if(charPoint == size) return;
+	if(charPoint == 0)
+	{
+		param = 0;
+		divisor = 0;
+	}
+	if(charPoint < size || divisor < MaxDecimalDivisor)
+	{
+		param *= (charPoint < size && (charPoint == first6 || charPoint == first6+2))?6:10;
+		param += Hex2Int();
+		if(charPoint > size) ++divisor;
+	}
+}
+
+void GetFloat(float &param)
+{
+	static bool isSign;
+	static bool isDot;
+	static u8 divisor;
+	if(charPoint == 0)
+	{
+		isSign = false;
+		isDot = false;
+		param = 0;
+		divisor = 0;
+	}
+	switch(data)
+	{
+		case ' ':
+		case '+': break;
+		case '-': isSign = true; break;
+		case '.': isDot = true; break;
+		default:
+		if(isDot)
+		{
+			if(divisor < MaxDecimalDivisor)
+			{
+				++divisor;
+				float temp = Hex2Int();
+				temp /= DecimalDivisor[divisor];
+				if(isSign)
+				{
+					param -= temp;
+				}
+				else
+				{
+					param += temp;
+				}
+			}
+		}
+		else
+		{
+			param *= 10;
+			if(isSign)
+			{
+				param -= Hex2Int();
+			}
+			else
+			{
+				param += Hex2Int();
+			}
+		}
+		break;
+	}
+}
+
+struct
 {
 	u32 seconds; //Секунд в текущем дне
 	u8 centiSeconds; //Сотых секунд
@@ -104,25 +183,25 @@ struct
 			case 0:
 			month = 0;
 			year = 0;
-			day = Hex2Int(data);
+			day = Hex2Int();
 			break;
 			case 1:
 			day *= 10;
-			day += Hex2Int(data);
+			day += Hex2Int();
 			break;
 			case 2:
-			month = Hex2Int(data);
+			month = Hex2Int();
 			break;
 			case 3:
 			month *= 10;
-			month += Hex2Int(data);
+			month += Hex2Int();
 			break;
 			case 4:
-			year = Hex2Int(data);
+			year = Hex2Int();
 			break;
 			case 5:
 			year *= 10;
-			year += Hex2Int(data);
+			year += Hex2Int();
 			
 			DateTimeCalc();
 			updateFlag |= UpdateDate;
@@ -214,75 +293,8 @@ struct
 	float tDop;
 } nmeaPrecision;
 
-void GetFixedDigits(s32 &param, u8 &divisor, u8 first6, u8 size) //Чтение чисел с фиксированной целой частью
-{ 
-	if(charPoint == size) return;
-	if(charPoint == 0) 
-	{
-		param = 0;
-		divisor = 0;
-	}
-	if(charPoint < size || divisor < MaxDecimalDivisor)
-	{
-		param *= (charPoint < size && (charPoint == first6 || charPoint == first6+2))?6:10;
-		param += Hex2Int();
-		if(charPoint > size) ++divisor;
-	}
-}
 
-void GetFloat(float &param) 
-{
-	static bool isSign;
-	static bool isDot;
-	static u8 divisor;
-	if(charPoint == 0)
-	{
-		isSign = false;
-		isDot = false;
-		param = 0;
-		divisor = 0;
-	}
-	switch(data)
-	{
-		case ' ':
-		case '+': break;
-		case '-': isSign = true; break;
-		case '.': isDot = true; break;
-		default:
-		if(isDot)
-		{
-			if(divisor < MaxDecimalDivisor)
-			{
-				++divisor;
-				float temp = Hex2Int();
-				temp /= DecimalDivisor[divisor];
-				if(isSign)
-				{
-					param -= temp;
-				}
-				else
-				{
-					param += temp;
-				}
-			}
-		}
-		else
-		{
-			param *= 10;
-			if(isSign)
-			{
-				param -= Hex2Int();
-			}
-			else
-			{
-				param += Hex2Int();
-			}
-		}
-		break;
-	}
-}
-
-void floatPush(float &arg, void (*tsipPush)(u8))
+void floatPush(float &arg)
 {
 	u8 *f2byte = ((u8*) &arg) +3;
 	for(u8 i = 0; i < 4; ++i, --f2byte)
@@ -291,7 +303,7 @@ void floatPush(float &arg, void (*tsipPush)(u8))
 		tsipPush(*f2byte);
 	}
 }
-void int16Push(u16 &arg, void (*tsipPush)(u8)) 
+void int16Push(u16 &arg) 
 {
 	u8 *i2byte = ((u8*) &arg) +1;
 	for(u8 i = 0; i < 2; ++i, --i2byte)
@@ -303,7 +315,7 @@ void int16Push(u16 &arg, void (*tsipPush)(u8))
 
  public:
  
-bool Parse(u8 c, void (*tsipPush)(u8))
+bool Parse(u8 c)
 {
 	data = c;
 	static union
@@ -394,43 +406,43 @@ bool Parse(u8 c, void (*tsipPush)(u8))
 	}
 	break;
 	default: //Передача TSIP
-	if(updateFlag & UpdateDateTime == UpdateDateTime) //0x41 GPS Время
+	if((updateFlag & UpdateDateTime) == UpdateDateTime) //0x41 GPS Время
 	{
 		tsipPush(DLE);
 		tsipPush(0x41);
-		floatPush(nmeaDateTime.gpsTimeOfWeek, &tsipPush);
-		int16Push(nmeaDateTime.gpsWeekNumber, &tsipPush);
-		floatPush(nmeaDateTime.gpsUtcOffset, &tsipPush);
+		floatPush(nmeaDateTime.gpsTimeOfWeek);
+		int16Push(nmeaDateTime.gpsWeekNumber);
+		floatPush(nmeaDateTime.gpsUtcOffset);
 		tsipPush(DLE);
 		tsipPush(ETX);
 	}
-	if(updateFlag & UpdatePosition == UpdatePosition) //0x4A Позиция
+	if((updateFlag & UpdatePosition) == UpdatePosition) //0x4A Позиция
 	{
 		nmeaPosition.PositionCalc();
 		nmeaDateTime.TimeOfFixCalc();
 		tsipPush(DLE);
 		tsipPush(0x4A);
-		floatPush(nmeaPosition.latitudeRadians, &tsipPush);
-		floatPush(nmeaPosition.longitudeRadians, &tsipPush);
-		floatPush(nmeaPosition.haeAltitudeMeters, &tsipPush);
+		floatPush(nmeaPosition.latitudeRadians);
+		floatPush(nmeaPosition.longitudeRadians);
+		floatPush(nmeaPosition.haeAltitudeMeters);
 		
-		floatPush(Zero, &tsipPush);
-		floatPush(nmeaDateTime.timeOfFix, &tsipPush);
+		floatPush(Zero);
+		floatPush(nmeaDateTime.timeOfFix);
 		tsipPush(DLE);
 		tsipPush(ETX);
 	}
-	if(updateFlag & UpdateVelocity == UpdateVelocity) //0x56 Скорость
+	if((updateFlag & UpdateVelocity) == UpdateVelocity) //0x56 Скорость
 	{
 		nmeaVelocity.VelocityCalc();
 		nmeaDateTime.TimeOfFixCalc();
 		tsipPush(DLE);
 		tsipPush(0x56);
-		floatPush(nmeaVelocity.eastVelocityMps, &tsipPush);
-		floatPush(nmeaVelocity.northVelocityMps, &tsipPush);
-		floatPush(nmeaVelocity.upVelocityMps, &tsipPush);
+		floatPush(nmeaVelocity.eastVelocityMps);
+		floatPush(nmeaVelocity.northVelocityMps);
+		floatPush(nmeaVelocity.upVelocityMps);
 		
-		floatPush(Zero, &tsipPush);
-		floatPush(nmeaDateTime.timeOfFix, &tsipPush);
+		floatPush(Zero);
+		floatPush(nmeaDateTime.timeOfFix);
 		tsipPush(DLE);
 		tsipPush(ETX);
 	}
