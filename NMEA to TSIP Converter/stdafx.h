@@ -25,18 +25,20 @@ typedef signed short s16;
 typedef unsigned long u32;
 typedef signed long s32;
 
+#define LED_PIN 5
+#define LED_PORT PORTB
 
 
 template<u8 bufferSize> struct RingBuffer
 {
-	volatile u8 writeIndex, readIndex, counter;
+	volatile u8 writeIndex, readIndex, counter, isOverflow;
 	volatile u8 buffer[bufferSize];
 	
 	void Push(u8 data)
 	{
 		buffer[writeIndex] = data;
 		if(++writeIndex >= bufferSize) writeIndex = 0;
-		++counter;
+		if(++counter == bufferSize) isOverflow = 1;
 	}
 	u8 Pop()
 	{

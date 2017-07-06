@@ -18,17 +18,29 @@ class HardUart
 
  HardUart()
  {
-   // USART initialization
-   // Communication Parameters: 8 Data, 1 Stop, Odd Parity
-   // USART Receiver: On
-   // USART Transmitter: On
-   // USART0 Mode: Asynchronous
-   // USART Baud Rate: 9600
-   UCSR0A=0x00;
-   UCSR0B=0x18;
-   UCSR0C=0x36;
-   UBRR0H=0x00;
-   UBRR0L=0x67;
+	   // USART initialization
+	   // Communication Parameters: 8 Data, 1 Stop, No Parity
+	   // USART Receiver: On
+	   // USART Transmitter: On
+	   // USART0 Mode: Asynchronous
+	   // USART Baud Rate: 57600
+	   UCSR0A=0x00;
+	   UCSR0B=0x18;
+	   UCSR0C=0x06;
+	   UBRR0H=0x00;
+	   UBRR0L=0x10;
+	 
+   //// USART initialization
+   //// Communication Parameters: 8 Data, 1 Stop, Odd Parity
+   //// USART Receiver: On
+   //// USART Transmitter: On
+   //// USART0 Mode: Asynchronous
+   //// USART Baud Rate: 9600
+   //UCSR0A=0x00;
+   //UCSR0B=0x18;
+   //UCSR0C=0x36;
+   //UBRR0H=0x00;
+   //UBRR0L=0x67;
  }
 
  inline bool RxProcessing(u8 &data)

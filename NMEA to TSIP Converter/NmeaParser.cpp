@@ -6,15 +6,29 @@
 */
 #include "stdafx.h"
 
+#ifndef NMEA_PARSER_H_
+#define NMEA_PARSER_H_
+
 class NmeaParser
 {
 	public:
-	void (*tsipPush)(u8);
-	NmeaParser(void (*tsipPushi)(u8))
+	RingBuffer<120> &tsipBuffer;
+	//void (*tsipPushRaw)(u8);
+	NmeaParser(RingBuffer<120> &tsipBuffer):tsipBuffer(tsipBuffer)
 	{
-		tsipPush = tsipPushi;
+		//tsipPushRaw = tsipPushm;
 	}
-	protected:
+	
+	inline void TsipPushRaw(u8 c)
+	{
+		tsipBuffer.Push(c);
+	}
+	inline void DebugPush(u8 c)
+	{
+		tsipBuffer.Push(c);
+	}
+	
+	private:
 	#define MSG_ENCODE(_a,_b) ((_a)|(u16(_b)<<8))
 	
 	
@@ -165,7 +179,14 @@ class NmeaParser
 		float pDop;
 		float hDop;
 		float vDop;
-		float tDop = 0;
+		float tDop;
+		
+		void PrecisionCalc()
+		{
+			dimension &= 0x0F;
+			dimension |= numberSv<<4;
+			tDop = 0;
+		}
 	} nmeaPrecision;
 
 
@@ -300,13 +321,19 @@ class NmeaParser
 		GetFixedDigits(nmeaPosition.longitudeMinutes,nmeaPosition.longitudeDivisor, 3, 5);
 		if(charPoint == 4) updateFlag |= UpdateLongitude;
 	}
+	
+	void tsipPush(u8 c)
+	{
+		if(c == DLE) TsipPushRaw(DLE);
+		TsipPushRaw(c);
+	}
+	
 
 	void floatPush(float &arg)
 	{
 		u8 *f2byte = ((u8*) &arg) +3;
 		for(u8 i = 0; i < 4; ++i, --f2byte)
 		{
-			if(*f2byte == DLE) tsipPush(DLE);
 			tsipPush(*f2byte);
 		}
 	}
@@ -315,7 +342,6 @@ class NmeaParser
 		u8 *i2byte = ((u8*) &arg) +1;
 		for(u8 i = 0; i < 2; ++i, --i2byte)
 		{
-			if(*i2byte == DLE) tsipPush(DLE);
 			tsipPush(*i2byte);
 		}
 	}
@@ -332,7 +358,7 @@ class NmeaParser
 		} msgType;
 		
 		globalError = Ok;
-		checkSum ^= data;
+		if(byteCount < 6) checkSum ^= data;
 		
 		switch(++byteCount)
 		{
@@ -344,10 +370,14 @@ class NmeaParser
 			case 6: msgType.msg8[1] = data;
 			comaPoint = 0;
 			charPoint = 0;
+			DebugPush(0xBB);
+			DebugPush(msgType.msg8[0]);
+			DebugPush(msgType.msg8[1]);
 			break;
 			case 7:
 			if(data != '*')
 			{
+				checkSum ^= data;
 				byteCount = 6;
 				if(data == ',')
 				{
@@ -358,6 +388,7 @@ class NmeaParser
 				switch(msgType.msg16)
 				{
 					case MSG_ENCODE('M','C'): //RMC - Рекомендованный минимальный набор GPS данных
+					
 					switch(comaPoint)
 					{
 						case 1: GetTime(); break; //UTC время
@@ -423,61 +454,63 @@ class NmeaParser
 			checkSum ^= Hex2Int() << 4;
 			break;
 			case 9:
-			checkSum ^= Hex2Int() ^ '*';
+			checkSum ^= Hex2Int();
 			if(checkSum) //Ошибка контрольной суммы
 			{
 				byteCount = 0;
+				DebugPush(0xEE);
+				DebugPush(checkSum);
 			}
 			break;
 			default: //Передача TSIP
 			if((updateFlag & UpdateDateTime) == UpdateDateTime) //0x41 GPS Время
 			{
-				tsipPush(DLE);
-				tsipPush(0x41);
+				LED_PORT ^= LED_PIN;
+				TsipPushRaw(DLE);
+				TsipPushRaw(0x41);
 				floatPush(nmeaDateTime.gpsTimeOfWeek);
 				int16Push(nmeaDateTime.gpsWeekNumber);
 				floatPush(nmeaDateTime.gpsUtcOffset);
-				tsipPush(DLE);
-				tsipPush(ETX);
+				TsipPushRaw(DLE);
+				TsipPushRaw(ETX);
 			}
 			if((updateFlag & UpdatePosition) == UpdatePosition) //0x4A Позиция
 			{
 				nmeaPosition.PositionCalc();
 				nmeaDateTime.TimeOfFixCalc();
-				tsipPush(DLE);
-				tsipPush(0x4A);
+				TsipPushRaw(DLE);
+				TsipPushRaw(0x4A);
 				floatPush(nmeaPosition.latitudeRadians);
 				floatPush(nmeaPosition.longitudeRadians);
 				floatPush(nmeaPosition.haeAltitudeMeters);
 				
 				floatPush(Zero);
 				floatPush(nmeaDateTime.timeOfFix);
-				tsipPush(DLE);
-				tsipPush(ETX);
+				TsipPushRaw(DLE);
+				TsipPushRaw(ETX);
 			}
 			if((updateFlag & UpdateVelocity) == UpdateVelocity) //0x56 Скорость
 			{
 				nmeaVelocity.VelocityCalc();
 				nmeaDateTime.TimeOfFixCalc();
-				tsipPush(DLE);
-				tsipPush(0x56);
+				TsipPushRaw(DLE);
+				TsipPushRaw(0x56);
 				floatPush(nmeaVelocity.eastVelocityMps);
 				floatPush(nmeaVelocity.northVelocityMps);
 				floatPush(nmeaVelocity.upVelocityMps);
 				
 				floatPush(Zero);
 				floatPush(nmeaDateTime.timeOfFix);
-				tsipPush(DLE);
-				tsipPush(ETX);
+				TsipPushRaw(DLE);
+				TsipPushRaw(ETX);
 			}
 			if((updateFlag & UpdatePrecision) == UpdatePrecision) //0x6D Точность и PRN
 			{
 				if(!(updateFlag & UpdatePrn)) nmeaPrecision.numberSv = 0;
-				nmeaPrecision.dimension &= 0x0F; 
-				nmeaPrecision.dimension |= nmeaPrecision.numberSv<<4;
-				tsipPush(DLE);
-				tsipPush(0x6D);
-				if(nmeaPrecision.dimension == DLE) tsipPush(DLE);
+				nmeaPrecision.PrecisionCalc();
+				
+				TsipPushRaw(DLE);
+				TsipPushRaw(0x6D);
 				tsipPush(nmeaPrecision.dimension);
 				floatPush(nmeaPrecision.pDop);
 				floatPush(nmeaPrecision.hDop);
@@ -485,16 +518,22 @@ class NmeaParser
 				floatPush(nmeaPrecision.tDop);
 				for(u8 i = 0; i < nmeaPrecision.numberSv; i++)
 				{ 
-					if(nmeaPrecision.svprn[i] == DLE) tsipPush(DLE);
 					tsipPush(nmeaPrecision.svprn[i]);
 				}
-				tsipPush(DLE);
-				tsipPush(ETX);
+				TsipPushRaw(DLE);
+				TsipPushRaw(ETX);
 			}
 			break;
 		}
-		if(globalError == Error) byteCount = 0;
+		if(globalError == Error) 
+		{
+			byteCount = 0;
+			DebugPush(0xEE);
+			DebugPush(0);
+		}
 		return globalError;
 	}
 	
 };
+
+#endif /*NMEA_PARSER_H_*/

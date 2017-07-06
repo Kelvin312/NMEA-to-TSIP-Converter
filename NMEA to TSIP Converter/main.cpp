@@ -10,26 +10,27 @@
 #include "SoftwareUART.cpp"
 #include "NmeaParser.cpp"
 
-#define LED_PIN 5
-#define SUART_RX_PIN 3
-#define SUART_TX_PIN 2
-#define LED_PORT PORTB
+
+#define SUART_RX_PIN 7
+#define SUART_TX_PIN 6
 #define SUART_RX_PORT PIND
 #define SUART_TX_PORT PORTD
 
- SoftUart nmeaUart = SoftUart(SUART_RX_PORT,SUART_RX_PIN,SUART_TX_PORT,SUART_TX_PIN);
- HardUart tsipUart = HardUart();
-  RingBuffer<120> nmeaBuffer = RingBuffer<120>();
-  RingBuffer<120> tsipBuffer = RingBuffer<120>();
-  inline void TsipPush(u8 data)
-  {
-	  tsipBuffer.Push(data);
-  }
- NmeaParser parser = NmeaParser( &(TsipPush));
-
+SoftUart nmeaUart = SoftUart(SUART_RX_PORT,SUART_RX_PIN,SUART_TX_PORT,SUART_TX_PIN);
+HardUart tsipUart = HardUart();
+RingBuffer<120> nmeaBuffer = RingBuffer<120>();
+RingBuffer<120> tsipBuffer = RingBuffer<120>();
+//inline void TsipPushRaw(u8 data)
+//{
+	//tsipBuffer.Push(data);
+//}
+NmeaParser parser = NmeaParser(tsipBuffer);
+volatile u16 timeCounter;
+u8 timePrescaler;
 
 ISR(TIMER1_CAPT_vect) //9600*3
 {
+	if(++timePrescaler >= 29){timePrescaler = 0; ++timeCounter;}
 	u8 data;
 	if(nmeaUart.RxProcessing(data))
 	{
@@ -51,7 +52,23 @@ void mainLoop()
 {
 	if(nmeaBuffer.Size())
 	{
-		parser.Parse(nmeaBuffer.Pop());
+		u8 tmp = nmeaBuffer.Pop();
+		//tsipBuffer.Push(tmp);
+		timeCounter = 0;
+		parser.Parse(tmp);
+		if(timeCounter > 0)
+		{
+			tsipBuffer.Push(0xAA);
+			tsipBuffer.Push(timeCounter>>8);
+			tsipBuffer.Push(timeCounter);
+		}
+		if(nmeaBuffer.isOverflow || tsipBuffer.isOverflow)
+		{
+			nmeaBuffer.isOverflow = 0;
+			tsipBuffer.isOverflow = 0;
+			tsipBuffer.Push(0xEE);
+			tsipBuffer.Push(0x0F);
+		}
 	}
 }
 
@@ -67,8 +84,8 @@ int main()
 
   // Input/Output Ports initialization
   DDRB=_BV(LED_PIN);
-  PORTD=_BV(SUART_TX_PORT);
-  DDRD=_BV(SUART_TX_PORT);
+  //PORTD=_BV(SUART_TX_PORT);
+  //DDRD=_BV(SUART_TX_PORT);
 
   // Timer/Counter 0 initialization
   // Clock source: System Clock
@@ -164,6 +181,15 @@ int main()
   // Global enable interrupts
   sei();
 
+
+tsipBuffer.Push(0xAA);
+tsipBuffer.Push(0xAA);
+tsipBuffer.Push(0xAA);
+tsipBuffer.Push(0xAA);
+tsipBuffer.Push(0xAA);
+tsipBuffer.Push(0xAA);
+tsipBuffer.Push(0xAA);
+tsipBuffer.Push(0xAA);
 
   while (1)
   {
