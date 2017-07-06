@@ -28,35 +28,39 @@ RingBuffer<120> outBuffer = RingBuffer<120>();
 
 volatile u8 aDetect, bDetect;
 
+volatile u16 timeCounter;
+u8 timePrescaler;
+
 ISR(TIMER1_CAPT_vect) //9600*3
 {
-	u8 data;
-	if(suartA.RxProcessing(data))
-	{
-		aBuffer.Push(data);
-		if(data == DLE)
-		{
-			aDetect = 1;
-		}
-		else
-		{
-			if((aDetect == 1 && data == ETX) || aDetect == 2) aDetect = 2;
-			else aDetect = 0;
-		}
-	}
-	if(suartB.RxProcessing(data))
-	{
-		bBuffer.Push(data);
-		if(data == DLE)
-		{
-			bDetect = 1;
-		}
-		else
-		{
-			if((bDetect == 1 && data == ETX) || bDetect == 2) bDetect = 2;
-			else bDetect = 0;
-		}
-	}
+	if(++timePrescaler >= 29){timePrescaler = 0; ++timeCounter;}
+	//u8 data;
+	//if(suartA.RxProcessing(data))
+	//{
+		//aBuffer.Push(data);
+		//if(data == DLE)
+		//{
+			//aDetect = 1;
+		//}
+		//else
+		//{
+			//if((aDetect == 1 && data == ETX) || aDetect == 2) aDetect = 2;
+			//else aDetect = 0;
+		//}
+	//}
+	//if(suartB.RxProcessing(data))
+	//{
+		//bBuffer.Push(data);
+		//if(data == DLE)
+		//{
+			//bDetect = 1;
+		//}
+		//else
+		//{
+			//if((bDetect == 1 && data == ETX) || bDetect == 2) bDetect = 2;
+			//else bDetect = 0;
+		//}
+	//}
 	if(outuart.TxProcessing())
 	{
 		if(outBuffer.Size()) outuart.Transmit(outBuffer.Pop());
@@ -65,26 +69,37 @@ ISR(TIMER1_CAPT_vect) //9600*3
 
 void mainLoop()
 {
-	if(aDetect == 2)
+	//if(aDetect == 2)
+	//{
+		//outBuffer.Push(0xAA);
+		//outBuffer.Push(0x00);
+		//while(aBuffer.Size())
+		//{
+			//outBuffer.Push(aBuffer.Pop());
+		//}
+		//aDetect = 0;
+	//}
+	//if(bDetect == 2)
+	//{
+		//outBuffer.Push(0xBB);
+		//outBuffer.Push(0x00);
+		//while(bBuffer.Size())
+		//{
+			//outBuffer.Push(bBuffer.Pop());
+		//}
+		//bDetect = 0;
+	//}
+	static const u8 softwareVersion[15] = {0x10, 0x45, 0x01, 0x10, 0x10, 0x02, 0x02, 0x06, 0x02, 0x19, 0x0C, 0x02, 0x05, 0x10, 0x03};
+	if(timeCounter>1000)
 	{
-		outBuffer.Push(0xAA);
-		outBuffer.Push(0x00);
-		while(aBuffer.Size())
+		timeCounter = 0;
+		for(u8 i=0; i<15; i++)
 		{
-			outBuffer.Push(aBuffer.Pop());
+			outBuffer.Push(softwareVersion[i]);
 		}
-		aDetect = 0;
 	}
-	if(bDetect == 2)
-	{
-		outBuffer.Push(0xBB);
-		outBuffer.Push(0x00);
-		while(bBuffer.Size())
-		{
-			outBuffer.Push(bBuffer.Pop());
-		}
-		bDetect = 0;
-	}
+	
+	
 }
 
 
