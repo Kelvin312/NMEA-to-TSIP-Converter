@@ -12,9 +12,9 @@
 class NmeaParser
 {
 	public:
-	RingBuffer<120> &tsipBuffer;
+	RingBuffer<64> &tsipBuffer;
 	//void (*tsipPushRaw)(u8);
-	NmeaParser(RingBuffer<120> &tsipBuffer):tsipBuffer(tsipBuffer)
+	NmeaParser(RingBuffer<64> &tsipBuffer):tsipBuffer(tsipBuffer)
 	{
 		//tsipPushRaw = tsipPushm;
 	}
@@ -370,7 +370,7 @@ class NmeaParser
 			case 6: msgType.msg8[1] = data;
 			comaPoint = 0;
 			charPoint = 0;
-			DebugPush(0xBB);
+			DebugPush('?');
 			DebugPush(msgType.msg8[0]);
 			DebugPush(msgType.msg8[1]);
 			break;
@@ -459,10 +459,12 @@ class NmeaParser
 			{
 				byteCount = 0;
 				DebugPush(0xEE);
+				DebugPush(0xCC);
 				DebugPush(checkSum);
 			}
 			break;
 			default: //Передача TSIP
+			byteCount = 0;
 			if((updateFlag & UpdateDateTime) == UpdateDateTime) //0x41 GPS Время
 			{
 				LED_PORT ^= LED_PIN;
@@ -529,7 +531,8 @@ class NmeaParser
 		{
 			byteCount = 0;
 			DebugPush(0xEE);
-			DebugPush(0);
+			DebugPush(0x00);
+			DebugPush(0xAE);
 		}
 		return globalError;
 	}

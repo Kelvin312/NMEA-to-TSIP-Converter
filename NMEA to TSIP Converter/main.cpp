@@ -19,7 +19,7 @@
 SoftUart nmeaUart = SoftUart(SUART_RX_PORT,SUART_RX_PIN,SUART_TX_PORT,SUART_TX_PIN);
 HardUart tsipUart = HardUart();
 RingBuffer<120> nmeaBuffer = RingBuffer<120>();
-RingBuffer<120> tsipBuffer = RingBuffer<120>();
+RingBuffer<64> tsipBuffer = RingBuffer<64>();
 //inline void TsipPushRaw(u8 data)
 //{
 	//tsipBuffer.Push(data);
@@ -56,7 +56,7 @@ void mainLoop()
 		//tsipBuffer.Push(tmp);
 		timeCounter = 0;
 		parser.Parse(tmp);
-		if(timeCounter > 0)
+		if(timeCounter > 1)
 		{
 			tsipBuffer.Push(0xAA);
 			tsipBuffer.Push(timeCounter>>8);
@@ -64,10 +64,12 @@ void mainLoop()
 		}
 		if(nmeaBuffer.isOverflow || tsipBuffer.isOverflow)
 		{
-			nmeaBuffer.isOverflow = 0;
-			tsipBuffer.isOverflow = 0;
 			tsipBuffer.Push(0xEE);
 			tsipBuffer.Push(0x0F);
+			if(nmeaBuffer.isOverflow) tsipBuffer.Push('N');
+			if(tsipBuffer.isOverflow) tsipBuffer.Push('T');
+			nmeaBuffer.isOverflow = 0;
+			tsipBuffer.isOverflow = 0;
 		}
 	}
 }
@@ -83,7 +85,7 @@ int main()
   clock_prescale_set(clock_div_1);
 
   // Input/Output Ports initialization
-  DDRB=_BV(LED_PIN);
+  DDRB = LED_PIN;
   //PORTD=_BV(SUART_TX_PORT);
   //DDRD=_BV(SUART_TX_PORT);
 

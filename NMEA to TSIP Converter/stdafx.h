@@ -25,7 +25,7 @@ typedef signed short s16;
 typedef unsigned long u32;
 typedef signed long s32;
 
-#define LED_PIN 5
+#define LED_PIN _BV(5)
 #define LED_PORT PORTB
 
 
