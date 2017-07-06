@@ -19,7 +19,7 @@
 SoftUart nmeaUart = SoftUart(SUART_RX_PORT,SUART_RX_PIN,SUART_TX_PORT,SUART_TX_PIN);
 HardUart tsipUart = HardUart();
 RingBuffer<120> nmeaBuffer = RingBuffer<120>();
-RingBuffer<64> tsipBuffer = RingBuffer<64>();
+RingBuffer<120> tsipBuffer = RingBuffer<120>();
 //inline void TsipPushRaw(u8 data)
 //{
 	//tsipBuffer.Push(data);
@@ -183,15 +183,12 @@ int main()
   // Global enable interrupts
   sei();
 
-
-tsipBuffer.Push(0xAA);
-tsipBuffer.Push(0xAA);
-tsipBuffer.Push(0xAA);
-tsipBuffer.Push(0xAA);
-tsipBuffer.Push(0xAA);
-tsipBuffer.Push(0xAA);
-tsipBuffer.Push(0xAA);
-tsipBuffer.Push(0xAA);
+	static const u8 softwareVersion[15] PROGMEM = {0x10, 0x45, 0x01, 0x10, 0x10, 0x02, 0x02, 0x06, 0x02, 0x19, 0x0C, 0x02, 0x05, 0x10, 0x03};
+	for(u8 i=0; i<15; i++)
+	{
+		tsipBuffer.Push(pgm_read_byte(&softwareVersion[i]));
+		wdt_reset();
+	}
 
   while (1)
   {

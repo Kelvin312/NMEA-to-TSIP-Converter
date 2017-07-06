@@ -5,7 +5,7 @@ GPS Receivers
 * Old: Lassen iQ / TSIP (3.3V TXD Pin 1 are 9600 baud 8-odd-1)
 
 Hardware
-* Arduino Nano v3.0 (ATmega328 16МГц 5V)
+* Arduino Nano v3.0 (ATmega328P 16МГц 5V)
 
 ### TSIP packet structure
 
