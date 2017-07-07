@@ -33,7 +33,7 @@ class NmeaParser
 	}
 	inline void DebugPush(u8 c)
 	{
-		tsipUart.TransmitAndWait(c);
+		//tsipUart.TransmitAndWait(c);
 	}
 	
 	private:

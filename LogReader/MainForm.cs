@@ -42,11 +42,13 @@ namespace LogReader
             TsipPacket
         }
 
+        private Flags flag = Flags.None;
+        private byte oldByte = 0;
+
         private void Port_DataReceived(object sender, System.IO.Ports.SerialDataReceivedEventArgs e)
         {
             byte[] readBuffer = new byte[1024];
-            int readCount = port.Read(ref readBuffer, 5);
-            Flags flag = Flags.None;
+            int readCount = port.Read(ref readBuffer, 1);
 
             for (int i=0; i<readCount; i++)
             {
@@ -88,11 +90,12 @@ namespace LogReader
                         break;
                     case Flags.TsipPacket:
                         txtLog.AppendText(string.Format("{0:X2} ", readBuffer[i]));
-                        if(readBuffer[i] == 0x03 && i>0 && readBuffer[i-1] == 0x10)
+                        if(readBuffer[i] == 0x03 && ((i>0 && readBuffer[i-1] == 0x10) || (i==0 && oldByte == 0x10)))
                         {
                             flag = Flags.None;
                             txtLog.AppendText("\r\n");
                         }
+
                         break;
                     default:
                         txtLog.AppendText(string.Format("\\{0:X2} ", readBuffer[i]));
@@ -100,6 +103,8 @@ namespace LogReader
 
                 }
             }
+            if(readCount>0)
+            oldByte = readBuffer[readCount - 1];
         }
 
         private void MainForm_FormClosing(object sender, FormClosingEventArgs e)
