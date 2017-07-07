@@ -16,7 +16,8 @@ Hardware
     Порядок байт - со старшего
     Single = Float
 
-Automatic Output Packets	
+Automatic Output Packets
+	
 |	   |											|			|
 |------|--------------------------------------------|-----------|
 | 0x41 | GPS time									| 5 seconds	|
@@ -28,6 +29,7 @@ Automatic Output Packets
 | 0x82 | DGPS position fix mode (only in DGPS mode)	| 1 second	|
 
 Packets Output at Power-Up
+
 |	   |						|
 |------|------------------------|
 | 0x45 | software version		|					
