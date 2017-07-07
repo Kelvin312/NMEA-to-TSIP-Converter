@@ -63,7 +63,11 @@ void mainLoop()
 		u8 c = nmeaBuffer.Pop();
 		sei();
 		//tsipBuffer.Push(tmp);
-		timeCounter = 0;
+		if(timeCounter>5000 && parser.ppsTimeMSec > 1 && parser.ppsTimeMSec < 500) 
+		{
+			timeCounter = 0;
+			parser.isHealthSend = true;
+		}
 		parser.Parse(c);
 		//if(timeCounter > 1)
 		//{

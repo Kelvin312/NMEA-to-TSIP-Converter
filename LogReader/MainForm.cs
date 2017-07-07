@@ -45,7 +45,7 @@ namespace LogReader
         private void Port_DataReceived(object sender, System.IO.Ports.SerialDataReceivedEventArgs e)
         {
             byte[] readBuffer = new byte[1024];
-            int readCount = port.Read(ref readBuffer, 1);
+            int readCount = port.Read(ref readBuffer, 5);
             Flags flag = Flags.None;
 
             for (int i=0; i<readCount; i++)

@@ -17,13 +17,14 @@ class NmeaParser
 	
 	volatile u16 ppsTimeMSec;
 	volatile u8 ppsTimeSec;
+	volatile bool isHealthSend;
 	
 	
 	HardUart &tsipUart;
 	//void (*tsipPushRaw)(u8);
 	NmeaParser(HardUart tsipUart):tsipUart(tsipUart)
 	{
-		
+		nmeaHealth.HealthClear();
 	}
 	
 	inline void TsipPushRaw(u8 c)
@@ -85,7 +86,8 @@ class NmeaParser
 		UpdatePDop = 512,
 		UpdateHDop = 1024,
 		UpdateVDop = 2048,
-		UpdatePrecision = UpdateDimension | UpdatePDop | UpdateHDop | UpdateVDop
+		UpdatePrecision = UpdateDimension | UpdatePDop | UpdateHDop | UpdateVDop,
+		UpdateQuality = 4096
 	};
 
 	struct
@@ -196,7 +198,34 @@ class NmeaParser
 		}
 	} nmeaPrecision;
 
-
+	struct 
+	{
+		u8 qualityIndicator; // 0 = No GPS, 1 = GPS, 2 = DGPS
+		u8 nSatellitesUse;
+		bool isTimeValid;
+		u8 statusCode;
+		
+		void HealthClear()
+		{
+			qualityIndicator = 0;
+			nSatellitesUse = 0;
+			isTimeValid = 0;
+		}
+		
+		void HealthCalc()
+		{
+			if(!isTimeValid)
+			{
+				statusCode = 0x01; //Don't have GPS time yet
+			}
+			else if(nSatellitesUse < 4)
+			{
+				statusCode = 0x08 + nSatellitesUse;
+			}
+			else statusCode = 0x00;
+		}
+		
+	} nmeaHealth;
 
 	void GetFixedDigits(s32 &param, u8 &divisor, u8 first6, u8 size) //Чтение чисел с фиксированной целой частью
 	{
@@ -399,7 +428,7 @@ class NmeaParser
 					switch(comaPoint)
 					{
 						case 1: GetTime(); break; //UTC время
-						case 2: break; //статус: «A» — данные достоверны, «V» — недостоверны.
+						case 2: nmeaHealth.isTimeValid = data == 'A'; break; //статус: «A» — данные достоверны, «V» — недостоверны.
 						case 3: GetLatitude(); break; //широта
 						case 4: if(data == 'S') nmeaPosition.latitudeMinutes *= -1; break; //«N» для северной или «S» для южной широты
 						case 5: GetLongitude(); break; //долгота
@@ -421,10 +450,10 @@ class NmeaParser
 						case 3:	if(data == 'S') nmeaPosition.latitudeMinutes *= -1; break; //«N» для северной или «S» для южной широты
 						case 4:	GetLongitude(); break; //долгота
 						case 5:	if(data == 'W') nmeaPosition.longitudeMinutes *= -1; break; //«E» для восточной или «W» для западной долготы
-						case 6:	 break; //Качество фиксации позиции: 0 = No GPS, 1 = GPS, 2 = DGPS
-						case 7:	 break; //количество используемых спутников
+						case 6:	nmeaHealth.qualityIndicator = Hex2Int(); updateFlag |= UpdateQuality; break; //Качество фиксации позиции: 0 = No GPS, 1 = GPS, 2 = DGPS
+						case 7:	nmeaHealth.nSatellitesUse = Hex2Int(); break; //количество используемых спутников
 						case 8:	 break; //HDOP
-						case 9:	GetFloat(nmeaPosition.mslAltitudeMeters); updateFlag |= UpdateAltitude; break; //высота над уровнем моря
+						case 9:	GetFloat(nmeaPosition.mslAltitudeMeters); nmeaPosition.mslAboveHae = 0; updateFlag |= UpdateAltitude; break; //высота над уровнем моря
 						case 10: break; //M - метры
 						case 11: GetFloat(nmeaPosition.mslAboveHae); break; //высота уровня моря над эллипсоидом WGS 84
 						case 12: break; //M - метры
@@ -539,6 +568,35 @@ class NmeaParser
 				TsipPushRaw(DLE);
 				TsipPushRaw(ETX);
 			}
+			if((updateFlag & UpdateQuality) == UpdateQuality) //0x82 Режим фиксации положения
+			{
+				TsipPushRaw(DLE);
+				TsipPushRaw(0x82);
+				tsipPush((nmeaHealth.qualityIndicator == 2)?3:2);
+				TsipPushRaw(DLE);
+				TsipPushRaw(ETX);
+			}
+			if(isHealthSend)
+			{
+				nmeaHealth.HealthCalc();
+				TsipPushRaw(DLE);
+				TsipPushRaw(0x46); //0x46 Здоровье приемника
+				tsipPush(nmeaHealth.statusCode);
+				tsipPush(0x00);
+				TsipPushRaw(DLE);
+				TsipPushRaw(ETX);
+				
+				TsipPushRaw(DLE);
+				TsipPushRaw(0x4B); //0x4B Дополнительный статус
+				tsipPush(0x5A);
+				tsipPush(0x00);
+				tsipPush(0x01);
+				TsipPushRaw(DLE);
+				TsipPushRaw(ETX);
+				nmeaHealth.HealthClear();
+				isHealthSend = false;
+			}
+			
 			
 			DebugPush('P');
 			tempTime = ppsTimeMSec;
