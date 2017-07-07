@@ -4,6 +4,8 @@
 * Created: 02.07.2017 16:20:24
 *  Author: Kelvin
 */
+#ifndef SOFT_UART_H_
+#define SOFT_UART_H_
 
 #include "stdafx.h"
 
@@ -129,3 +131,4 @@ class SoftUart
 	}
 
 };
+#endif SOFT_UART_H_

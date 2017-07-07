@@ -21,7 +21,7 @@ SoftUart suartB = SoftUart(SUART_RX_PORT,SUARTB_RX_PIN,PORTD,7);
 HardUart outuart = HardUart();
 RingBuffer<120> aBuffer = RingBuffer<120>();
 RingBuffer<120> bBuffer = RingBuffer<120>();
-RingBuffer<120> outBuffer = RingBuffer<120>();
+ RingBuffer<120> outBuffer = RingBuffer<120>();
 
 #define DLE 0x10
 #define ETX 0x03
@@ -96,6 +96,11 @@ void mainLoop()
 		for(u8 i=0; i<15; i++)
 		{
 			outBuffer.Push(softwareVersion[i]);
+			//while(!outuart.TxProcessing())
+			//{
+				//
+			//}
+			//outuart.Transmit(softwareVersion[i]);
 		}
 	}
 	

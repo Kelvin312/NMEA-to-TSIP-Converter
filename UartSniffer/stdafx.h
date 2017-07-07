@@ -31,25 +31,27 @@ template<u8 bufferSize> struct RingBuffer
 	volatile u8 writeIndex, readIndex, counter;
 	volatile u8 buffer[bufferSize];
 	
-	void Push(u8 data)
+	 void Push(volatile u8 data)
 	{
 		buffer[writeIndex] = data;
 		if(++writeIndex >= bufferSize) writeIndex = 0;
+		cli();
 		++counter;
+		sei();
 	}
-	u8 Pop()
+	 u8 Pop()
 	{
 		if(counter == 0) return 0;
-		u8 data = buffer[readIndex];
+		volatile u8 data = buffer[readIndex];
 		if(++readIndex >= bufferSize) readIndex = 0;
 		--counter;
 		return data;
 	}
-	void Clear()
+	 void Clear()
 	{
 		readIndex = writeIndex = counter = 0;
 	}
-	u8 Size()
+	 u8 Size()
 	{
 		return counter;
 	}

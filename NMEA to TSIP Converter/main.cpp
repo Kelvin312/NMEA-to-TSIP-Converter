@@ -15,62 +15,71 @@
 #define SUART_TX_PIN 6
 #define SUART_RX_PORT PIND
 #define SUART_TX_PORT PORTD
+#define INT1_PIN _BV(3)
+#define INT1_PORT PORTD
 
 SoftUart nmeaUart = SoftUart(SUART_RX_PORT,SUART_RX_PIN,SUART_TX_PORT,SUART_TX_PIN);
 HardUart tsipUart = HardUart();
 RingBuffer<120> nmeaBuffer = RingBuffer<120>();
-RingBuffer<120> tsipBuffer = RingBuffer<120>();
 //inline void TsipPushRaw(u8 data)
 //{
 	//tsipBuffer.Push(data);
 //}
-NmeaParser parser = NmeaParser(tsipBuffer);
+NmeaParser parser = NmeaParser(tsipUart);
 volatile u16 timeCounter;
 u8 timePrescaler;
 
 ISR(TIMER1_CAPT_vect) //9600*3
 {
-	if(++timePrescaler >= 29){timePrescaler = 0; ++timeCounter;}
+	if(++timePrescaler >= 29)
+	{
+		timePrescaler = 0; 
+		++timeCounter;
+		++parser.ppsTimeMSec;
+	}
+	if(EIFR & _BV(INTF1)) //Нарастающий фронт
+	{
+		++parser.ppsTimeSec;
+		parser.ppsTimeMSec = 0;
+		EIFR &= _BV(INTF1);
+	}
+	if(INT1_PORT & INT1_PIN)
+	{
+		parser.ppsTimeMSec = 0;
+	}
+	
 	u8 data;
 	if(nmeaUart.RxProcessing(data))
 	{
 		nmeaBuffer.Push(data);
 	}
-	if(tsipUart.TxProcessing())
-	{
-		if(tsipBuffer.Size())
-		{
-			tsipUart.Transmit(tsipBuffer.Pop());
-		}
-	}
-	
 }
-
-
 
 void mainLoop()
 {
 	if(nmeaBuffer.Size())
 	{
-		u8 tmp = nmeaBuffer.Pop();
+		cli();
+		u8 c = nmeaBuffer.Pop();
+		sei();
 		//tsipBuffer.Push(tmp);
 		timeCounter = 0;
-		parser.Parse(tmp);
-		if(timeCounter > 1)
-		{
-			tsipBuffer.Push(0xAA);
-			tsipBuffer.Push(timeCounter>>8);
-			tsipBuffer.Push(timeCounter);
-		}
-		if(nmeaBuffer.isOverflow || tsipBuffer.isOverflow)
-		{
-			tsipBuffer.Push(0xEE);
-			tsipBuffer.Push(0x0F);
-			if(nmeaBuffer.isOverflow) tsipBuffer.Push('N');
-			if(tsipBuffer.isOverflow) tsipBuffer.Push('T');
-			nmeaBuffer.isOverflow = 0;
-			tsipBuffer.isOverflow = 0;
-		}
+		parser.Parse(c);
+		//if(timeCounter > 1)
+		//{
+			//tsipBuffer.Push(0xAA);
+			//tsipBuffer.Push(timeCounter>>8);
+			//tsipBuffer.Push(timeCounter);
+		//}
+		//if(nmeaBuffer.isOverflow || tsipBuffer.isOverflow)
+		//{
+			//tsipBuffer.Push(0xEE);
+			//tsipBuffer.Push(0x0F);
+			//if(nmeaBuffer.isOverflow) tsipBuffer.Push('N');
+			//if(tsipBuffer.isOverflow) tsipBuffer.Push('T');
+			//nmeaBuffer.isOverflow = 0;
+			//tsipBuffer.isOverflow = 0;
+		//}
 	}
 }
 
@@ -79,13 +88,21 @@ void mainLoop()
 
 int main()
 {
-  // Declare your local variables here
-  
-  // Crystal Oscillator division factor: 1
-  clock_prescale_set(clock_div_1);
+	// Declare your local variables here
+	
+	// Crystal Oscillator division factor: 1
+	clock_prescale_set(clock_div_1);
 
-  // Input/Output Ports initialization
-  DDRB = LED_PIN;
+	// Input/Output Ports initialization
+	PORTB=0x00;
+	DDRB = LED_PIN;
+
+	PORTC=0x00;
+	DDRC=0x00;
+
+	PORTD=0x00;
+	DDRD=0x00;
+
   //PORTD=_BV(SUART_TX_PORT);
   //DDRD=_BV(SUART_TX_PORT);
 
@@ -137,15 +154,17 @@ int main()
   OCR2A=0x00;
   OCR2B=0x00;
 
-  // External Interrupt(s) initialization
-  // INT0: Off
-  // INT1: Off
-  // Interrupt on any change on pins PCINT0-7: Off
-  // Interrupt on any change on pins PCINT8-14: Off
-  // Interrupt on any change on pins PCINT16-23: Off
-  EICRA=0x00;
-  EIMSK=0x00;
-  PCICR=0x00;
+ // External Interrupt(s) initialization
+ // INT0: Off
+ // INT1: On
+ // INT1 Mode: Rising Edge
+ // Interrupt on any change on pins PCINT0-7: Off
+ // Interrupt on any change on pins PCINT8-14: Off
+ // Interrupt on any change on pins PCINT16-23: Off
+ EICRA=0x0C;
+ EIMSK=0x00;
+ EIFR=0x02; //INTF1: External Interrupt Flag 1
+ PCICR=0x00;
 
   // Timer/Counter 0 Interrupt(s) initialization
   TIMSK0=0x00;
@@ -186,7 +205,7 @@ int main()
 	static const u8 softwareVersion[15] PROGMEM = {0x10, 0x45, 0x01, 0x10, 0x10, 0x02, 0x02, 0x06, 0x02, 0x19, 0x0C, 0x02, 0x05, 0x10, 0x03};
 	for(u8 i=0; i<15; i++)
 	{
-		tsipBuffer.Push(pgm_read_byte(&softwareVersion[i]));
+		tsipUart.TransmitAndWait(pgm_read_byte(&softwareVersion[i]));
 		wdt_reset();
 	}
 

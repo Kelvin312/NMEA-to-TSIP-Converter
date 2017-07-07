@@ -4,28 +4,35 @@
 * Created: 02.07.2017 20:51:05
 *  Author: Kelvin
 */
-#include "stdafx.h"
 
 #ifndef NMEA_PARSER_H_
 #define NMEA_PARSER_H_
 
+#include "stdafx.h"
+#include "HardwareUART.cpp"
+
 class NmeaParser
 {
 	public:
-	RingBuffer<120> &tsipBuffer;
+	
+	volatile u16 ppsTimeMSec;
+	volatile u8 ppsTimeSec;
+	
+	
+	HardUart &tsipUart;
 	//void (*tsipPushRaw)(u8);
-	NmeaParser(RingBuffer<120> &tsipBuffer):tsipBuffer(tsipBuffer)
+	NmeaParser(HardUart tsipUart):tsipUart(tsipUart)
 	{
-		//tsipPushRaw = tsipPushm;
+		
 	}
 	
 	inline void TsipPushRaw(u8 c)
 	{
-		tsipBuffer.Push(c);
+		tsipUart.TransmitAndWait(c);
 	}
 	inline void DebugPush(u8 c)
 	{
-		tsipBuffer.Push(c);
+		tsipUart.TransmitAndWait(c);
 	}
 	
 	private:
@@ -370,9 +377,9 @@ class NmeaParser
 			case 6: msgType.msg8[1] = data;
 			comaPoint = 0;
 			charPoint = 0;
-			//DebugPush('?');
-			//DebugPush(msgType.msg8[0]);
-			//DebugPush(msgType.msg8[1]);
+			DebugPush('?');
+			DebugPush(msgType.msg8[0]);
+			DebugPush(msgType.msg8[1]);
 			break;
 			case 7:
 			if(data != '*')
@@ -458,13 +465,20 @@ class NmeaParser
 			if(checkSum) //Ошибка контрольной суммы
 			{
 				byteCount = 0;
-				//DebugPush(0xEE);
-				//DebugPush(0xCC);
-				//DebugPush(checkSum);
+				DebugPush(0xEE);
+				DebugPush(0xCC);
+				DebugPush(checkSum);
 			}
 			break;
 			default: //Передача TSIP
 			byteCount = 0;
+			
+			DebugPush('P');
+			u16 tempTime = ppsTimeMSec;
+			DebugPush(ppsTimeSec);
+			DebugPush(tempTime>>8);
+			DebugPush(tempTime);
+			
 			if((updateFlag & UpdateDateTime) == UpdateDateTime) //0x41 GPS Время
 			{
 				LED_PORT ^= LED_PIN;
@@ -475,8 +489,6 @@ class NmeaParser
 				floatPush(nmeaDateTime.gpsUtcOffset);
 				TsipPushRaw(DLE);
 				TsipPushRaw(ETX);
-				
-				TsipPushRaw(0);
 			}
 			if((updateFlag & UpdatePosition) == UpdatePosition) //0x4A Позиция
 			{
@@ -492,8 +504,6 @@ class NmeaParser
 				floatPush(nmeaDateTime.timeOfFix);
 				TsipPushRaw(DLE);
 				TsipPushRaw(ETX);
-				
-				TsipPushRaw(0);
 			}
 			if((updateFlag & UpdateVelocity) == UpdateVelocity) //0x56 Скорость
 			{
@@ -509,8 +519,6 @@ class NmeaParser
 				floatPush(nmeaDateTime.timeOfFix);
 				TsipPushRaw(DLE);
 				TsipPushRaw(ETX);
-				
-				TsipPushRaw(0);
 			}
 			if((updateFlag & UpdatePrecision) == UpdatePrecision) //0x6D Точность и PRN
 			{
@@ -530,17 +538,21 @@ class NmeaParser
 				}
 				TsipPushRaw(DLE);
 				TsipPushRaw(ETX);
-				
-				TsipPushRaw(0);
 			}
+			
+			DebugPush('P');
+			tempTime = ppsTimeMSec;
+			DebugPush(ppsTimeSec);
+			DebugPush(tempTime>>8);
+			DebugPush(tempTime);
 			break;
 		}
 		if(globalError == Error) 
 		{
 			byteCount = 0;
-			//DebugPush(0xEE);
-			//DebugPush(0x00);
-			//DebugPush(0xAE);
+			DebugPush(0xEE);
+			DebugPush(0x00);
+			DebugPush(0xAE);
 		}
 		return globalError;
 	}

@@ -4,8 +4,10 @@
  * Created: 01.07.2017 18:34:34
  *  Author: Kelvin
  */ 
-#include "stdafx.h"
 
+#ifndef HARD_UART_H_
+#define HARD_UART_H_
+#include "stdafx.h"
 
 class HardUart
 {
@@ -62,4 +64,12 @@ class HardUart
  {
 	 UDR0 = data;
  }
+ 
+  inline void TransmitAndWait(u8 data)
+  {
+	  while((UCSR0A & DATA_REGISTER_EMPTY)==0);
+	  UDR0 = data;
+  }
 };
+
+#endif HARD_UART_H_
