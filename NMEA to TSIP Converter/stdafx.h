@@ -3,9 +3,9 @@
  *  Author: Andrey
  */ 
 
-
 #ifndef STDAFX_H_
 #define STDAFX_H_
+#define F_CPU 16000000UL  // 16 MHz
 
 #include <avr/io.h>
 #include <avr/interrupt.h>
@@ -28,36 +28,82 @@ typedef signed long s32;
 #define LED_PIN _BV(5)
 #define LED_PORT PORTB
 
+// TEMPLATE CLASS conditional
+template<bool _Test,
+class _Ty1,
+class _Ty2>
+struct conditional
+{	// type is _Ty2 for assumed !_Test
+	typedef _Ty2 type;
+};
 
-template<u8 bufferSize> struct RingBuffer
+template<class _Ty1,
+class _Ty2>
+struct conditional<true, _Ty1, _Ty2>
+{	// type is _Ty1 for _Test
+	typedef _Ty1 type;
+};
+
+template<u16 S> struct RingBuffer
 {
-	volatile u8 writeIndex, readIndex, counter, isOverflow;
+	private:
+	typedef typename conditional<(S>128), u16, u8 >::type T;
+	static const u16 S0 = S-1, S1 = S0 | S0 >> 1, S2 = S1 | S1 >> 2, S4 = S2 | S2 >> 4, S8 = S4 | S4 >> 8;
+
+	static const T bufferSize = S8 + 1;
+	volatile T writeIndex = 0, readIndex = 0;
 	volatile u8 buffer[bufferSize];
-	
-	volatile void Push(volatile u8 data)
+
+	public:
+	volatile bool isOverflow = false;
+
+	void Push(u8 data)
 	{
-		buffer[writeIndex] = data;
-		if(++writeIndex >= bufferSize) writeIndex = 0;
-		if(++counter == bufferSize) isOverflow = 1;
+		if (Size() == bufferSize) //Переполнение
+		{
+			isOverflow = true;
+			return;
+		}
+		buffer[writeIndex++ & (bufferSize - 1)] = data;
 	}
-	volatile u8 Pop()
+	u8 Pop()
 	{
-		if(counter == 0) return 0;
-		u8 data = buffer[readIndex];
-		if(++readIndex >= bufferSize) readIndex = 0;
-		--counter;
-		return data;
+		if (Empty()) return 0; //Буфер пустой
+		return buffer[readIndex++  & (bufferSize - 1)];
+	}
+	u8 Front() const
+	{
+		if (Empty()) return 0;
+		return buffer[readIndex & (bufferSize - 1)];
+	}
+	u8 Back() const
+	{
+		if (Empty()) return 0;
+		return buffer[writeIndex - 1 & (bufferSize - 1)];
 	}
 	void Clear()
 	{
-		readIndex = writeIndex = counter = 0;
+		readIndex = writeIndex = 0;
 	}
-	volatile u8 Size()
+	T Size() const
 	{
-		return counter;
+		return writeIndex - readIndex;
+	}
+	bool Empty() const
+	{
+		return writeIndex == readIndex;
 	}
 };
 
 
+enum class ParityAndStop:u8
+{
+	None1 =  0,
+	None2 =  1,
+	Even1 = 4,
+	Even2 = 5,
+	Odd1 = 6,
+	Odd2 = 7
+};
 
 #endif /* STDAFX_H_ */
