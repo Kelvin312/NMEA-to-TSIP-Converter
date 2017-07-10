@@ -19,7 +19,7 @@
 #define INT1_PORT PORTD
 
 SoftUart nmeaUart = SoftUart(SUART_RX_PORT,SUART_RX_PIN,SUART_TX_PORT,SUART_TX_PIN);
-HardUart tsipUart = HardUart();
+HardUart tsipUart = HardUart(9600, ParityAndStop::Odd1);
 RingBuffer<120> nmeaBuffer = RingBuffer<120>();
 //inline void TsipPushRaw(u8 data)
 //{
