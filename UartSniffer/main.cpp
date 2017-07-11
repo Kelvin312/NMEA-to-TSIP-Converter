@@ -100,13 +100,32 @@ enum
 } tsipStatus = tsipEnd;
 u8 commandId = 0, commandByte = 0;
 
-u8 TsipParse(u8 data)
+void TsipParse(u8 data)
 {
 	//Замена байт
-	
-	
+	if(commandId == 0x6D && commandByte == 1)
+	{
+		 tsipSend(0x64);
+		 return;
+	}
+	if(commandId == 0x6D && commandByte == 17)
+	{
+		tsipSend(data);
+		tsipSend(0x60);
+		tsipSend(0x70);
+		tsipSend(0x62);
+		tsipSend(0x72);
+		tsipSend(0x64);
+		tsipSend(0x74);
+		return;
+	}
+	if(commandId == 0x46 && commandByte == 1)
+	{
+		tsipSend(0x00);
+		return;
+	}
 	//**********
-	return data;
+	tsipSend(data);
 }
 
 
@@ -143,9 +162,10 @@ void mainLoop()
 			}
 			break;
 		}
-		if((tsipStatus == tsipData || tsipStatus == tsipDLE) && commandByte > 1)
+		if((tsipStatus == tsipData || tsipStatus == tsipDLE) && commandByte > 0)
 		{
-			c = TsipParse(c);
+			TsipParse(c);
+			return;
 		}
 		
 		tsipSend(c);
