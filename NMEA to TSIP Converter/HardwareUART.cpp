@@ -42,7 +42,6 @@ class HardUart
 		UCSR0B=0x18;
 		UCSR0C = (u8(mode) << 3) | 6;
 		UBRR0 = F_CPU / (baudRate * 16UL) - 1;
-		UBRR0L=0x67;
 	}
 
 	bool RxProcessing(u8 &data)

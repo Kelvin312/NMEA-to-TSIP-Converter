@@ -39,7 +39,15 @@
             this.txtLog = new System.Windows.Forms.TextBox();
             this.cmbParity = new System.Windows.Forms.ComboBox();
             this.label3 = new System.Windows.Forms.Label();
+            this.txtLog2 = new System.Windows.Forms.TextBox();
+            this.btnClear = new System.Windows.Forms.Button();
+            this.splitContainer1 = new System.Windows.Forms.SplitContainer();
+            this.lblPortStatus = new System.Windows.Forms.Label();
             ((System.ComponentModel.ISupportInitialize)(this.bindingSource1)).BeginInit();
+            ((System.ComponentModel.ISupportInitialize)(this.splitContainer1)).BeginInit();
+            this.splitContainer1.Panel1.SuspendLayout();
+            this.splitContainer1.Panel2.SuspendLayout();
+            this.splitContainer1.SuspendLayout();
             this.SuspendLayout();
             // 
             // cmbPort
@@ -88,7 +96,7 @@
             // 
             // btnClose
             // 
-            this.btnClose.Location = new System.Drawing.Point(233, 46);
+            this.btnClose.Location = new System.Drawing.Point(233, 37);
             this.btnClose.Name = "btnClose";
             this.btnClose.Size = new System.Drawing.Size(75, 23);
             this.btnClose.TabIndex = 5;
@@ -98,14 +106,12 @@
             // 
             // txtLog
             // 
-            this.txtLog.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
-            | System.Windows.Forms.AnchorStyles.Left) 
-            | System.Windows.Forms.AnchorStyles.Right)));
-            this.txtLog.Location = new System.Drawing.Point(15, 119);
+            this.txtLog.Dock = System.Windows.Forms.DockStyle.Fill;
+            this.txtLog.Location = new System.Drawing.Point(0, 0);
             this.txtLog.Multiline = true;
             this.txtLog.Name = "txtLog";
             this.txtLog.ScrollBars = System.Windows.Forms.ScrollBars.Vertical;
-            this.txtLog.Size = new System.Drawing.Size(514, 396);
+            this.txtLog.Size = new System.Drawing.Size(337, 431);
             this.txtLog.TabIndex = 6;
             // 
             // cmbParity
@@ -125,14 +131,63 @@
             this.label3.TabIndex = 8;
             this.label3.Text = "Parity";
             // 
+            // txtLog2
+            // 
+            this.txtLog2.Dock = System.Windows.Forms.DockStyle.Fill;
+            this.txtLog2.Location = new System.Drawing.Point(0, 0);
+            this.txtLog2.Multiline = true;
+            this.txtLog2.Name = "txtLog2";
+            this.txtLog2.ScrollBars = System.Windows.Forms.ScrollBars.Vertical;
+            this.txtLog2.Size = new System.Drawing.Size(391, 431);
+            this.txtLog2.TabIndex = 9;
+            // 
+            // btnClear
+            // 
+            this.btnClear.Location = new System.Drawing.Point(233, 64);
+            this.btnClear.Name = "btnClear";
+            this.btnClear.Size = new System.Drawing.Size(75, 23);
+            this.btnClear.TabIndex = 10;
+            this.btnClear.Text = "Clear";
+            this.btnClear.UseVisualStyleBackColor = true;
+            this.btnClear.Click += new System.EventHandler(this.btnClear_Click);
+            // 
+            // splitContainer1
+            // 
+            this.splitContainer1.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
+            | System.Windows.Forms.AnchorStyles.Left) 
+            | System.Windows.Forms.AnchorStyles.Right)));
+            this.splitContainer1.Location = new System.Drawing.Point(3, 93);
+            this.splitContainer1.Name = "splitContainer1";
+            // 
+            // splitContainer1.Panel1
+            // 
+            this.splitContainer1.Panel1.Controls.Add(this.txtLog);
+            // 
+            // splitContainer1.Panel2
+            // 
+            this.splitContainer1.Panel2.Controls.Add(this.txtLog2);
+            this.splitContainer1.Size = new System.Drawing.Size(732, 431);
+            this.splitContainer1.SplitterDistance = 337;
+            this.splitContainer1.TabIndex = 11;
+            // 
+            // lblPortStatus
+            // 
+            this.lblPortStatus.AutoSize = true;
+            this.lblPortStatus.Location = new System.Drawing.Point(341, 12);
+            this.lblPortStatus.Name = "lblPortStatus";
+            this.lblPortStatus.Size = new System.Drawing.Size(0, 13);
+            this.lblPortStatus.TabIndex = 12;
+            // 
             // MainForm
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(541, 527);
+            this.ClientSize = new System.Drawing.Size(739, 527);
+            this.Controls.Add(this.lblPortStatus);
+            this.Controls.Add(this.splitContainer1);
+            this.Controls.Add(this.btnClear);
             this.Controls.Add(this.label3);
             this.Controls.Add(this.cmbParity);
-            this.Controls.Add(this.txtLog);
             this.Controls.Add(this.btnClose);
             this.Controls.Add(this.btnOpen);
             this.Controls.Add(this.label2);
@@ -144,6 +199,12 @@
             this.FormClosing += new System.Windows.Forms.FormClosingEventHandler(this.MainForm_FormClosing);
             this.Load += new System.EventHandler(this.MainForm_Load);
             ((System.ComponentModel.ISupportInitialize)(this.bindingSource1)).EndInit();
+            this.splitContainer1.Panel1.ResumeLayout(false);
+            this.splitContainer1.Panel1.PerformLayout();
+            this.splitContainer1.Panel2.ResumeLayout(false);
+            this.splitContainer1.Panel2.PerformLayout();
+            ((System.ComponentModel.ISupportInitialize)(this.splitContainer1)).EndInit();
+            this.splitContainer1.ResumeLayout(false);
             this.ResumeLayout(false);
             this.PerformLayout();
 
@@ -161,6 +222,10 @@
         private System.Windows.Forms.TextBox txtLog;
         private System.Windows.Forms.ComboBox cmbParity;
         private System.Windows.Forms.Label label3;
+        private System.Windows.Forms.TextBox txtLog2;
+        private System.Windows.Forms.Button btnClear;
+        private System.Windows.Forms.SplitContainer splitContainer1;
+        private System.Windows.Forms.Label lblPortStatus;
     }
 }
 

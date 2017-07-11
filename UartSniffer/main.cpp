@@ -31,15 +31,15 @@ volatile u8 uartNumber = 0;
 
 inline void tsipSend(u8 data)
 {
+	cli();
 	if(uartNumber != 1)
 	{
-		cli();
 		uartNumber = 1;
 		debugBuffer.Push(0xAA);
 		debugBuffer.Push(0xB1);
-		sei();
 	}
 	debugBuffer.Push(data);
+	sei();
 	tsipUart.TransmitAndWait(data);
 }
 
@@ -89,11 +89,64 @@ ISR(TIMER1_CAPT_vect) //9600*3
 	}
 }
 
+static const u8 DLE = 0x10;
+static const u8 ETX = 0x03;
+enum
+{
+	tsipDLE,
+	tsipStart,
+	tsipEnd,
+	tsipData
+} tsipStatus = tsipEnd;
+u8 commandId = 0, commandByte = 0;
+
+u8 TsipParse(u8 data)
+{
+	//Замена байт
+	
+	
+	//**********
+	return data;
+}
+
+
 void mainLoop()
 {
 	if(gpsBuffer.Size())
 	{
 		u8 c = gpsBuffer.Pop();
+		++commandByte;
+		switch(c)
+		{
+			case DLE:
+			if(tsipStatus == tsipEnd)
+			{
+				tsipStatus = tsipStart;
+			}
+			else
+			{
+				tsipStatus = tsipDLE;
+			}
+			break;
+			case ETX:
+				if(tsipStatus == tsipDLE)
+				{
+					tsipStatus = tsipEnd;
+				}
+			break;
+			default:
+			if(tsipStatus == tsipStart)
+			{
+				commandByte = 0;
+				commandId = c;
+				tsipStatus = tsipData;
+			}
+			break;
+		}
+		if((tsipStatus == tsipData || tsipStatus == tsipDLE) && commandByte > 1)
+		{
+			c = TsipParse(c);
+		}
 		
 		tsipSend(c);
 	}

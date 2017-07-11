@@ -115,8 +115,6 @@ void mainLoop()
 }
 
 
-
-
 int main()
 {
 	// Declare your local variables here
