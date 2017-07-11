@@ -14,26 +14,10 @@
 class NmeaParser
 {
 	public:
-	
-	volatile u16 ppsTimeMSec;
-	volatile u8 ppsTimeSec;
-	volatile bool isHealthSend;
-	
-	
-	HardUart &tsipUart;
-	//void (*tsipPushRaw)(u8);
-	NmeaParser(HardUart tsipUart):tsipUart(tsipUart)
+	void (*tsipPushRaw)(u8);
+	NmeaParser(void (*tsipPushRawA)(u8)):tsipPushRaw(tsipPushRawA)
 	{
 		nmeaHealth.HealthClear();
-	}
-	
-	inline void TsipPushRaw(u8 c)
-	{
-		tsipUart.TransmitAndWait(c);
-	}
-	inline void DebugPush(u8 c)
-	{
-		//tsipUart.TransmitAndWait(c);
 	}
 	
 	private:
@@ -152,13 +136,24 @@ class NmeaParser
 		float haeAltitudeMeters;
 		float mslAboveHae;
 		
-		#define DDF_MULTI(_x) (M_PI /180 /60 /(_x))
-		const float DecimalDivisorF[5] = {DDF_MULTI(1),DDF_MULTI(10),DDF_MULTI(100),DDF_MULTI(1000),DDF_MULTI(10000)};
+		float clockBiasMeters; //?
+		float oldPositionMeters = 0;
+		
+		static float RDCalc(const u16 divisor)
+		{
+			return M_PI /180 /60 / divisor;
+		}
+		const float RadiansDivisor[5] = {RDCalc(1),RDCalc(10),RDCalc(100),RDCalc(1000),RDCalc(10000)};
 		void PositionCalc()
 		{
-			latitudeRadians = latitudeMinutes * DecimalDivisorF[latitudeDivisor];
-			longitudeRadians = longitudeMinutes * DecimalDivisorF[longitudeDivisor];
+			latitudeRadians = latitudeMinutes * RadiansDivisor[latitudeDivisor];
+			longitudeRadians = longitudeMinutes * RadiansDivisor[longitudeDivisor];
 			haeAltitudeMeters = mslAltitudeMeters + mslAboveHae;
+			
+			//float currentPositionMeters = (cos(latitudeRadians)*longitudeRadians + latitudeRadians)
+			//*40000/(2*M_PI) + haeAltitudeMeters;
+			clockBiasMeters = 0.1;//currentPositionMeters - oldPositionMeters;
+			//oldPositionMeters = currentPositionMeters;
 		}
 	} nmeaPosition;
 
@@ -170,13 +165,21 @@ class NmeaParser
 		float northVelocityMps;
 		float upVelocityMps;
 		
+		float clockBiasRateMps; //?
+		float oldSpeedMps = 0;
+		
 		const float knots2m = 0.514;
 		void VelocityCalc()
 		{
 			float fi = courseDegrees * M_PI / 180;
-			eastVelocityMps = speedKnots * sin(fi) * knots2m;
-			northVelocityMps = speedKnots * cos(fi) * knots2m;
+			float speedMps = speedKnots * knots2m;
+			eastVelocityMps = speedMps * sin(fi);
+			northVelocityMps = speedMps * cos(fi);
 			upVelocityMps = 0;
+			
+			//speedMps += upVelocityMps;
+			clockBiasRateMps = 0;//speedMps - oldSpeedMps;
+			//oldSpeedMps = speedMps;
 		}
 	} nmeaVelocity;
 
@@ -184,7 +187,7 @@ class NmeaParser
 	{
 		u8 dimension;
 		u8 numberSv;
-		u8 svprn[12];
+		u8 svprn[12] = {120,10,20,30,40,50,60,70,80,90,100,110};
 		float pDop;
 		float hDop;
 		float vDop;
@@ -194,7 +197,7 @@ class NmeaParser
 		{
 			dimension &= 0x0F;
 			dimension |= numberSv<<4;
-			tDop = 0;
+			tDop = 1;
 		}
 	} nmeaPrecision;
 
@@ -214,11 +217,12 @@ class NmeaParser
 		
 		void HealthCalc()
 		{
-			if(!isTimeValid)
-			{
-				statusCode = 0x01; //Don't have GPS time yet
-			}
-			else if(nSatellitesUse < 4)
+			//if(!isTimeValid)
+			//{
+				//statusCode = 0x01; //Don't have GPS time yet
+			//}
+			//else 
+			if(nSatellitesUse < 4)
 			{
 				statusCode = 0x08 + nSatellitesUse;
 			}
@@ -358,10 +362,21 @@ class NmeaParser
 		if(charPoint == 4) updateFlag |= UpdateLongitude;
 	}
 	
-	void tsipPush(u8 c)
+	
+	void TsipPushDle(u8 c)
 	{
-		if(c == DLE) TsipPushRaw(DLE);
-		TsipPushRaw(c);
+		tsipPushRaw(DLE);
+		tsipPushRaw(c);
+	}
+	void TsipPush(u8 c)
+	{
+		if(c == DLE) tsipPushRaw(DLE);
+		tsipPushRaw(c);
+	}
+	void TsipPushDleEtx()
+	{
+		tsipPushRaw(DLE);
+		tsipPushRaw(ETX);
 	}
 	
 
@@ -370,7 +385,7 @@ class NmeaParser
 		u8 *f2byte = ((u8*) &arg) +3;
 		for(u8 i = 0; i < 4; ++i, --f2byte)
 		{
-			tsipPush(*f2byte);
+			TsipPush(*f2byte);
 		}
 	}
 	void int16Push(u16 &arg)
@@ -378,11 +393,28 @@ class NmeaParser
 		u8 *i2byte = ((u8*) &arg) +1;
 		for(u8 i = 0; i < 2; ++i, --i2byte)
 		{
-			tsipPush(*i2byte);
+			TsipPush(*i2byte);
 		}
 	}
 
 	public:
+	
+	void HealthSend()
+	{
+		nmeaHealth.HealthCalc();
+		TsipPushDle(0x46); //0x46 Здоровье приемника
+		TsipPush(nmeaHealth.statusCode);
+		TsipPush(0x00);
+		TsipPushDleEtx();
+		
+		TsipPushDle(0x4B); //0x4B Дополнительный статус
+		TsipPush(0x5A);
+		TsipPush(0x00);
+		TsipPush(0x01);
+		TsipPushDleEtx();
+		nmeaHealth.HealthClear();
+	}
+	
 	
 	bool Parse(u8 c)
 	{
@@ -406,9 +438,6 @@ class NmeaParser
 			case 6: msgType.msg8[1] = data;
 			comaPoint = 0;
 			charPoint = 0;
-			DebugPush('?');
-			DebugPush(msgType.msg8[0]);
-			DebugPush(msgType.msg8[1]);
 			break;
 			case 7:
 			if(data != '*')
@@ -494,123 +523,73 @@ class NmeaParser
 			if(checkSum) //Ошибка контрольной суммы
 			{
 				byteCount = 0;
-				DebugPush(0xEE);
-				DebugPush(0xCC);
-				DebugPush(checkSum);
 			}
 			break;
 			default: //Передача TSIP
 			byteCount = 0;
 			
-			DebugPush('P');
-			u16 tempTime = ppsTimeMSec;
-			DebugPush(ppsTimeSec);
-			DebugPush(tempTime>>8);
-			DebugPush(tempTime);
-			
 			if((updateFlag & UpdateDateTime) == UpdateDateTime) //0x41 GPS Время
 			{
-				LED_PORT ^= LED_PIN;
-				TsipPushRaw(DLE);
-				TsipPushRaw(0x41);
+				TsipPushDle(0x41);
 				floatPush(nmeaDateTime.gpsTimeOfWeek);
 				int16Push(nmeaDateTime.gpsWeekNumber);
 				floatPush(nmeaDateTime.gpsUtcOffset);
-				TsipPushRaw(DLE);
-				TsipPushRaw(ETX);
+				TsipPushDleEtx();
 			}
 			if((updateFlag & UpdatePosition) == UpdatePosition) //0x4A Позиция
 			{
 				nmeaPosition.PositionCalc();
 				nmeaDateTime.TimeOfFixCalc();
-				TsipPushRaw(DLE);
-				TsipPushRaw(0x4A);
+				TsipPushDle(0x4A);
 				floatPush(nmeaPosition.latitudeRadians);
 				floatPush(nmeaPosition.longitudeRadians);
 				floatPush(nmeaPosition.haeAltitudeMeters);
 				
-				floatPush(Zero);
+				floatPush(nmeaPosition.clockBiasMeters);
 				floatPush(nmeaDateTime.timeOfFix);
-				TsipPushRaw(DLE);
-				TsipPushRaw(ETX);
+				TsipPushDleEtx();
 			}
 			if((updateFlag & UpdateVelocity) == UpdateVelocity) //0x56 Скорость
 			{
 				nmeaVelocity.VelocityCalc();
 				nmeaDateTime.TimeOfFixCalc();
-				TsipPushRaw(DLE);
-				TsipPushRaw(0x56);
+				TsipPushDle(0x56);
 				floatPush(nmeaVelocity.eastVelocityMps);
 				floatPush(nmeaVelocity.northVelocityMps);
 				floatPush(nmeaVelocity.upVelocityMps);
 				
-				floatPush(Zero);
+				floatPush(nmeaVelocity.clockBiasRateMps);
 				floatPush(nmeaDateTime.timeOfFix);
-				TsipPushRaw(DLE);
-				TsipPushRaw(ETX);
+				TsipPushDleEtx();
 			}
 			if((updateFlag & UpdatePrecision) == UpdatePrecision) //0x6D Точность и PRN
 			{
 				if(!(updateFlag & UpdatePrn)) nmeaPrecision.numberSv = 0;
 				nmeaPrecision.PrecisionCalc();
 				
-				TsipPushRaw(DLE);
-				TsipPushRaw(0x6D);
-				tsipPush(nmeaPrecision.dimension);
+				TsipPushDle(0x6D);
+				TsipPush(nmeaPrecision.dimension);
 				floatPush(nmeaPrecision.pDop);
 				floatPush(nmeaPrecision.hDop);
 				floatPush(nmeaPrecision.vDop);
 				floatPush(nmeaPrecision.tDop);
 				for(u8 i = 0; i < nmeaPrecision.numberSv; i++)
 				{ 
-					tsipPush(nmeaPrecision.svprn[i]);
+					TsipPush(nmeaPrecision.svprn[i]);
 				}
-				TsipPushRaw(DLE);
-				TsipPushRaw(ETX);
+				TsipPushDleEtx();
 			}
 			if((updateFlag & UpdateQuality) == UpdateQuality) //0x82 Режим фиксации положения
 			{
-				TsipPushRaw(DLE);
-				TsipPushRaw(0x82);
-				tsipPush((nmeaHealth.qualityIndicator == 2)?3:2);
-				TsipPushRaw(DLE);
-				TsipPushRaw(ETX);
+				TsipPushDle(0x82);
+				TsipPush((nmeaHealth.qualityIndicator == 2)?3:2);
+				TsipPushDleEtx();
 			}
-			if(isHealthSend)
-			{
-				nmeaHealth.HealthCalc();
-				TsipPushRaw(DLE);
-				TsipPushRaw(0x46); //0x46 Здоровье приемника
-				tsipPush(nmeaHealth.statusCode);
-				tsipPush(0x00);
-				TsipPushRaw(DLE);
-				TsipPushRaw(ETX);
-				
-				TsipPushRaw(DLE);
-				TsipPushRaw(0x4B); //0x4B Дополнительный статус
-				tsipPush(0x5A);
-				tsipPush(0x00);
-				tsipPush(0x01);
-				TsipPushRaw(DLE);
-				TsipPushRaw(ETX);
-				nmeaHealth.HealthClear();
-				isHealthSend = false;
-			}
-			
-			
-			DebugPush('P');
-			tempTime = ppsTimeMSec;
-			DebugPush(ppsTimeSec);
-			DebugPush(tempTime>>8);
-			DebugPush(tempTime);
 			break;
 		}
 		if(globalError == Error) 
 		{
 			byteCount = 0;
-			DebugPush(0xEE);
-			DebugPush(0x00);
-			DebugPush(0xAE);
 		}
 		return globalError;
 	}

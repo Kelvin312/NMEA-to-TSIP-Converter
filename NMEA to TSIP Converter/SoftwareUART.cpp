@@ -11,25 +11,15 @@
 
 class SoftUart
 {
-	public:
-	SoftUart(volatile u8 &rxPort, u8 rxPin, volatile u8 &txPort, u8 txPin):
-	rxPort(rxPort),
-	rxPin(rxPin),
-	txPort(txPort),
-	txPin(txPin)
-	{
-		txFrameCounter = txFrameSize;
-		transmitComplete = true;
-		rxFlag = WaitStartBit;
-	}
 	private:
 	volatile u8 &rxPort;
 	volatile u8 &txPort;
 	const u8 rxPin, txPin;
+	const ParityAndStop mode;
 	
-	inline u8 GetRxPin(){ return rxPort & _BV(rxPin); }
-	inline void SetTxPinHigh(){ txPort |=_BV(txPin); }
-	inline void SetTxPinLow(){ txPort &= ~_BV(txPin); }
+	inline u8 GetRxPin(){ return rxPort & rxPin; }
+	inline void SetTxPinHigh(){ txPort |= txPin; }
+	inline void SetTxPinLow(){ txPort &= ~txPin; }
 	
 	enum
 	{
@@ -39,17 +29,29 @@ class SoftUart
 	} rxFlag;
 	
 	u8 timerRxCtr, rxFrameCounter;
-	u8 rxFrameBuffer, rxMask;
-	static const u8 rxFrameDataBits = 8; //Количество бит данных
+	u8 rxFrameBuffer, rxMask, rxParityBit;
+	const u8 rxFrameDataBits = (mode == ParityAndStop::None1) ? 8 : 9; //Количество бит данных
 	
-	bool transmitComplete;
-	u8 timerTxCtr, txFrameCounter;
-	u16 txFrameBuffer;
-	static const u8 txFrameSize = 10; //Количество бит данных + стоп и старт бит
+	volatile bool transmitComplete;
+	u8 timerTxCtr;
+	volatile u8 txFrameCounter, txParityBit;
+	volatile u16 txFrameBuffer;
+	const u8 txFrameSize = (mode == ParityAndStop::None1) ? 10 : 11; //Количество бит данных + стоп и старт бит
 	
 	public:
+	SoftUart(volatile u8 &rxPort, u8 rxPin, volatile u8 &txPort, u8 txPin, ParityAndStop mode = ParityAndStop::None1):
+	rxPort(rxPort),
+	rxPin(rxPin),
+	txPort(txPort),
+	txPin(txPin),
+	mode(mode)
+	{
+		txFrameCounter = txFrameSize;
+		transmitComplete = true;
+		rxFlag = WaitStartBit;
+	}
 	
-	inline bool RxProcessing(u8 &data)
+	bool RxProcessing(u8 &data)
 	{
 		switch(rxFlag)
 		{
@@ -61,6 +63,7 @@ class SoftUart
 				rxFrameCounter = rxFrameDataBits;
 				rxFrameBuffer = 0;
 				rxMask = 1;
+				rxParityBit = (mode == ParityAndStop::Odd1) ? 1:0;
 			}
 			break;
 			case ReadData: //Принимаем 8 бит
@@ -70,6 +73,7 @@ class SoftUart
 				if(GetRxPin())
 				{
 					rxFrameBuffer |= rxMask;
+					rxParityBit ^= 1;
 				}
 				rxMask <<= 1;
 				if(--rxFrameCounter == 0)
@@ -85,6 +89,8 @@ class SoftUart
 				if(GetRxPin())
 				{
 					rxFlag = WaitStartBit;
+					if((mode == ParityAndStop::Odd1 || mode == ParityAndStop::Even1) 
+					&& rxParityBit) return false;
 					data = rxFrameBuffer;
 					return true;
 				}
@@ -94,17 +100,22 @@ class SoftUart
 		return false;
 	}
 
-	inline void Transmit(u8 data)
+	void Transmit(u8 data)
 	{
 		if(transmitComplete)
 		{
-			txFrameBuffer = (((u16)data)<<1) | 0x300; //Добавляем старт и стоп биты.
+			txParityBit = data ^ (data >> 4);
+			txParityBit ^= txParityBit >> 2;
+			txParityBit ^= txParityBit >> 1;
+			if(mode == ParityAndStop::Odd1) txParityBit ^= 1;
+			txFrameBuffer = (u16(data)<<1) | 0xC00; //Добавляем старт и стоп биты.
+			if(mode == ParityAndStop::None1 || (txParityBit & 1)) txFrameBuffer |= 1<<9;
 			txFrameCounter = txFrameSize;
 			transmitComplete = false;
 		}
 	}
 
-	inline bool TxProcessing()
+	bool TxProcessing()
 	{
 		if(transmitComplete) return true;
 		if(--timerTxCtr == 0)
@@ -129,6 +140,13 @@ class SoftUart
 		}
 		return false;
 	}
+	
+	void TransmitAndWait(u8 data)
+	{
+		while(!transmitComplete);
+		Transmit(data);
+	}
 
 };
-#endif SOFT_UART_H_
+
+#endif /* SOFT_UART_H_ */

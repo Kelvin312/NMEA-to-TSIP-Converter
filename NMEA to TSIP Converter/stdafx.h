@@ -99,11 +99,11 @@ template<u16 S> struct RingBuffer
 enum class ParityAndStop:u8
 {
 	None1 =  0,
-	None2 =  1,
+	//None2 =  1,
 	Even1 = 4,
-	Even2 = 5,
+	//Even2 = 5,
 	Odd1 = 6,
-	Odd2 = 7
+	//Odd2 = 7
 };
 
 #endif /* STDAFX_H_ */

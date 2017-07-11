@@ -11,22 +11,26 @@
 #include "NmeaParser.cpp"
 
 
-#define SUART_RX_PIN 7
-#define SUART_TX_PIN 6
-#define SUART_RX_PORT PIND
-#define SUART_TX_PORT PORTD
-#define INT1_PIN _BV(3)
-#define INT1_PORT PORTD
+#define GPS_UART_RX_PIN _BV(7)
+#define GPS_UART_TX_PIN _BV(6)
+#define MG_UART_RX_PIN _BV(5)
+#define MG_UART_TX_PIN _BV(4)
 
-SoftUart nmeaUart = SoftUart(SUART_RX_PORT,SUART_RX_PIN,SUART_TX_PORT,SUART_TX_PIN);
-HardUart tsipUart = HardUart(9600, ParityAndStop::Odd1);
-RingBuffer<120> nmeaBuffer = RingBuffer<120>();
-//inline void TsipPushRaw(u8 data)
-//{
-	//tsipBuffer.Push(data);
-//}
-NmeaParser parser = NmeaParser(tsipUart);
-volatile u16 timeCounter;
+#define PPS_PIN _BV(3)
+#define PPS_PORT PIND
+
+SoftUart nmeaUart = SoftUart(PIND, GPS_UART_RX_PIN, PORTD, GPS_UART_TX_PIN);
+SoftUart tsipUart = SoftUart(PIND, MG_UART_RX_PIN, PORTD, MG_UART_TX_PIN, ParityAndStop::Odd1); 
+HardUart debugUart = HardUart(9600, ParityAndStop::Odd1);
+RingBuffer<128> nmeaBuffer = RingBuffer<128>();
+RingBuffer<128> debugBuffer = RingBuffer<128>();
+RingBuffer<64> inBuffer = RingBuffer<64>();
+inline void TsipPushRaw(u8 data)
+{
+	tsipUart.TransmitAndWait(data);
+}
+NmeaParser parser = NmeaParser(&TsipPushRaw);
+volatile u16 timeCounter, ppsTimeMSec;
 u8 timePrescaler;
 
 ISR(TIMER1_CAPT_vect) //9600*3
@@ -35,17 +39,18 @@ ISR(TIMER1_CAPT_vect) //9600*3
 	{
 		timePrescaler = 0; 
 		++timeCounter;
-		++parser.ppsTimeMSec;
+		++ppsTimeMSec;
 	}
 	if(EIFR & _BV(INTF1)) //Нарастающий фронт
 	{
-		++parser.ppsTimeSec;
-		parser.ppsTimeMSec = 0;
+		//++parser.ppsTimeSec;
+		ppsTimeMSec = 0;
 		EIFR &= _BV(INTF1);
+		LED_PORT ^= LED_PIN;
 	}
-	if(INT1_PORT & INT1_PIN)
+	if(PPS_PORT & PPS_PIN)
 	{
-		parser.ppsTimeMSec = 0;
+		ppsTimeMSec = 0;
 	}
 	
 	u8 data;
@@ -53,22 +58,44 @@ ISR(TIMER1_CAPT_vect) //9600*3
 	{
 		nmeaBuffer.Push(data);
 	}
+	
+	if(tsipUart.RxProcessing(data))
+	{
+		debugBuffer.Push(data);
+	}
+	if(tsipUart.TxProcessing())
+	{
+		//
+	}
+	if(debugUart.RxProcessing(data))
+	{
+		inBuffer.Push(data);
+	}
+	if(debugUart.TxProcessing() && debugBuffer.Size())
+	{
+		debugUart.Transmit(debugBuffer.Pop());
+	}
 }
 
 void mainLoop()
 {
 	if(nmeaBuffer.Size())
 	{
-		cli();
+		//cli();
 		u8 c = nmeaBuffer.Pop();
-		sei();
+		//sei();
 		//tsipBuffer.Push(tmp);
-		if(timeCounter>5000 && parser.ppsTimeMSec > 1 && parser.ppsTimeMSec < 500) 
+		parser.Parse(c);
+		if(timeCounter>5000 && ppsTimeMSec > 1 && ppsTimeMSec < 500)
 		{
 			timeCounter = 0;
-			parser.isHealthSend = true;
+			parser.HealthSend();
 		}
-		parser.Parse(c);
+		
+		while(inBuffer.Size())
+		{
+			tsipUart.TransmitAndWait(inBuffer.Pop());
+		}
 		//if(timeCounter > 1)
 		//{
 			//tsipBuffer.Push(0xAA);
@@ -98,14 +125,14 @@ int main()
 	clock_prescale_set(clock_div_1);
 
 	// Input/Output Ports initialization
-	PORTB=0x00;
+	PORTB = 0x00;
 	DDRB = LED_PIN;
 
 	PORTC=0x00;
 	DDRC=0x00;
 
-	PORTD=0x00;
-	DDRD=0x00;
+	PORTD = GPS_UART_TX_PIN | MG_UART_TX_PIN;
+	DDRD = GPS_UART_TX_PIN | MG_UART_TX_PIN;
 
   //PORTD=_BV(SUART_TX_PORT);
   //DDRD=_BV(SUART_TX_PORT);

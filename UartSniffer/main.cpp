@@ -1,111 +1,104 @@
 /*
- * UsrtSniffer.cpp
- *
- * Created: 04.07.2017 9:18:58
+ * NEMA to TSIP Converter.cpp
+ * ATmega328P 16 MHz
+ * Created: 28.06.2017 7:30:19
  * Author : Andrey
  */ 
 
-#include <avr/io.h>
 #include "stdafx.h"
-#include "SoftwareUART.cpp"
 #include "HardwareUART.cpp"
+#include "SoftwareUART.cpp"
 
-#define LED_PIN 5
-#define LED_PORT PORTB
-#define SUARTA_RX_PIN 2
-#define SUARTB_RX_PIN 3
-#define SUART_RX_PORT PIND
 
-SoftUart suartA = SoftUart(SUART_RX_PORT,SUARTA_RX_PIN,PORTD,7);
-SoftUart suartB = SoftUart(SUART_RX_PORT,SUARTB_RX_PIN,PORTD,7);
-HardUart outuart = HardUart();
-RingBuffer<120> aBuffer = RingBuffer<120>();
-RingBuffer<120> bBuffer = RingBuffer<120>();
- RingBuffer<120> outBuffer = RingBuffer<120>();
+#define GPS_UART_RX_PIN _BV(2)
+#define GPS_UART_TX_PIN _BV(6)
+#define MG_UART_RX_PIN _BV(5)
+#define MG_UART_TX_PIN _BV(4)
 
-#define DLE 0x10
-#define ETX 0x03
+#define PPS_PIN _BV(3)
+#define PPS_PORT PIND
 
-volatile u8 aDetect, bDetect;
+SoftUart gpsUart = SoftUart(PIND, GPS_UART_RX_PIN, PORTD, GPS_UART_TX_PIN, ParityAndStop::Odd1);
+SoftUart tsipUart = SoftUart(PIND, MG_UART_RX_PIN, PORTD, MG_UART_TX_PIN, ParityAndStop::Odd1); 
+HardUart debugUart = HardUart(57600, ParityAndStop::None1);
 
-volatile u16 timeCounter;
+RingBuffer<128> debugBuffer = RingBuffer<128>();
+RingBuffer<128> gpsBuffer = RingBuffer<128>();
+
+volatile u16 timeCounter, ppsTimeMSec;
 u8 timePrescaler;
+volatile u8 uartNumber = 0;
+
+inline void tsipSend(u8 data)
+{
+	if(uartNumber != 1)
+	{
+		cli();
+		uartNumber = 1;
+		debugBuffer.Push(0xAA);
+		debugBuffer.Push(0xB1);
+		sei();
+	}
+	debugBuffer.Push(data);
+	tsipUart.TransmitAndWait(data);
+}
+
 
 ISR(TIMER1_CAPT_vect) //9600*3
 {
-	if(++timePrescaler >= 29){timePrescaler = 0; ++timeCounter;}
-	//u8 data;
-	//if(suartA.RxProcessing(data))
-	//{
-		//aBuffer.Push(data);
-		//if(data == DLE)
-		//{
-			//aDetect = 1;
-		//}
-		//else
-		//{
-			//if((aDetect == 1 && data == ETX) || aDetect == 2) aDetect = 2;
-			//else aDetect = 0;
-		//}
-	//}
-	//if(suartB.RxProcessing(data))
-	//{
-		//bBuffer.Push(data);
-		//if(data == DLE)
-		//{
-			//bDetect = 1;
-		//}
-		//else
-		//{
-			//if((bDetect == 1 && data == ETX) || bDetect == 2) bDetect = 2;
-			//else bDetect = 0;
-		//}
-	//}
-	if(outuart.TxProcessing())
+	if(++timePrescaler >= 29)
 	{
-		if(outBuffer.Size()) outuart.Transmit(outBuffer.Pop());
+		timePrescaler = 0; 
+		++timeCounter;
+		++ppsTimeMSec;
+	}
+	if(EIFR & _BV(INTF1)) //Нарастающий фронт
+	{
+		//++parser.ppsTimeSec;
+		ppsTimeMSec = 0;
+		EIFR &= _BV(INTF1);
+		LED_PORT ^= LED_PIN;
+	}
+	if(PPS_PORT & PPS_PIN)
+	{
+		ppsTimeMSec = 0;
+	}
+	
+	u8 data;
+	if(gpsUart.RxProcessing(data))
+	{
+		gpsBuffer.Push(data);
+	}
+	if(tsipUart.TxProcessing())
+	{
+		//
+	}
+	if(tsipUart.RxProcessing(data))
+	{
+		if(uartNumber != 0)
+		{
+			uartNumber = 0;
+			debugBuffer.Push(0xAA);
+			debugBuffer.Push(0xB0);
+		}
+		debugBuffer.Push(data);
+	}
+	if(debugUart.TxProcessing() && debugBuffer.Size())
+	{
+		debugUart.Transmit(debugBuffer.Pop());
 	}
 }
 
 void mainLoop()
 {
-	//if(aDetect == 2)
-	//{
-		//outBuffer.Push(0xAA);
-		//outBuffer.Push(0x00);
-		//while(aBuffer.Size())
-		//{
-			//outBuffer.Push(aBuffer.Pop());
-		//}
-		//aDetect = 0;
-	//}
-	//if(bDetect == 2)
-	//{
-		//outBuffer.Push(0xBB);
-		//outBuffer.Push(0x00);
-		//while(bBuffer.Size())
-		//{
-			//outBuffer.Push(bBuffer.Pop());
-		//}
-		//bDetect = 0;
-	//}
-	static const u8 softwareVersion[15] = {0x10, 0x45, 0x01, 0x10, 0x10, 0x02, 0x02, 0x06, 0x02, 0x19, 0x0C, 0x02, 0x05, 0x10, 0x03};
-	if(timeCounter>1000)
+	if(gpsBuffer.Size())
 	{
-		timeCounter = 0;
-		for(u8 i=0; i<15; i++)
-		{
-			outBuffer.Push(softwareVersion[i]);
-			//while(!outuart.TxProcessing())
-			//{
-				//
-			//}
-			//outuart.Transmit(softwareVersion[i]);
-		}
+		u8 c = gpsBuffer.Pop();
+		
+		tsipSend(c);
 	}
-	
-	
 }
+
 
 
 
@@ -117,108 +110,125 @@ int main()
 	clock_prescale_set(clock_div_1);
 
 	// Input/Output Ports initialization
-	DDRB=_BV(LED_PIN);
+	PORTB = 0x00;
+	DDRB = LED_PIN;
 
-	// Timer/Counter 0 initialization
-	// Clock source: System Clock
-	// Clock value: Timer 0 Stopped
-	// Mode: Normal top=0xFF
-	// OC0A output: Disconnected
-	// OC0B output: Disconnected
-	TCCR0A=0x00;
-	TCCR0B=0x00;
-	TCNT0=0x00;
-	OCR0A=0x00;
-	OCR0B=0x00;
+	PORTC=0x00;
+	DDRC=0x00;
 
-	// Timer/Counter 1 initialization
-	// Clock source: System Clock
-	// Clock value: 16000,000 kHz
-	// Mode: CTC top=ICR1
-	// OC1A output: Discon.
-	// OC1B output: Discon.
-	// Noise Canceler: Off
-	// Input Capture on Falling Edge
-	// Timer1 Overflow Interrupt: Off
-	// Input Capture Interrupt: On
-	// Compare A Match Interrupt: Off
-	// Compare B Match Interrupt: Off
-	TCCR1A=0x00;
-	TCCR1B=0x19;
-	TCNT1H=0x00;
-	TCNT1L=0x00;
-	ICR1H=0x02;
-	ICR1L=0x2B;
-	OCR1AH=0x00;
-	OCR1AL=0x00;
-	OCR1BH=0x00;
-	OCR1BL=0x00;
+	PORTD = GPS_UART_TX_PIN | MG_UART_TX_PIN;
+	DDRD = GPS_UART_TX_PIN | MG_UART_TX_PIN;
 
-	// Timer/Counter 2 initialization
-	// Clock source: System Clock
-	// Clock value: Timer2 Stopped
-	// Mode: Normal top=0xFF
-	// OC2A output: Disconnected
-	// OC2B output: Disconnected
-	ASSR=0x00;
-	TCCR2A=0x00;
-	TCCR2B=0x00;
-	TCNT2=0x00;
-	OCR2A=0x00;
-	OCR2B=0x00;
+  //PORTD=_BV(SUART_TX_PORT);
+  //DDRD=_BV(SUART_TX_PORT);
 
-	// External Interrupt(s) initialization
-	// INT0: Off
-	// INT1: Off
-	// Interrupt on any change on pins PCINT0-7: Off
-	// Interrupt on any change on pins PCINT8-14: Off
-	// Interrupt on any change on pins PCINT16-23: Off
-	EICRA=0x00;
-	EIMSK=0x00;
-	PCICR=0x00;
+  // Timer/Counter 0 initialization
+  // Clock source: System Clock
+  // Clock value: Timer 0 Stopped
+  // Mode: Normal top=0xFF
+  // OC0A output: Disconnected
+  // OC0B output: Disconnected
+  TCCR0A=0x00;
+  TCCR0B=0x00;
+  TCNT0=0x00;
+  OCR0A=0x00;
+  OCR0B=0x00;
 
-	// Timer/Counter 0 Interrupt(s) initialization
-	TIMSK0=0x00;
+  // Timer/Counter 1 initialization
+  // Clock source: System Clock
+  // Clock value: 16000,000 kHz
+  // Mode: CTC top=ICR1
+  // OC1A output: Discon.
+  // OC1B output: Discon.
+  // Noise Canceler: Off
+  // Input Capture on Falling Edge
+  // Timer1 Overflow Interrupt: Off
+  // Input Capture Interrupt: On
+  // Compare A Match Interrupt: Off
+  // Compare B Match Interrupt: Off
+  TCCR1A=0x00;
+  TCCR1B=0x19;
+  TCNT1H=0x00;
+  TCNT1L=0x00;
+  ICR1H=0x02;
+  ICR1L=0x2B;
+  OCR1AH=0x00;
+  OCR1AL=0x00;
+  OCR1BH=0x00;
+  OCR1BL=0x00;
 
-	// Timer/Counter 1 Interrupt(s) initialization
-	TIMSK1=0x20;
+  // Timer/Counter 2 initialization
+  // Clock source: System Clock
+  // Clock value: Timer2 Stopped
+  // Mode: Normal top=0xFF
+  // OC2A output: Disconnected
+  // OC2B output: Disconnected
+  ASSR=0x00;
+  TCCR2A=0x00;
+  TCCR2B=0x00;
+  TCNT2=0x00;
+  OCR2A=0x00;
+  OCR2B=0x00;
 
-	// Timer/Counter 2 Interrupt(s) initialization
-	TIMSK2=0x00;
+ // External Interrupt(s) initialization
+ // INT0: Off
+ // INT1: On
+ // INT1 Mode: Rising Edge
+ // Interrupt on any change on pins PCINT0-7: Off
+ // Interrupt on any change on pins PCINT8-14: Off
+ // Interrupt on any change on pins PCINT16-23: Off
+ EICRA=0x0C;
+ EIMSK=0x00;
+ EIFR=0x02; //INTF1: External Interrupt Flag 1
+ PCICR=0x00;
 
-	// Analog Comparator initialization
-	// Analog Comparator: Off
-	// Analog Comparator Input Capture by Timer/Counter 1: Off
-	ACSR=0x80;
-	ADCSRB=0x00;
-	DIDR1=0x00;
+  // Timer/Counter 0 Interrupt(s) initialization
+  TIMSK0=0x00;
 
-	// ADC initialization
-	// ADC disabled
-	ADCSRA=0x00;
+  // Timer/Counter 1 Interrupt(s) initialization
+  TIMSK1=0x20;
 
-	// SPI initialization
-	// SPI disabled
-	SPCR=0x00;
+  // Timer/Counter 2 Interrupt(s) initialization
+  TIMSK2=0x00;
 
-	// TWI initialization
-	// TWI disabled
-	TWCR=0x00;
+  // Analog Comparator initialization
+  // Analog Comparator: Off
+  // Analog Comparator Input Capture by Timer/Counter 1: Off
+  ACSR=0x80;
+  ADCSRB=0x00;
+  DIDR1=0x00;
 
-	// Watchdog Timer initialization
-	// Watchdog Timer Prescaler: OSC/16k
-	// Watchdog Timer interrupt: Off
-	wdt_enable(WDTO_120MS);
+  // ADC initialization
+  // ADC disabled
+  ADCSRA=0x00;
 
-	// Global enable interrupts
-	sei();
+  // SPI initialization
+  // SPI disabled
+  SPCR=0x00;
 
-	while (1)
+  // TWI initialization
+  // TWI disabled
+  TWCR=0x00;
+
+  // Watchdog Timer initialization
+  // Watchdog Timer Prescaler: OSC/16k
+  // Watchdog Timer interrupt: Off
+  wdt_enable(WDTO_120MS);
+
+  // Global enable interrupts
+  sei();
+
+	static const u8 softwareVersion[15] PROGMEM = {0x10, 0x45, 0x01, 0x10, 0x10, 0x02, 0x02, 0x06, 0x02, 0x19, 0x0C, 0x02, 0x05, 0x10, 0x03};
+	for(u8 i=0; i<15; i++)
 	{
-		mainLoop();
+		tsipUart.TransmitAndWait(pgm_read_byte(&softwareVersion[i]));
 		wdt_reset();
 	}
-	return 0;
+
+  while (1)
+  {
+    mainLoop();
+	wdt_reset();
+  }
+  return 0;
 }
-
-
