@@ -28,6 +28,7 @@ RingBuffer<64> inBuffer = RingBuffer<64>();
 inline void TsipPushRaw(u8 data)
 {
 	tsipUart.TransmitAndWait(data);
+	debugBuffer.Push(data); //!!
 }
 NmeaParser parser = NmeaParser(&TsipPushRaw);
 volatile u16 timeCounter, ppsTimeMSec;
@@ -234,7 +235,7 @@ int main()
 	static const u8 softwareVersion[15] PROGMEM = {0x10, 0x45, 0x01, 0x10, 0x10, 0x02, 0x02, 0x06, 0x02, 0x19, 0x0C, 0x02, 0x05, 0x10, 0x03};
 	for(u8 i=0; i<15; i++)
 	{
-		tsipUart.TransmitAndWait(pgm_read_byte(&softwareVersion[i]));
+		TsipPushRaw(pgm_read_byte(&softwareVersion[i]));
 		wdt_reset();
 	}
 
