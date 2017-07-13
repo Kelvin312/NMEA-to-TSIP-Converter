@@ -122,27 +122,32 @@ u8 commandId = 0, commandByte = 0;
 void TsipParse(u8 data)
 {
 	//Замена байт
-	if(commandId == 0x6D && commandByte == 1)
+	if(commandId == 0x41 && commandByte == 5)
 	{
-		 tsipSend(0x64);
-		 return;
+		data &= 0x03;
 	}
-	if(commandId == 0x6D && commandByte == 17)
-	{
-		tsipSend(data);
-		tsipSend(0x60);
-		tsipSend(0x70);
-		tsipSend(0x62);
-		tsipSend(0x72);
-		tsipSend(0x64);
-		tsipSend(0x74);
-		return;
-	}
-	if(commandId == 0x46 && commandByte == 1)
-	{
-		tsipSend(0x00);
-		return;
-	}
+	
+	//if(commandId == 0x6D && commandByte == 1)
+	//{
+		 //tsipSend(0x64);
+		 //return;
+	//}
+	//if(commandId == 0x6D && commandByte == 17)
+	//{
+		//tsipSend(data);
+		//tsipSend(0x60);
+		//tsipSend(0x70);
+		//tsipSend(0x62);
+		//tsipSend(0x72);
+		//tsipSend(0x64);
+		//tsipSend(0x74);
+		//return;
+	//}
+	//if(commandId == 0x46 && commandByte == 1)
+	//{
+		//tsipSend(0x00);
+		//return;
+	//}
 	//**********
 	tsipSend(data);
 }
@@ -203,7 +208,7 @@ int main()
 
 // USART initialization
 // USART disabled
-UCSR0B=0x00;
+//UCSR0B=0x00;
 
 // USART initialization
 // Communication Parameters: 8 Data, 1 Stop, Odd Parity
@@ -211,11 +216,11 @@ UCSR0B=0x00;
 // USART Transmitter: On
 // USART0 Mode: Asynchronous
 // USART Baud Rate: 9600
-//UCSR0A=0x00;
-//UCSR0B=0x98;
-//UCSR0C=0x36;
-//UBRR0H=0x00;
-//UBRR0L=0x67;
+UCSR0A=0x00;
+UCSR0B=0x98;
+UCSR0C=0x36;
+UBRR0H=0x00;
+UBRR0L=0x67;
 
 	// Input/Output Ports initialization
 	PORTB = 0x00;
