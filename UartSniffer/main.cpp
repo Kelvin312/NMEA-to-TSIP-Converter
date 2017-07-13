@@ -203,7 +203,7 @@ int main()
 
 // USART initialization
 // USART disabled
-//UCSR0B=0x00;
+UCSR0B=0x00;
 
 // USART initialization
 // Communication Parameters: 8 Data, 1 Stop, Odd Parity
@@ -211,11 +211,11 @@ int main()
 // USART Transmitter: On
 // USART0 Mode: Asynchronous
 // USART Baud Rate: 9600
-UCSR0A=0x00;
-UCSR0B=0x98;
-UCSR0C=0x36;
-UBRR0H=0x00;
-UBRR0L=0x67;
+//UCSR0A=0x00;
+//UCSR0B=0x98;
+//UCSR0C=0x36;
+//UBRR0H=0x00;
+//UBRR0L=0x67;
 
 	// Input/Output Ports initialization
 	PORTB = 0x00;

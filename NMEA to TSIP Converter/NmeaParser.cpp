@@ -96,7 +96,6 @@ class NmeaParser
 			{
 				timeOfFix -= 7 * secInDay;
 			}
-			//timeOfFix = 1261440000UL; //!!
 		}
 
 		bool DateTimeCalc() //¬ычисление времени недели и номера недели GPS
