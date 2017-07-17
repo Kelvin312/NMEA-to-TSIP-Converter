@@ -1,11 +1,9 @@
-/*
- * Created: 28.06.2017 14:03:03
- *  Author: Andrey
- */ 
-
 #ifndef STDAFX_H_
 #define STDAFX_H_
+
 #define F_CPU 16000000UL  // 16 MHz
+#define LED_PIN _BV(5)
+#define LED_PORT PORTB
 
 #include <avr/io.h>
 #include <avr/interrupt.h>
@@ -24,9 +22,6 @@ typedef unsigned short u16;
 typedef signed short s16;
 typedef unsigned long u32;
 typedef signed long s32;
-
-#define LED_PIN _BV(5)
-#define LED_PORT PORTB
 
 // TEMPLATE CLASS conditional
 template<bool _Test,

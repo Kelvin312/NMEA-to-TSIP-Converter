@@ -1,12 +1,5 @@
-/*
-* SoftwareUART.cpp
-*
-* Created: 02.07.2017 16:20:24
-*  Author: Kelvin
-*/
 #ifndef SOFT_UART_H_
 #define SOFT_UART_H_
-
 #include "stdafx.h"
 
 class SoftUart
@@ -141,7 +134,7 @@ class SoftUart
 		return false;
 	}
 	
-	void TransmitAndWait(u8 data)
+	void WaitAndTransmit(u8 data)
 	{
 		while(!transmitComplete);
 		Transmit(data);

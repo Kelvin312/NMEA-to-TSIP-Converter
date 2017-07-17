@@ -9,7 +9,14 @@
 #define NMEA_PARSER_H_
 
 #include "stdafx.h"
-#include "HardwareUART.cpp"
+
+enum class ReturnCode
+{
+	Ok = 0,
+	Error,
+	CheckSumError
+};
+
 
 class NmeaParser
 {
@@ -23,16 +30,13 @@ class NmeaParser
 	private:
 	#define MSG_ENCODE(_a,_b) ((_a)|(u16(_b)<<8))
 	
-	
 	const u8 DLE = 0x10;
 	const u8 ETX = 0x03;
 	float Zero = 0;
-	const bool Error = true;
-	const bool Ok = false;
 	const u16 DecimalDivisor[5] = {1,10,100,1000,10000};
 	const u8 MaxDecimalDivisor = 4;
 
-	bool globalError; //Флаг ошибки пакета NMEA
+	ReturnCode parseError; //Флаг ошибки пакета NMEA
 	u8 byteCount; //Индекс типа данных
 	u8 comaPoint; //Номер поля данных
 	u8 charPoint; //Номер символа в текущем поле данных
@@ -47,7 +51,7 @@ class NmeaParser
 		return data - 'A' + 10;
 		if (data >= 'a' && data <= 'f')
 		return data - 'a' + 10;
-		globalError = Error;
+		parseError = ReturnCode::Error;
 		return 0;
 	}
 
@@ -135,9 +139,7 @@ class NmeaParser
 		float mslAltitudeMeters;
 		float haeAltitudeMeters;
 		float mslAboveHae;
-		
-		float clockBiasMeters; //?
-		float oldPositionMeters = 0;
+		float clockBiasMeters;
 		
 		static float RDCalc(const u16 divisor)
 		{
@@ -149,11 +151,7 @@ class NmeaParser
 			latitudeRadians = latitudeMinutes * RadiansDivisor[latitudeDivisor];
 			longitudeRadians = longitudeMinutes * RadiansDivisor[longitudeDivisor];
 			haeAltitudeMeters = mslAltitudeMeters + mslAboveHae;
-			
-			//float currentPositionMeters = (cos(latitudeRadians)*longitudeRadians + latitudeRadians)
-			//*40000/(2*M_PI) + haeAltitudeMeters;
-			clockBiasMeters = 0.1;//currentPositionMeters - oldPositionMeters;
-			//oldPositionMeters = currentPositionMeters;
+			clockBiasMeters = -16000.0; //!
 		}
 	} nmeaPosition;
 
@@ -164,9 +162,7 @@ class NmeaParser
 		float eastVelocityMps;
 		float northVelocityMps;
 		float upVelocityMps;
-		
-		float clockBiasRateMps; //?
-		float oldSpeedMps = 0;
+		float clockBiasRateMps;
 		
 		const float knots2m = 0.514;
 		void VelocityCalc()
@@ -176,10 +172,7 @@ class NmeaParser
 			eastVelocityMps = speedMps * sin(fi);
 			northVelocityMps = speedMps * cos(fi);
 			upVelocityMps = 0;
-			
-			//speedMps += upVelocityMps;
-			clockBiasRateMps = 0;//speedMps - oldSpeedMps;
-			//oldSpeedMps = speedMps;
+			clockBiasRateMps = 156.0; //!
 		}
 	} nmeaVelocity;
 
@@ -187,7 +180,7 @@ class NmeaParser
 	{
 		u8 dimension;
 		u8 numberSv;
-		u8 svprn[12] = {120,10,20,30,40,50,60,70,80,90,100,110};
+		u8 svprn[12];// = {0x07, 0x1E, 0x01, 0x0D, 0x0B, 0x1C, 0x0F,};
 		float pDop;
 		float hDop;
 		float vDop;
@@ -344,7 +337,7 @@ class NmeaParser
 			nmeaDateTime.year *= 10;
 			nmeaDateTime.year += Hex2Int();
 			
-			if(nmeaDateTime.DateTimeCalc()) globalError = Error;
+			if(nmeaDateTime.DateTimeCalc()) parseError = ReturnCode::Error;
 			updateFlag |= UpdateDate;
 			break;
 		}
@@ -380,7 +373,7 @@ class NmeaParser
 	}
 	
 
-	void floatPush(float &arg)
+	void FloatPush(float &arg)
 	{
 		u8 *f2byte = ((u8*) &arg) +3;
 		for(u8 i = 0; i < 4; ++i, --f2byte)
@@ -388,7 +381,7 @@ class NmeaParser
 			TsipPush(*f2byte);
 		}
 	}
-	void int16Push(u16 &arg)
+	void Int16Push(u16 &arg)
 	{
 		u8 *i2byte = ((u8*) &arg) +1;
 		for(u8 i = 0; i < 2; ++i, --i2byte)
@@ -416,7 +409,7 @@ class NmeaParser
 	}
 	
 	
-	bool Parse(u8 c)
+	ReturnCode Parse(u8 c)
 	{
 		data = c;
 		static union
@@ -425,7 +418,7 @@ class NmeaParser
 			u8 msg8[2];
 		} msgType;
 		
-		globalError = Ok;
+		parseError = ReturnCode::Ok;
 		if(byteCount < 6) checkSum ^= data;
 		
 		switch(++byteCount)
@@ -456,7 +449,7 @@ class NmeaParser
 					
 					switch(comaPoint)
 					{
-						case 1: GetTime(); break; //UTC время
+						case 1: GetTime(); break; //UTC время hhmmss.ss
 						case 2: nmeaHealth.isTimeValid = data == 'A'; break; //статус: «A» — данные достоверны, «V» — недостоверны.
 						case 3: GetLatitude(); break; //широта
 						case 4: if(data == 'S') nmeaPosition.latitudeMinutes *= -1; break; //«N» для северной или «S» для южной широты
@@ -464,7 +457,7 @@ class NmeaParser
 						case 6: if(data == 'W') nmeaPosition.longitudeMinutes *= -1; break; //«E» для восточной или «W» для западной долготы
 						case 7: GetFloat(nmeaVelocity.speedKnots); updateFlag |= UpdateSpeed; break; //скорость относительно земли в узлах
 						case 8: GetFloat(nmeaVelocity.courseDegrees); updateFlag |= UpdateCourse; break; // путевой угол (направление скорости) в градусах по часовой от севера
-						case 9: GetDate(); break; //дата
+						case 9: GetDate(); break; //дата  ddmmyy
 						case 10: break; //магнитное склонение в градусах
 						case 11: break;//для получения магнитного курса «E» — вычесть, «W» — прибавить
 						case 12: break;//индикатор режима: «A» — автономный, «D» — дифференциальный, «E» — аппроксимация, «N» — недостоверные данные
@@ -474,7 +467,7 @@ class NmeaParser
 					case MSG_ENCODE('G','A'): //GGA - данные о последнем определении местоположения
 					switch(comaPoint)
 					{
-						case 1: GetTime(); break; //UTC время
+						case 1: GetTime(); break; //UTC время hhmmss.ss
 						case 2:	GetLatitude(); break; //широта
 						case 3:	if(data == 'S') nmeaPosition.latitudeMinutes *= -1; break; //«N» для северной или «S» для южной широты
 						case 4:	GetLongitude(); break; //долгота
@@ -523,6 +516,7 @@ class NmeaParser
 			if(checkSum) //Ошибка контрольной суммы
 			{
 				byteCount = 0;
+				parseError = ReturnCode::CheckSumError;
 			}
 			break;
 			default: //Передача TSIP
@@ -530,36 +524,40 @@ class NmeaParser
 			
 			if((updateFlag & UpdateDateTime) == UpdateDateTime) //0x41 GPS Время
 			{
+				//Расчет вызывается в функции чтения даты
+				
 				TsipPushDle(0x41);
-				floatPush(nmeaDateTime.gpsTimeOfWeek);
-				int16Push(nmeaDateTime.gpsWeekNumber);
-				floatPush(nmeaDateTime.gpsUtcOffset);
+				FloatPush(nmeaDateTime.gpsTimeOfWeek); //Секунд с воскресенья
+				Int16Push(nmeaDateTime.gpsWeekNumber); //Недель с January 6, 1980
+				FloatPush(nmeaDateTime.gpsUtcOffset); //Разница GPS и UTC в секундах
 				TsipPushDleEtx();
 			}
 			if((updateFlag & UpdatePosition) == UpdatePosition) //0x4A Позиция
 			{
 				nmeaPosition.PositionCalc();
 				nmeaDateTime.TimeOfFixCalc();
-				TsipPushDle(0x4A);
-				floatPush(nmeaPosition.latitudeRadians);
-				floatPush(nmeaPosition.longitudeRadians);
-				floatPush(nmeaPosition.haeAltitudeMeters);
 				
-				floatPush(nmeaPosition.clockBiasMeters);
-				floatPush(nmeaDateTime.timeOfFix);
+				TsipPushDle(0x4A);
+				FloatPush(nmeaPosition.latitudeRadians);  //Широта в радианах
+				FloatPush(nmeaPosition.longitudeRadians); //Долгота в радианах
+				FloatPush(nmeaPosition.haeAltitudeMeters); //Высота над эллипсойдом WGS-84 в метрах
+				
+				FloatPush(nmeaPosition.clockBiasMeters); //Похоже на смещение от вращения земли
+				FloatPush(nmeaDateTime.timeOfFix); //Время, когда был сделан замер, в секундах с воскресенья
 				TsipPushDleEtx();
 			}
 			if((updateFlag & UpdateVelocity) == UpdateVelocity) //0x56 Скорость
 			{
 				nmeaVelocity.VelocityCalc();
 				nmeaDateTime.TimeOfFixCalc();
-				TsipPushDle(0x56);
-				floatPush(nmeaVelocity.eastVelocityMps);
-				floatPush(nmeaVelocity.northVelocityMps);
-				floatPush(nmeaVelocity.upVelocityMps);
 				
-				floatPush(nmeaVelocity.clockBiasRateMps);
-				floatPush(nmeaDateTime.timeOfFix);
+				TsipPushDle(0x56);
+				FloatPush(nmeaVelocity.eastVelocityMps); //Скорость на восток в м/с
+				FloatPush(nmeaVelocity.northVelocityMps); //Скорость на север в м/с
+				FloatPush(nmeaVelocity.upVelocityMps); //Скорость вверх в м/с
+				
+				FloatPush(nmeaVelocity.clockBiasRateMps); //Скорость изменения Clock Bias
+				FloatPush(nmeaDateTime.timeOfFix); //Время, когда был сделан замер, в секундах с воскресенья
 				TsipPushDleEtx();
 			}
 			if((updateFlag & UpdatePrecision) == UpdatePrecision) //0x6D Точность и PRN
@@ -568,30 +566,30 @@ class NmeaParser
 				nmeaPrecision.PrecisionCalc();
 				
 				TsipPushDle(0x6D);
-				TsipPush(nmeaPrecision.dimension);
-				floatPush(nmeaPrecision.pDop);
-				floatPush(nmeaPrecision.hDop);
-				floatPush(nmeaPrecision.vDop);
-				floatPush(nmeaPrecision.tDop);
+				TsipPush(nmeaPrecision.dimension); //Количество спутников и режим работы
+				FloatPush(nmeaPrecision.pDop);
+				FloatPush(nmeaPrecision.hDop);
+				FloatPush(nmeaPrecision.vDop);
+				FloatPush(nmeaPrecision.tDop);
 				for(u8 i = 0; i < nmeaPrecision.numberSv; i++)
 				{ 
-					TsipPush(nmeaPrecision.svprn[i]);
+					TsipPush(nmeaPrecision.svprn[i]); //PRN спутников
 				}
 				TsipPushDleEtx();
 			}
 			if((updateFlag & UpdateQuality) == UpdateQuality) //0x82 Режим фиксации положения
 			{
 				TsipPushDle(0x82);
-				TsipPush((nmeaHealth.qualityIndicator == 2)?3:2);
+				TsipPush((nmeaHealth.qualityIndicator == 2)?3:2); //DGPS/GPS
 				TsipPushDleEtx();
 			}
 			break;
 		}
-		if(globalError == Error) 
+		if(parseError != ReturnCode::Ok) 
 		{
 			byteCount = 0;
 		}
-		return globalError;
+		return parseError;
 	}
 	
 };

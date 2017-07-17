@@ -1,10 +1,3 @@
-/*
- * HardwareUART.cpp
- *
- * Created: 01.07.2017 18:34:34
- *  Author: Kelvin
- */ 
-
 #ifndef HARD_UART_H_
 #define HARD_UART_H_
 #include "stdafx.h"
@@ -20,24 +13,6 @@ class HardUart
 	public:
 	HardUart(u32 baudRate = 9600, ParityAndStop mode = ParityAndStop::None1)
 	{
-		//// USART initialization
-		//// Communication Parameters: 8 Data, 1 Stop, No Parity
-		//// USART Receiver: On
-		//// USART Transmitter: On
-		//// USART0 Mode: Asynchronous
-		//// USART Baud Rate: 57600
-		//UCSR0A=0x00;
-		//UCSR0B=0x18;
-		//UCSR0C=0x06;
-		//UBRR0H=0x00;
-		//UBRR0L=0x10;
-		
-		// USART initialization
-		// Communication Parameters: 8 Data, ? Parity, ? Stop
-		// USART Receiver: On
-		// USART Transmitter: On
-		// USART0 Mode: Asynchronous
-		// USART Baud Rate: ?
 		UCSR0A=0x00;
 		UCSR0B=0x18;
 		UCSR0C = (u8(mode) << 3) | 6;
@@ -62,7 +37,7 @@ class HardUart
 		UDR0 = data;
 	}
 	
-	void TransmitAndWait(u8 data)
+	void WaitAndTransmit(u8 data)
 	{
 		while((UCSR0A & DATA_REGISTER_EMPTY)==0);
 		UDR0 = data;

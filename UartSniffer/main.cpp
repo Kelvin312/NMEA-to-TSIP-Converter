@@ -10,24 +10,91 @@
 #include "SoftwareUART.cpp"
 
 
-#define GPS_UART_RX_PIN _BV(2)
-#define GPS_UART_TX_PIN _BV(6)
+#define GPS_UART_RX_PIN _BV(6)
+#define GPS_UART_TX_PIN _BV(2)
 #define MG_UART_RX_PIN _BV(5)
 #define MG_UART_TX_PIN _BV(4)
 
 #define PPS_PIN _BV(3)
 #define PPS_PORT PIND
-//
-//SoftUart gpsUart = SoftUart(PIND, GPS_UART_RX_PIN, PORTD, GPS_UART_TX_PIN, ParityAndStop::Odd1);
-//SoftUart tsipUart = SoftUart(PIND, MG_UART_RX_PIN, PORTD, MG_UART_TX_PIN, ParityAndStop::Odd1); 
-//HardUart debugUart = HardUart(9600, ParityAndStop::Odd1);
-//
-//RingBuffer<128> debugBuffer = RingBuffer<128>();
-//RingBuffer<128> gpsBuffer = RingBuffer<128>();
-//
-//volatile u16 timeCounter, ppsTimeMSec;
-//u8 timePrescaler;
-//volatile u8 uartNumber = 0;
+
+SoftUart gpsUart = SoftUart(PIND, GPS_UART_RX_PIN, PORTD, GPS_UART_TX_PIN, ParityAndStop::Odd1);
+SoftUart mgUart = SoftUart(PIND, MG_UART_RX_PIN, PORTD, MG_UART_TX_PIN, ParityAndStop::Odd1); 
+HardUart debugUart = HardUart(9600, ParityAndStop::Odd1);
+
+RingBuffer<128> mgBuffer = RingBuffer<128>();
+RingBuffer<128> gpsBuffer = RingBuffer<128>();
+
+volatile u16 timeCounter, ppsTimeMSec;
+u8 timePrescaler;
+volatile u8 uartNumber = 0;
+
+
+ISR(TIMER1_CAPT_vect) //9600*3
+{
+	if(++timePrescaler >= 29)
+	{
+		timePrescaler = 0; 
+		++timeCounter;
+		++ppsTimeMSec;
+	}
+	if(EIFR & _BV(INTF1)) //Нарастающий фронт
+	{
+		ppsTimeMSec = 0;
+		EIFR &= _BV(INTF1);
+		LED_PORT ^= LED_PIN;
+	}
+	if(PPS_PORT & PPS_PIN)
+	{
+		ppsTimeMSec = 0;
+	}
+	
+	u8 data;
+	if(gpsUart.RxProcessing(data))
+	{
+		gpsBuffer.Push(data);
+	}
+	if(mgUart.RxProcessing(data))
+	{
+		mgBuffer.Push(data);
+	}
+	if(mgUart.TxProcessing())
+	{
+		
+	}
+}
+
+void mainLoop()
+{
+	while(gpsBuffer.Size())
+	{
+		if(uartNumber != 1)
+		{
+			uartNumber = 1;
+			debugUart.WaitAndTransmit(0xAA);
+			debugUart.WaitAndTransmit(0xB1);
+		}
+		u8 c = gpsBuffer.Pop();
+		debugUart.WaitAndTransmit(c);
+		mgUart.WaitAndTransmit(c);
+		wdt_reset();
+	}
+	
+	while(mgBuffer.Size())
+	{
+		if(uartNumber != 0)
+		{
+			uartNumber = 0;
+			debugUart.WaitAndTransmit(0xAA);
+			debugUart.WaitAndTransmit(0xB0);
+		}
+		debugUart.WaitAndTransmit(mgBuffer.Pop());
+		wdt_reset();
+	}
+}
+
+
+
 //
 //inline void tsipSend(u8 data)
 //{
@@ -42,159 +109,113 @@
 	//sei();
 	//tsipUart.TransmitAndWait(data);
 //}
+
+
+//RingBuffer<128> gpsBuffer = RingBuffer<128>();
 //
-//
-//ISR(TIMER1_CAPT_vect) //9600*3
+//ISR(USART_RX_vect)
 //{
-	//if(++timePrescaler >= 29)
-	//{
-		//timePrescaler = 0; 
-		//++timeCounter;
-		//++ppsTimeMSec;
-	//}
-	//if(EIFR & _BV(INTF1)) //Нарастающий фронт
-	//{
-		////++parser.ppsTimeSec;
-		//ppsTimeMSec = 0;
-		//EIFR &= _BV(INTF1);
-		//LED_PORT ^= LED_PIN;
-	//}
-	//if(PPS_PORT & PPS_PIN)
-	//{
-		//ppsTimeMSec = 0;
-	//}
-	//
-	//u8 data;
-	//if(gpsUart.RxProcessing(data))
+	//char status,data;
+	//status=UCSR0A;
+	//data=UDR0;
+	//if ((status & (FRAMING_ERROR | PARITY_ERROR | DATA_OVERRUN))==0)
 	//{
 		//gpsBuffer.Push(data);
 	//}
-	//if(tsipUart.TxProcessing())
+//}
+//
+//inline void tsipSend(u8 data)
+//{
+	//while((UCSR0A & DATA_REGISTER_EMPTY)==0);
+	//UDR0 = data;
+//}
+//
+//static const u8 DLE = 0x10;
+//static const u8 ETX = 0x03;
+//enum
+//{
+	//tsipDLE,
+	//tsipStart,
+	//tsipEnd,
+	//tsipData
+//} tsipStatus = tsipEnd;
+//u8 commandId = 0, commandByte = 0;
+//
+//void TsipParse(u8 data)
+//{
+	////Замена байт
+	//if(commandId == 0x41 && commandByte == 5)
 	//{
-		////
+		//data &= 0x03;
 	//}
-	//if(tsipUart.RxProcessing(data))
-	//{
-		//if(uartNumber != 0)
-		//{
-			//uartNumber = 0;
-			//debugBuffer.Push(0xAA);
-			//debugBuffer.Push(0xB0);
-		//}
-		//debugBuffer.Push(data);
-	//}
-	//if(debugUart.TxProcessing() && debugBuffer.Size())
-	//{
-		//debugUart.Transmit(debugBuffer.Pop());
-	//}
+	//
+	////if(commandId == 0x6D && commandByte == 1)
+	////{
+		 ////tsipSend(0x64);
+		 ////return;
+	////}
+	////if(commandId == 0x6D && commandByte == 17)
+	////{
+		////tsipSend(data);
+		////tsipSend(0x60);
+		////tsipSend(0x70);
+		////tsipSend(0x62);
+		////tsipSend(0x72);
+		////tsipSend(0x64);
+		////tsipSend(0x74);
+		////return;
+	////}
+	////if(commandId == 0x46 && commandByte == 1)
+	////{
+		////tsipSend(0x00);
+		////return;
+	////}
+	////**********
+	//tsipSend(data);
 //}
 
-RingBuffer<128> gpsBuffer = RingBuffer<128>();
 
-ISR(USART_RX_vect)
-{
-	char status,data;
-	status=UCSR0A;
-	data=UDR0;
-	if ((status & (FRAMING_ERROR | PARITY_ERROR | DATA_OVERRUN))==0)
-	{
-		gpsBuffer.Push(data);
-	}
-}
 
-inline void tsipSend(u8 data)
-{
-	while((UCSR0A & DATA_REGISTER_EMPTY)==0);
-	UDR0 = data;
-}
-
-static const u8 DLE = 0x10;
-static const u8 ETX = 0x03;
-enum
-{
-	tsipDLE,
-	tsipStart,
-	tsipEnd,
-	tsipData
-} tsipStatus = tsipEnd;
-u8 commandId = 0, commandByte = 0;
-
-void TsipParse(u8 data)
-{
-	//Замена байт
-	if(commandId == 0x41 && commandByte == 5)
-	{
-		data &= 0x03;
-	}
-	
-	//if(commandId == 0x6D && commandByte == 1)
+	//if(gpsBuffer.Size())
 	//{
-		 //tsipSend(0x64);
-		 //return;
+		//u8 c = gpsBuffer.Pop();
+		//++commandByte;
+		//switch(c)
+		//{
+			//case DLE:
+			//if(tsipStatus == tsipEnd)
+			//{
+				//tsipStatus = tsipStart;
+			//}
+			//else
+			//{
+				//tsipStatus = tsipDLE;
+			//}
+			//break;
+			//case ETX:
+				//if(tsipStatus == tsipDLE)
+				//{
+					//tsipStatus = tsipEnd;
+				//}
+			//break;
+			//default:
+			//if(tsipStatus == tsipStart)
+			//{
+				//commandByte = 0;
+				//commandId = c;
+				//tsipStatus = tsipData;
+			//}
+			//break;
+		//}
+		//if((tsipStatus == tsipData || tsipStatus == tsipDLE) && commandByte > 0)
+		//{
+			//TsipParse(c);
+			//return;
+		//}
+		//
+		//tsipSend(c);
 	//}
-	//if(commandId == 0x6D && commandByte == 17)
-	//{
-		//tsipSend(data);
-		//tsipSend(0x60);
-		//tsipSend(0x70);
-		//tsipSend(0x62);
-		//tsipSend(0x72);
-		//tsipSend(0x64);
-		//tsipSend(0x74);
-		//return;
-	//}
-	//if(commandId == 0x46 && commandByte == 1)
-	//{
-		//tsipSend(0x00);
-		//return;
-	//}
-	//**********
-	tsipSend(data);
-}
 
-
-void mainLoop()
-{
-	if(gpsBuffer.Size())
-	{
-		u8 c = gpsBuffer.Pop();
-		++commandByte;
-		switch(c)
-		{
-			case DLE:
-			if(tsipStatus == tsipEnd)
-			{
-				tsipStatus = tsipStart;
-			}
-			else
-			{
-				tsipStatus = tsipDLE;
-			}
-			break;
-			case ETX:
-				if(tsipStatus == tsipDLE)
-				{
-					tsipStatus = tsipEnd;
-				}
-			break;
-			default:
-			if(tsipStatus == tsipStart)
-			{
-				commandByte = 0;
-				commandId = c;
-				tsipStatus = tsipData;
-			}
-			break;
-		}
-		if((tsipStatus == tsipData || tsipStatus == tsipDLE) && commandByte > 0)
-		{
-			TsipParse(c);
-			return;
-		}
-		
-		tsipSend(c);
-	}
-}
 
 
 
@@ -216,11 +237,11 @@ int main()
 // USART Transmitter: On
 // USART0 Mode: Asynchronous
 // USART Baud Rate: 9600
-UCSR0A=0x00;
-UCSR0B=0x98;
-UCSR0C=0x36;
-UBRR0H=0x00;
-UBRR0L=0x67;
+//UCSR0A=0x00;
+//UCSR0B=0x98;
+//UCSR0C=0x36;
+//UBRR0H=0x00;
+//UBRR0L=0x67;
 
 	// Input/Output Ports initialization
 	PORTB = 0x00;
@@ -229,13 +250,11 @@ UBRR0L=0x67;
 	PORTC=0x00;
 	DDRC=0x00;
 
-	//PORTD = GPS_UART_TX_PIN | MG_UART_TX_PIN;
-	//DDRD = GPS_UART_TX_PIN | MG_UART_TX_PIN;
-	PORTD = 0;
-	DDRD = 0;
+	PORTD = GPS_UART_TX_PIN | MG_UART_TX_PIN;
+	DDRD = GPS_UART_TX_PIN | MG_UART_TX_PIN;
+	//PORTD = 0;
+	//DDRD = 0;
 
-  //PORTD=_BV(SUART_TX_PORT);
-  //DDRD=_BV(SUART_TX_PORT);
 
   // Timer/Counter 0 initialization
   // Clock source: System Clock
@@ -261,16 +280,16 @@ UBRR0L=0x67;
   // Input Capture Interrupt: On
   // Compare A Match Interrupt: Off
   // Compare B Match Interrupt: Off
-  //TCCR1A=0x00;
-  //TCCR1B=0x19;
-  //TCNT1H=0x00;
-  //TCNT1L=0x00;
-  //ICR1H=0x02;
-  //ICR1L=0x2B;
-  //OCR1AH=0x00;
-  //OCR1AL=0x00;
-  //OCR1BH=0x00;
-  //OCR1BL=0x00;
+  TCCR1A=0x00;
+  TCCR1B=0x19;
+  TCNT1H=0x00;
+  TCNT1L=0x00;
+  ICR1H=0x02;
+  ICR1L=0x2B;
+  OCR1AH=0x00;
+  OCR1AL=0x00;
+  OCR1BH=0x00;
+  OCR1BL=0x00;
 
   // Timer/Counter 2 initialization
   // Clock source: System Clock

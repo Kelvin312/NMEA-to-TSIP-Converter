@@ -12,7 +12,7 @@
 
 
 #define GPS_UART_RX_PIN _BV(7)
-#define GPS_UART_TX_PIN _BV(6)
+#define GPS_UART_TX_PIN _BV(2)
 #define MG_UART_RX_PIN _BV(5)
 #define MG_UART_TX_PIN _BV(4)
 
@@ -27,8 +27,8 @@ RingBuffer<128> debugBuffer = RingBuffer<128>();
 RingBuffer<64> inBuffer = RingBuffer<64>();
 inline void TsipPushRaw(u8 data)
 {
-	tsipUart.TransmitAndWait(data);
-	debugBuffer.Push(data); //!!
+	tsipUart.WaitAndTransmit(data);
+	debugBuffer.Push(data); //!
 }
 NmeaParser parser = NmeaParser(&TsipPushRaw);
 volatile u16 timeCounter, ppsTimeMSec;
@@ -95,7 +95,7 @@ void mainLoop()
 		
 		while(inBuffer.Size())
 		{
-			tsipUart.TransmitAndWait(inBuffer.Pop());
+			tsipUart.WaitAndTransmit(inBuffer.Pop());
 		}
 		//if(timeCounter > 1)
 		//{
