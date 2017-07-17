@@ -18,7 +18,7 @@
 #define PPS_PIN _BV(3)
 #define PPS_PORT PIND
 #define PPS_INTF _BV(INTF0)
-#define PPS_OUT_PIN _BV(2)
+//#define PPS_OUT_PIN _BV(2)
 
 SoftUart gpsUart = SoftUart(PIND, GPS_UART_RX_PIN, PORTB, 0, ParityAndStop::Odd1);
 SoftUart mgUart = SoftUart(PIND, MG_UART_RX_PIN, PORTD, MG_UART_TX_PIN, ParityAndStop::Odd1); 
@@ -42,16 +42,9 @@ ISR(TIMER1_CAPT_vect) //9600*3
 	}
 	if(EIFR & PPS_INTF) //Нарастающий фронт
 	{
-		//ppsTimeMSec = 0;
+		ppsTimeMSec = 0;
 		EIFR &= PPS_INTF;
 		LED_PORT ^= LED_PIN;
-	}
-		
-	PORTD &= ~PPS_OUT_PIN;
-	if((PPS_PORT & PPS_PIN) || ppsTimeMSec > 992)
-	{
-		PORTD |= PPS_OUT_PIN;
-		ppsTimeMSec = 0;
 	}
 	
 	u8 data;
@@ -271,7 +264,7 @@ int main()
 	DDRC=0x00;
 
 	PORTD =  MG_UART_TX_PIN;
-	DDRD =  MG_UART_TX_PIN | PPS_OUT_PIN;
+	DDRD =  MG_UART_TX_PIN;
 	//PORTD = 0;
 	//DDRD = 0;
 
@@ -331,9 +324,9 @@ int main()
  // Interrupt on any change on pins PCINT0-7: Off
  // Interrupt on any change on pins PCINT8-14: Off
  // Interrupt on any change on pins PCINT16-23: Off
- EICRA=0x0C;
- EIMSK=0x00;
- EIFR=0x02; //INTF1: External Interrupt Flag 1
+ EICRA = 0x0F;
+ EIMSK = 0x00; //Прерывание
+ EIFR = 0x03; //INTF1 INTF0
  PCICR=0x00;
 
   // Timer/Counter 0 Interrupt(s) initialization

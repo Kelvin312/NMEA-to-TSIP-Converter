@@ -16,11 +16,11 @@
 #define MG_UART_RX_PIN _BV(5)
 #define MG_UART_TX_PIN _BV(4)
 
-#define PPS_PIN _BV(2)
-#define PPS_PORT PIND
-#define PPS_INTF _BV(INTF0)
+//#define PPS_PIN _BV(2)
+//#define PPS_PORT PIND
+//#define PPS_INTF _BV(INTF0)
 
-//#define PPS_OUT_PIN _BV(2)
+#define PPS_OUT_PIN _BV(3)
 
 SoftUart nmeaUart = SoftUart(PIND, GPS_UART_RX_PIN, PORTB, 0);
 SoftUart tsipUart = SoftUart(PIND, MG_UART_RX_PIN, PORTD, MG_UART_TX_PIN, ParityAndStop::Odd1); 
@@ -57,6 +57,15 @@ inline void Wait1us()
 	__asm__ __volatile__ ("nop");
 }
 
+ISR(INT0_vect)
+{
+	PORTD |= PPS_OUT_PIN;
+	LED_PORT ^= LED_PIN;
+	ppsTimeMSec = 0;
+	Wait1us();
+	PORTD &= ~PPS_OUT_PIN;
+}
+
 ISR(TIMER1_CAPT_vect) //9600*3
 {
 	if(++timePrescaler >= 29)
@@ -66,17 +75,11 @@ ISR(TIMER1_CAPT_vect) //9600*3
 		++ppsTimeMSec;
 	}
 	
-	if(EIFR & PPS_INTF) //Нарастающий фронт
+	//if(EIFR & PPS_INTF) //Нарастающий фронт
 	{
-		//PORTD |= PPS_OUT_PIN;
-		//Wait1us();
-		//PORTD &= ~PPS_OUT_PIN;
-		
-		ppsTimeMSec = 0;
-		EIFR &= PPS_INTF;
-		LED_PORT ^= LED_PIN;
+		//EIFR &= PPS_INTF;
 	}
-	if((PPS_PORT & PPS_PIN) || ppsTimeMSec > 1500)
+	if(ppsTimeMSec > 1500) //При отсутствии pps
 	{
 		ppsTimeMSec = 0;
 	}
@@ -167,7 +170,7 @@ int main()
 	DDRC=0x00;
 
 	PORTD =  MG_UART_TX_PIN;
-	DDRD =  MG_UART_TX_PIN /*| PPS_OUT_PIN*/;
+	DDRD =  MG_UART_TX_PIN | PPS_OUT_PIN;
 
   //PORTD=_BV(SUART_TX_PORT);
   //DDRD=_BV(SUART_TX_PORT);
@@ -221,15 +224,14 @@ int main()
   OCR2B=0x00;
 
  // External Interrupt(s) initialization
- // INT0: Off
- // INT1: On
+ // INT0 Mode: Rising Edge
  // INT1 Mode: Rising Edge
  // Interrupt on any change on pins PCINT0-7: Off
  // Interrupt on any change on pins PCINT8-14: Off
  // Interrupt on any change on pins PCINT16-23: Off
- EICRA=0x0C;
- EIMSK=0x00;
- EIFR=0x02; //INTF1: External Interrupt Flag 1
+ EICRA=0x0F;
+ EIMSK=0x01; //Прерывание
+ EIFR=0x03; //INTF1 INTF0 
  PCICR=0x00;
 
   // Timer/Counter 0 Interrupt(s) initialization
