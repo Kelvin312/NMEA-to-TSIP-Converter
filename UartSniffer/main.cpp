@@ -11,14 +11,16 @@
 
 
 #define GPS_UART_RX_PIN _BV(6)
-#define GPS_UART_TX_PIN _BV(2)
+//#define GPS_UART_TX_PIN _BV(8)
 #define MG_UART_RX_PIN _BV(5)
 #define MG_UART_TX_PIN _BV(4)
 
 #define PPS_PIN _BV(3)
 #define PPS_PORT PIND
+#define PPS_INTF _BV(INTF0)
+#define PPS_OUT_PIN _BV(2)
 
-SoftUart gpsUart = SoftUart(PIND, GPS_UART_RX_PIN, PORTD, GPS_UART_TX_PIN, ParityAndStop::Odd1);
+SoftUart gpsUart = SoftUart(PIND, GPS_UART_RX_PIN, PORTB, 0, ParityAndStop::Odd1);
 SoftUart mgUart = SoftUart(PIND, MG_UART_RX_PIN, PORTD, MG_UART_TX_PIN, ParityAndStop::Odd1); 
 HardUart debugUart = HardUart(9600, ParityAndStop::Odd1);
 
@@ -28,7 +30,7 @@ RingBuffer<128> gpsBuffer = RingBuffer<128>();
 volatile u16 timeCounter, ppsTimeMSec;
 u8 timePrescaler;
 volatile u8 uartNumber = 0;
-
+bool isInit = true;
 
 ISR(TIMER1_CAPT_vect) //9600*3
 {
@@ -38,14 +40,17 @@ ISR(TIMER1_CAPT_vect) //9600*3
 		++timeCounter;
 		++ppsTimeMSec;
 	}
-	if(EIFR & _BV(INTF1)) //Нарастающий фронт
+	if(EIFR & PPS_INTF) //Нарастающий фронт
 	{
-		ppsTimeMSec = 0;
-		EIFR &= _BV(INTF1);
+		//ppsTimeMSec = 0;
+		EIFR &= PPS_INTF;
 		LED_PORT ^= LED_PIN;
 	}
-	if(PPS_PORT & PPS_PIN)
+		
+	PORTD &= ~PPS_OUT_PIN;
+	if((PPS_PORT & PPS_PIN) || ppsTimeMSec > 992)
 	{
+		PORTD |= PPS_OUT_PIN;
 		ppsTimeMSec = 0;
 	}
 	
@@ -91,6 +96,21 @@ void mainLoop()
 		debugUart.WaitAndTransmit(mgBuffer.Pop());
 		wdt_reset();
 	}
+	
+	if(isInit)
+	{
+		isInit = false;
+		static const u8 softwareVersion[15] PROGMEM = {0x10, 0x45, 0x01, 0x10, 0x10, 0x02, 0x02, 0x06, 0x02, 0x19, 0x0C, 0x02, 0x05, 0x10, 0x03};
+		for(u8 i=0; i<15; i++)
+		{
+			//TsipPushRaw(pgm_read_byte(&softwareVersion[i]));
+			wdt_reset();
+		}
+	}
+	
+	//
+	//mgUart.WaitAndTransmit(c);
+	wdt_reset();
 }
 
 
@@ -250,8 +270,8 @@ int main()
 	PORTC=0x00;
 	DDRC=0x00;
 
-	PORTD = GPS_UART_TX_PIN | MG_UART_TX_PIN;
-	DDRD = GPS_UART_TX_PIN | MG_UART_TX_PIN;
+	PORTD =  MG_UART_TX_PIN;
+	DDRD =  MG_UART_TX_PIN | PPS_OUT_PIN;
 	//PORTD = 0;
 	//DDRD = 0;
 

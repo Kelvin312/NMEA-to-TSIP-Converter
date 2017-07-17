@@ -68,7 +68,7 @@ class NmeaParser
 		UpdateCourse = 64,
 		UpdateDateTime = UpdateTime | UpdateDate,
 		UpdatePosition = UpdateLatitude | UpdateLongitude | UpdateAltitude,
-		UpdateVelocity = UpdateSpeed | UpdateCourse,
+		UpdateVelocity = UpdateSpeed,
 		UpdateDimension = 128,
 		UpdatePrn  = 256,
 		UpdatePDop = 512,
@@ -85,17 +85,17 @@ class NmeaParser
 		u8 day;
 		u8 month;
 		u8 year;
-		float gpsTimeOfWeek; //Секунд в текущей GPS неделе
-		u16 gpsWeekNumber; //Расширенный номер текущей GPS недели
-		float gpsUtcOffset; //Смещение времени GPS UTC секунд
+		float gpsTimeOfWeek = 0; //Секунд в текущей GPS неделе
+		u16 gpsWeekNumber = 1958; //Расширенный номер текущей GPS недели
+		float gpsUtcOffset = 18; //Смещение времени GPS UTC секунд
+		
 		const u8 gpsUtcOffsetConst = 18; //то-же, но задано константой
-		u32 gpsTimeFixSec; //День недели и UTC смещение в секундах
-		float timeOfFix; //Время, когда был сделан замер координат/скорости.
+		u32 gpsDaySec = 0; //День недели и UTC смещение в секундах
 		const u32 secInDay = u32(24)*60*60; //Секунд в сутках
 		
-		void TimeOfFixCalc()
+		void TimeOfFixCalc(float &timeOfFix)
 		{
-			timeOfFix = gpsTimeFixSec + seconds + float(centiSeconds)/100;
+			timeOfFix = gpsDaySec + seconds + float(centiSeconds)/100;
 			if(timeOfFix >= 7 * secInDay)
 			{
 				timeOfFix -= 7 * secInDay;
@@ -108,7 +108,7 @@ class NmeaParser
 			u16 y = year;
 			if (m > 2) { m -= 3; }
 			else	   { m += 12 - 3; --y;}
-			if(y >= 80)
+			if(y > 99)
 			{
 				return true;
 			}
@@ -116,8 +116,8 @@ class NmeaParser
 			//Количество дней с January 6, 1980
 			u16 gpsTime = day + (153 * m + 2) / 5 + 365 * y + (y >> 2) + 7359;//- y / 100 + y / 400 - 723126;
 			gpsWeekNumber = gpsTime / 7;
-			gpsTimeFixSec = (gpsTime % 7) * secInDay + gpsUtcOffsetConst;
-			gpsTimeOfWeek = gpsTimeFixSec + seconds + float(centiSeconds)/100;
+			gpsDaySec = (gpsTime % 7) * secInDay + gpsUtcOffsetConst;
+			gpsTimeOfWeek = gpsDaySec + seconds + float(centiSeconds)/100;
 			gpsUtcOffset = gpsUtcOffsetConst;
 			if(gpsTimeOfWeek >= 7 * secInDay)
 			{
@@ -134,14 +134,15 @@ class NmeaParser
 		u8 latitudeDivisor;
 		s32 longitudeMinutes;
 		u8 longitudeDivisor;
-		float latitudeRadians;
-		float longitudeRadians;
+		float latitudeRadians = 0;
+		float longitudeRadians = 0;
 		float mslAltitudeMeters;
-		float haeAltitudeMeters;
+		float haeAltitudeMeters = 0;
 		float mslAboveHae;
-		float clockBiasMeters;
+		float clockBiasMeters = 0;
+		float timeOfFixSec = 0;
 		
-		static float RDCalc(const u16 divisor)
+		float RDCalc(const u16 divisor)
 		{
 			return M_PI /180 /60 / divisor;
 		}
@@ -159,10 +160,11 @@ class NmeaParser
 	{
 		float speedKnots;
 		float courseDegrees;
-		float eastVelocityMps;
-		float northVelocityMps;
-		float upVelocityMps;
-		float clockBiasRateMps;
+		float eastVelocityMps = 0;
+		float northVelocityMps = 0;
+		float upVelocityMps = 0;
+		float clockBiasRateMps = 0;
+		float timeOfFixSec = 0;
 		
 		const float knots2m = 0.514;
 		void VelocityCalc()
@@ -178,13 +180,13 @@ class NmeaParser
 
 	struct
 	{
-		u8 dimension;
-		u8 numberSv;
+		u8 dimension = 3;
+		u8 numberSv = 0;
 		u8 svprn[12];// = {0x07, 0x1E, 0x01, 0x0D, 0x0B, 0x1C, 0x0F,};
-		float pDop;
-		float hDop;
-		float vDop;
-		float tDop;
+		float pDop = 0;
+		float hDop = 0;
+		float vDop = 0;
+		float tDop = 0;
 		
 		void PrecisionCalc()
 		{
@@ -196,15 +198,15 @@ class NmeaParser
 
 	struct 
 	{
-		u8 qualityIndicator; // 0 = No GPS, 1 = GPS, 2 = DGPS
-		u8 nSatellitesUse;
+		u8 qualityIndicator = 0; // 0 = No GPS, 1 = GPS, 2 = DGPS
+		u8 numberSv;
 		bool isTimeValid;
-		u8 statusCode;
+		u8 statusCode = 1;
 		
 		void HealthClear()
 		{
 			qualityIndicator = 0;
-			nSatellitesUse = 0;
+			numberSv = 0;
 			isTimeValid = 0;
 		}
 		
@@ -215,9 +217,9 @@ class NmeaParser
 				//statusCode = 0x01; //Don't have GPS time yet
 			//}
 			//else 
-			if(nSatellitesUse < 4)
+			if(numberSv < 4)
 			{
-				statusCode = 0x08 + nSatellitesUse;
+				statusCode = 0x08 + numberSv;
 			}
 			else statusCode = 0x00;
 		}
@@ -336,8 +338,7 @@ class NmeaParser
 			case 5:
 			nmeaDateTime.year *= 10;
 			nmeaDateTime.year += Hex2Int();
-			
-			if(nmeaDateTime.DateTimeCalc()) parseError = ReturnCode::Error;
+
 			updateFlag |= UpdateDate;
 			break;
 		}
@@ -391,7 +392,36 @@ class NmeaParser
 	}
 
 	public:
+	void PositionVelocitySend()
+	{
+		TsipPushDle(0x4A); //0x4A Позиция
+		FloatPush(nmeaPosition.latitudeRadians);  //Широта в радианах
+		FloatPush(nmeaPosition.longitudeRadians); //Долгота в радианах
+		FloatPush(nmeaPosition.haeAltitudeMeters); //Высота над эллипсойдом WGS-84 в метрах
+		
+		FloatPush(nmeaPosition.clockBiasMeters); //Похоже на смещение от вращения земли
+		FloatPush(nmeaPosition.timeOfFixSec); //Время, когда был сделан замер, в секундах с воскресенья
+		TsipPushDleEtx();
+		
+		TsipPushDle(0x56); //0x56 Скорость
+		FloatPush(nmeaVelocity.eastVelocityMps); //Скорость на восток в м/с
+		FloatPush(nmeaVelocity.northVelocityMps); //Скорость на север в м/с
+		FloatPush(nmeaVelocity.upVelocityMps); //Скорость вверх в м/с
+		
+		FloatPush(nmeaVelocity.clockBiasRateMps); //Скорость изменения Clock Bias
+		FloatPush(nmeaVelocity.timeOfFixSec); //Время, когда был сделан замер, в секундах с воскресенья
+		TsipPushDleEtx();
+	}
 	
+	void GpsTimeSend()
+	{
+		TsipPushDle(0x41); //0x41 GPS Время
+		FloatPush(nmeaDateTime.gpsTimeOfWeek); //Секунд с воскресенья
+		Int16Push(nmeaDateTime.gpsWeekNumber); //Недель с January 6, 1980
+		FloatPush(nmeaDateTime.gpsUtcOffset); //Разница GPS и UTC в секундах
+		TsipPushDleEtx();
+	}
+
 	void HealthSend()
 	{
 		nmeaHealth.HealthCalc();
@@ -408,6 +438,24 @@ class NmeaParser
 		nmeaHealth.HealthClear();
 	}
 	
+	void ViewSatelliteSend()
+	{
+		TsipPushDle(0x6D); //0x6D Точность и PRN
+		TsipPush(nmeaPrecision.dimension); //Количество спутников и режим работы
+		FloatPush(nmeaPrecision.pDop);
+		FloatPush(nmeaPrecision.hDop);
+		FloatPush(nmeaPrecision.vDop);
+		FloatPush(nmeaPrecision.tDop);
+		for(u8 i = 0; i < nmeaPrecision.numberSv; i++)
+		{
+			TsipPush(nmeaPrecision.svprn[i]); //PRN спутников
+		}
+		TsipPushDleEtx();
+		
+		TsipPushDle(0x82); //0x82 Режим фиксации положения
+		TsipPush((nmeaHealth.qualityIndicator == 2)?3:2); //DGPS/GPS
+		TsipPushDleEtx();
+	}
 	
 	ReturnCode Parse(u8 c)
 	{
@@ -455,7 +503,7 @@ class NmeaParser
 						case 4: if(data == 'S') nmeaPosition.latitudeMinutes *= -1; break; //«N» для северной или «S» для южной широты
 						case 5: GetLongitude(); break; //долгота
 						case 6: if(data == 'W') nmeaPosition.longitudeMinutes *= -1; break; //«E» для восточной или «W» для западной долготы
-						case 7: GetFloat(nmeaVelocity.speedKnots); updateFlag |= UpdateSpeed; break; //скорость относительно земли в узлах
+						case 7: GetFloat(nmeaVelocity.speedKnots); nmeaVelocity.courseDegrees = 0; updateFlag |= UpdateSpeed; break; //скорость относительно земли в узлах
 						case 8: GetFloat(nmeaVelocity.courseDegrees); updateFlag |= UpdateCourse; break; // путевой угол (направление скорости) в градусах по часовой от севера
 						case 9: GetDate(); break; //дата  ddmmyy
 						case 10: break; //магнитное склонение в градусах
@@ -473,7 +521,7 @@ class NmeaParser
 						case 4:	GetLongitude(); break; //долгота
 						case 5:	if(data == 'W') nmeaPosition.longitudeMinutes *= -1; break; //«E» для восточной или «W» для западной долготы
 						case 6:	nmeaHealth.qualityIndicator = Hex2Int(); updateFlag |= UpdateQuality; break; //Качество фиксации позиции: 0 = No GPS, 1 = GPS, 2 = DGPS
-						case 7:	nmeaHealth.nSatellitesUse = Hex2Int(); break; //количество используемых спутников
+						case 7:	nmeaHealth.numberSv = Hex2Int(); break; //количество используемых спутников
 						case 8:	 break; //HDOP
 						case 9:	GetFloat(nmeaPosition.mslAltitudeMeters); nmeaPosition.mslAboveHae = 0; updateFlag |= UpdateAltitude; break; //высота над уровнем моря
 						case 10: break; //M - метры
@@ -519,69 +567,31 @@ class NmeaParser
 				parseError = ReturnCode::CheckSumError;
 			}
 			break;
-			default: //Передача TSIP
+			default: 
 			byteCount = 0;
 			
-			if((updateFlag & UpdateDateTime) == UpdateDateTime) //0x41 GPS Время
-			{
-				//Расчет вызывается в функции чтения даты
-				
-				TsipPushDle(0x41);
-				FloatPush(nmeaDateTime.gpsTimeOfWeek); //Секунд с воскресенья
-				Int16Push(nmeaDateTime.gpsWeekNumber); //Недель с January 6, 1980
-				FloatPush(nmeaDateTime.gpsUtcOffset); //Разница GPS и UTC в секундах
-				TsipPushDleEtx();
-			}
 			if((updateFlag & UpdatePosition) == UpdatePosition) //0x4A Позиция
 			{
 				nmeaPosition.PositionCalc();
-				nmeaDateTime.TimeOfFixCalc();
-				
-				TsipPushDle(0x4A);
-				FloatPush(nmeaPosition.latitudeRadians);  //Широта в радианах
-				FloatPush(nmeaPosition.longitudeRadians); //Долгота в радианах
-				FloatPush(nmeaPosition.haeAltitudeMeters); //Высота над эллипсойдом WGS-84 в метрах
-				
-				FloatPush(nmeaPosition.clockBiasMeters); //Похоже на смещение от вращения земли
-				FloatPush(nmeaDateTime.timeOfFix); //Время, когда был сделан замер, в секундах с воскресенья
-				TsipPushDleEtx();
+				nmeaDateTime.TimeOfFixCalc(nmeaPosition.timeOfFixSec);
 			}
 			if((updateFlag & UpdateVelocity) == UpdateVelocity) //0x56 Скорость
 			{
 				nmeaVelocity.VelocityCalc();
-				nmeaDateTime.TimeOfFixCalc();
-				
-				TsipPushDle(0x56);
-				FloatPush(nmeaVelocity.eastVelocityMps); //Скорость на восток в м/с
-				FloatPush(nmeaVelocity.northVelocityMps); //Скорость на север в м/с
-				FloatPush(nmeaVelocity.upVelocityMps); //Скорость вверх в м/с
-				
-				FloatPush(nmeaVelocity.clockBiasRateMps); //Скорость изменения Clock Bias
-				FloatPush(nmeaDateTime.timeOfFix); //Время, когда был сделан замер, в секундах с воскресенья
-				TsipPushDleEtx();
+				nmeaDateTime.TimeOfFixCalc(nmeaVelocity.timeOfFixSec);
+			}
+			if((updateFlag & UpdateDateTime) == UpdateDateTime) //0x41 GPS Время
+			{
+				if(nmeaDateTime.DateTimeCalc()) parseError = ReturnCode::Error;
 			}
 			if((updateFlag & UpdatePrecision) == UpdatePrecision) //0x6D Точность и PRN
 			{
 				if(!(updateFlag & UpdatePrn)) nmeaPrecision.numberSv = 0;
 				nmeaPrecision.PrecisionCalc();
-				
-				TsipPushDle(0x6D);
-				TsipPush(nmeaPrecision.dimension); //Количество спутников и режим работы
-				FloatPush(nmeaPrecision.pDop);
-				FloatPush(nmeaPrecision.hDop);
-				FloatPush(nmeaPrecision.vDop);
-				FloatPush(nmeaPrecision.tDop);
-				for(u8 i = 0; i < nmeaPrecision.numberSv; i++)
-				{ 
-					TsipPush(nmeaPrecision.svprn[i]); //PRN спутников
-				}
-				TsipPushDleEtx();
 			}
 			if((updateFlag & UpdateQuality) == UpdateQuality) //0x82 Режим фиксации положения
 			{
-				TsipPushDle(0x82);
-				TsipPush((nmeaHealth.qualityIndicator == 2)?3:2); //DGPS/GPS
-				TsipPushDleEtx();
+				
 			}
 			break;
 		}

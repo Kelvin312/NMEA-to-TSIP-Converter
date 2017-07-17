@@ -12,14 +12,17 @@
 
 
 #define GPS_UART_RX_PIN _BV(7)
-#define GPS_UART_TX_PIN _BV(2)
+//#define GPS_UART_TX_PIN _BV(8)
 #define MG_UART_RX_PIN _BV(5)
 #define MG_UART_TX_PIN _BV(4)
 
-#define PPS_PIN _BV(3)
+#define PPS_PIN _BV(2)
 #define PPS_PORT PIND
+#define PPS_INTF _BV(INTF0)
 
-SoftUart nmeaUart = SoftUart(PIND, GPS_UART_RX_PIN, PORTD, GPS_UART_TX_PIN);
+//#define PPS_OUT_PIN _BV(2)
+
+SoftUart nmeaUart = SoftUart(PIND, GPS_UART_RX_PIN, PORTB, 0);
 SoftUart tsipUart = SoftUart(PIND, MG_UART_RX_PIN, PORTD, MG_UART_TX_PIN, ParityAndStop::Odd1); 
 HardUart debugUart = HardUart(9600, ParityAndStop::Odd1);
 RingBuffer<128> nmeaBuffer = RingBuffer<128>();
@@ -34,6 +37,26 @@ NmeaParser parser = NmeaParser(&TsipPushRaw);
 volatile u16 timeCounter, ppsTimeMSec;
 u8 timePrescaler;
 
+inline void Wait1us()
+{
+	__asm__ __volatile__ ("nop");
+	__asm__ __volatile__ ("nop");
+	__asm__ __volatile__ ("nop");
+	__asm__ __volatile__ ("nop");
+	__asm__ __volatile__ ("nop");
+	__asm__ __volatile__ ("nop");
+	__asm__ __volatile__ ("nop");
+	__asm__ __volatile__ ("nop");
+	__asm__ __volatile__ ("nop");
+	__asm__ __volatile__ ("nop");
+	__asm__ __volatile__ ("nop");
+	__asm__ __volatile__ ("nop");
+	__asm__ __volatile__ ("nop");
+	__asm__ __volatile__ ("nop");
+	__asm__ __volatile__ ("nop");
+	__asm__ __volatile__ ("nop");
+}
+
 ISR(TIMER1_CAPT_vect) //9600*3
 {
 	if(++timePrescaler >= 29)
@@ -42,14 +65,18 @@ ISR(TIMER1_CAPT_vect) //9600*3
 		++timeCounter;
 		++ppsTimeMSec;
 	}
-	if(EIFR & _BV(INTF1)) //Нарастающий фронт
+	
+	if(EIFR & PPS_INTF) //Нарастающий фронт
 	{
-		//++parser.ppsTimeSec;
+		//PORTD |= PPS_OUT_PIN;
+		//Wait1us();
+		//PORTD &= ~PPS_OUT_PIN;
+		
 		ppsTimeMSec = 0;
-		EIFR &= _BV(INTF1);
+		EIFR &= PPS_INTF;
 		LED_PORT ^= LED_PIN;
 	}
-	if(PPS_PORT & PPS_PIN)
+	if((PPS_PORT & PPS_PIN) || ppsTimeMSec > 1500)
 	{
 		ppsTimeMSec = 0;
 	}
@@ -62,7 +89,7 @@ ISR(TIMER1_CAPT_vect) //9600*3
 	
 	if(tsipUart.RxProcessing(data))
 	{
-		debugBuffer.Push(data);
+		//debugBuffer.Push(data);
 	}
 	if(tsipUart.TxProcessing())
 	{
@@ -87,11 +114,20 @@ void mainLoop()
 		//sei();
 		//tsipBuffer.Push(tmp);
 		parser.Parse(c);
-		if(timeCounter>5000 && ppsTimeMSec > 1 && ppsTimeMSec < 500)
+		if(ppsTimeMSec > 1 && ppsTimeMSec < 500)
 		{
-			timeCounter = 0;
-			parser.HealthSend();
+			ppsTimeMSec = 500;
+			parser.PositionVelocitySend();
+			if(timeCounter > 4800)
+			{
+				timeCounter = 0;
+				parser.GpsTimeSend();
+				parser.HealthSend();
+			}
+			parser.ViewSatelliteSend();
 		}
+		
+		
 		
 		while(inBuffer.Size())
 		{
@@ -130,8 +166,8 @@ int main()
 	PORTC=0x00;
 	DDRC=0x00;
 
-	PORTD = GPS_UART_TX_PIN | MG_UART_TX_PIN;
-	DDRD = GPS_UART_TX_PIN | MG_UART_TX_PIN;
+	PORTD =  MG_UART_TX_PIN;
+	DDRD =  MG_UART_TX_PIN /*| PPS_OUT_PIN*/;
 
   //PORTD=_BV(SUART_TX_PORT);
   //DDRD=_BV(SUART_TX_PORT);
@@ -238,6 +274,12 @@ int main()
 		TsipPushRaw(pgm_read_byte(&softwareVersion[i]));
 		wdt_reset();
 	}
+	parser.HealthSend();
+	parser.PositionVelocitySend();
+	wdt_reset();
+	parser.GpsTimeSend();
+	parser.ViewSatelliteSend();
+	wdt_reset();
 
   while (1)
   {
