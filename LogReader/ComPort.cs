@@ -9,25 +9,12 @@ namespace LogReader
         private static SerialPort _port = new SerialPort();
         public bool Open(string portName, string baudRate, Parity parity = Parity.None)
         {
-            try
-            {
-                if (_port.IsOpen)
-                {
-                    _port.Close();
-                }
-                _port.PortName = portName;
-                _port.BaudRate = int.Parse(baudRate);
-                _port.Parity = parity;
-                _port.Open();
-                return true;
-            }
-            catch 
-            {
-                return false; 
-            }
+            int br;
+            if (!int.TryParse(baudRate, out br)) return false;
+            return Open(portName, br, parity);
         }
 
-        public bool Open(string portName, int baudRate)
+        public bool Open(string portName, int baudRate, Parity parity = Parity.None)
         {
             try
             {
@@ -37,6 +24,7 @@ namespace LogReader
                 }
                 _port.PortName = portName;
                 _port.BaudRate = baudRate;
+                _port.Parity = parity;
                 _port.Open();
                 return true;
             }
@@ -84,13 +72,17 @@ namespace LogReader
         }
         public delegate void PortClosedEventHandler();
         public event PortClosedEventHandler PortClosed;  
-        public int Read(ref byte[] outBytes,int timeOut)
+        public int Read(ref byte[] outBytes, int timeOut)
         {
             try
             {
                 int rxIndex = 0;
                 outBytes.Initialize();
-                if (!_port.IsOpen) { PortClosed(); return -1; }
+                if (!_port.IsOpen)
+                {
+                    PortClosed?.Invoke();
+                    return -1;
+                }
                 while (true)
                 {
                     Thread.Sleep(timeOut);
@@ -103,11 +95,41 @@ namespace LogReader
             }
             catch { return -1; }
         }
+
+        public int Read(ref byte[] outBuffer, int bufferSize, ref int startIndex, ref int endIndex)
+        {
+            try
+            {
+                startIndex = endIndex;
+                if (!_port.IsOpen)
+                {
+                    PortClosed?.Invoke();
+                    return -1;
+                }
+                var rxCount = _port.BytesToRead;
+                var tempBuffer = new byte[rxCount];
+                if (rxCount > 0)
+                {
+                    _port.Read(tempBuffer, 0, rxCount);
+                    for (int i = 0; i < rxCount; i++)
+                    {
+                        outBuffer[endIndex] = tempBuffer[i];
+                        if (++endIndex >= bufferSize) endIndex -= bufferSize;
+                    }
+                }
+                return rxCount;
+            }
+            catch { return -1; }
+        }
+
         public bool Write(string text)
         {
             try
             {
-                if (!_port.IsOpen) { PortClosed(); return false; }
+                if (!_port.IsOpen)
+                {
+                    PortClosed?.Invoke(); return false; 
+                }
                 _port.Write(text);
                 return true;
             }

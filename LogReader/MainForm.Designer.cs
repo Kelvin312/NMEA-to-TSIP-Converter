@@ -42,12 +42,23 @@
             this.txtLog2 = new System.Windows.Forms.TextBox();
             this.btnClear = new System.Windows.Forms.Button();
             this.splitContainer1 = new System.Windows.Forms.SplitContainer();
+            this.splitContainer2 = new System.Windows.Forms.SplitContainer();
+            this.txtAscii = new System.Windows.Forms.TextBox();
             this.lblPortStatus = new System.Windows.Forms.Label();
+            this.btnSendUBX = new System.Windows.Forms.Button();
+            this.txtHexData = new System.Windows.Forms.TextBox();
+            this.label4 = new System.Windows.Forms.Label();
+            this.btnSendNMEA = new System.Windows.Forms.Button();
+            this.label5 = new System.Windows.Forms.Label();
             ((System.ComponentModel.ISupportInitialize)(this.bindingSource1)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.splitContainer1)).BeginInit();
             this.splitContainer1.Panel1.SuspendLayout();
             this.splitContainer1.Panel2.SuspendLayout();
             this.splitContainer1.SuspendLayout();
+            ((System.ComponentModel.ISupportInitialize)(this.splitContainer2)).BeginInit();
+            this.splitContainer2.Panel1.SuspendLayout();
+            this.splitContainer2.Panel2.SuspendLayout();
+            this.splitContainer2.SuspendLayout();
             this.SuspendLayout();
             // 
             // cmbPort
@@ -108,10 +119,11 @@
             // 
             this.txtLog.Dock = System.Windows.Forms.DockStyle.Fill;
             this.txtLog.Location = new System.Drawing.Point(0, 0);
+            this.txtLog.MaxLength = 2000000;
             this.txtLog.Multiline = true;
             this.txtLog.Name = "txtLog";
             this.txtLog.ScrollBars = System.Windows.Forms.ScrollBars.Vertical;
-            this.txtLog.Size = new System.Drawing.Size(337, 431);
+            this.txtLog.Size = new System.Drawing.Size(394, 454);
             this.txtLog.TabIndex = 6;
             // 
             // cmbParity
@@ -135,10 +147,11 @@
             // 
             this.txtLog2.Dock = System.Windows.Forms.DockStyle.Fill;
             this.txtLog2.Location = new System.Drawing.Point(0, 0);
+            this.txtLog2.MaxLength = 2000000;
             this.txtLog2.Multiline = true;
             this.txtLog2.Name = "txtLog2";
             this.txtLog2.ScrollBars = System.Windows.Forms.ScrollBars.Vertical;
-            this.txtLog2.Size = new System.Drawing.Size(391, 431);
+            this.txtLog2.Size = new System.Drawing.Size(311, 454);
             this.txtLog2.TabIndex = 9;
             // 
             // btnClear
@@ -161,28 +174,109 @@
             // 
             // splitContainer1.Panel1
             // 
-            this.splitContainer1.Panel1.Controls.Add(this.txtLog);
+            this.splitContainer1.Panel1.Controls.Add(this.splitContainer2);
             // 
             // splitContainer1.Panel2
             // 
             this.splitContainer1.Panel2.Controls.Add(this.txtLog2);
-            this.splitContainer1.Size = new System.Drawing.Size(732, 431);
-            this.splitContainer1.SplitterDistance = 337;
+            this.splitContainer1.Size = new System.Drawing.Size(1047, 454);
+            this.splitContainer1.SplitterDistance = 732;
             this.splitContainer1.TabIndex = 11;
+            // 
+            // splitContainer2
+            // 
+            this.splitContainer2.Dock = System.Windows.Forms.DockStyle.Fill;
+            this.splitContainer2.Location = new System.Drawing.Point(0, 0);
+            this.splitContainer2.Name = "splitContainer2";
+            // 
+            // splitContainer2.Panel1
+            // 
+            this.splitContainer2.Panel1.Controls.Add(this.txtLog);
+            // 
+            // splitContainer2.Panel2
+            // 
+            this.splitContainer2.Panel2.Controls.Add(this.txtAscii);
+            this.splitContainer2.Size = new System.Drawing.Size(732, 454);
+            this.splitContainer2.SplitterDistance = 394;
+            this.splitContainer2.TabIndex = 0;
+            // 
+            // txtAscii
+            // 
+            this.txtAscii.Dock = System.Windows.Forms.DockStyle.Fill;
+            this.txtAscii.Location = new System.Drawing.Point(0, 0);
+            this.txtAscii.MaxLength = 2000000;
+            this.txtAscii.Multiline = true;
+            this.txtAscii.Name = "txtAscii";
+            this.txtAscii.ScrollBars = System.Windows.Forms.ScrollBars.Vertical;
+            this.txtAscii.Size = new System.Drawing.Size(334, 454);
+            this.txtAscii.TabIndex = 7;
             // 
             // lblPortStatus
             // 
             this.lblPortStatus.AutoSize = true;
-            this.lblPortStatus.Location = new System.Drawing.Point(341, 12);
+            this.lblPortStatus.Location = new System.Drawing.Point(328, 15);
             this.lblPortStatus.Name = "lblPortStatus";
-            this.lblPortStatus.Size = new System.Drawing.Size(0, 13);
+            this.lblPortStatus.Size = new System.Drawing.Size(53, 13);
             this.lblPortStatus.TabIndex = 12;
+            this.lblPortStatus.Text = "Unknown";
+            // 
+            // btnSendUBX
+            // 
+            this.btnSendUBX.Location = new System.Drawing.Point(692, 10);
+            this.btnSendUBX.Name = "btnSendUBX";
+            this.btnSendUBX.Size = new System.Drawing.Size(75, 23);
+            this.btnSendUBX.TabIndex = 13;
+            this.btnSendUBX.Text = "Send UBX";
+            this.btnSendUBX.UseVisualStyleBackColor = true;
+            this.btnSendUBX.Click += new System.EventHandler(this.btnSendUBX_Click);
+            // 
+            // txtHexData
+            // 
+            this.txtHexData.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left) 
+            | System.Windows.Forms.AnchorStyles.Right)));
+            this.txtHexData.Location = new System.Drawing.Point(331, 66);
+            this.txtHexData.Name = "txtHexData";
+            this.txtHexData.Size = new System.Drawing.Size(711, 20);
+            this.txtHexData.TabIndex = 14;
+            // 
+            // label4
+            // 
+            this.label4.AutoSize = true;
+            this.label4.Location = new System.Drawing.Point(408, 15);
+            this.label4.Name = "label4";
+            this.label4.Size = new System.Drawing.Size(278, 13);
+            this.label4.TabIndex = 15;
+            this.label4.Text = "0xB5 0x62 [CLASS] [ID] [Len16] [Payload] [CK_A] [CK_B]";
+            // 
+            // btnSendNMEA
+            // 
+            this.btnSendNMEA.Location = new System.Drawing.Point(692, 37);
+            this.btnSendNMEA.Name = "btnSendNMEA";
+            this.btnSendNMEA.Size = new System.Drawing.Size(75, 23);
+            this.btnSendNMEA.TabIndex = 16;
+            this.btnSendNMEA.Text = "Send NMEA";
+            this.btnSendNMEA.UseVisualStyleBackColor = true;
+            this.btnSendNMEA.Click += new System.EventHandler(this.btnSendNMEA_Click);
+            // 
+            // label5
+            // 
+            this.label5.AutoSize = true;
+            this.label5.Location = new System.Drawing.Point(408, 42);
+            this.label5.Name = "label5";
+            this.label5.Size = new System.Drawing.Size(152, 13);
+            this.label5.TabIndex = 17;
+            this.label5.Text = "$[ID],[Payload]*[CK]<CR><LF>";
             // 
             // MainForm
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(739, 527);
+            this.ClientSize = new System.Drawing.Size(1054, 550);
+            this.Controls.Add(this.label5);
+            this.Controls.Add(this.btnSendNMEA);
+            this.Controls.Add(this.label4);
+            this.Controls.Add(this.txtHexData);
+            this.Controls.Add(this.btnSendUBX);
             this.Controls.Add(this.lblPortStatus);
             this.Controls.Add(this.splitContainer1);
             this.Controls.Add(this.btnClear);
@@ -200,11 +294,16 @@
             this.Load += new System.EventHandler(this.MainForm_Load);
             ((System.ComponentModel.ISupportInitialize)(this.bindingSource1)).EndInit();
             this.splitContainer1.Panel1.ResumeLayout(false);
-            this.splitContainer1.Panel1.PerformLayout();
             this.splitContainer1.Panel2.ResumeLayout(false);
             this.splitContainer1.Panel2.PerformLayout();
             ((System.ComponentModel.ISupportInitialize)(this.splitContainer1)).EndInit();
             this.splitContainer1.ResumeLayout(false);
+            this.splitContainer2.Panel1.ResumeLayout(false);
+            this.splitContainer2.Panel1.PerformLayout();
+            this.splitContainer2.Panel2.ResumeLayout(false);
+            this.splitContainer2.Panel2.PerformLayout();
+            ((System.ComponentModel.ISupportInitialize)(this.splitContainer2)).EndInit();
+            this.splitContainer2.ResumeLayout(false);
             this.ResumeLayout(false);
             this.PerformLayout();
 
@@ -226,6 +325,13 @@
         private System.Windows.Forms.Button btnClear;
         private System.Windows.Forms.SplitContainer splitContainer1;
         private System.Windows.Forms.Label lblPortStatus;
+        private System.Windows.Forms.Button btnSendUBX;
+        private System.Windows.Forms.TextBox txtHexData;
+        private System.Windows.Forms.Label label4;
+        private System.Windows.Forms.SplitContainer splitContainer2;
+        private System.Windows.Forms.TextBox txtAscii;
+        private System.Windows.Forms.Button btnSendNMEA;
+        private System.Windows.Forms.Label label5;
     }
 }
 

@@ -212,11 +212,11 @@ class NmeaParser
 		
 		void HealthCalc()
 		{
-			//if(!isTimeValid)
-			//{
-				//statusCode = 0x01; //Don't have GPS time yet
-			//}
-			//else 
+			if(qualityIndicator == 0)
+			{
+				statusCode = 0x01; //Don't have GPS time yet
+			}
+			else 
 			if(numberSv < 4)
 			{
 				statusCode = 0x08 + numberSv;

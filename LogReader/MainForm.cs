@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using System.Data;
 using System.Drawing;
+using System.Globalization;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -23,7 +24,8 @@ namespace LogReader
         {
             cmbPort.Items.AddRange(port.PortNames());
             cmbBaudRate.Items.AddRange(port.BaudRates());
-            cmbPort.SelectedIndex = Properties.Settings.Default.nPort;
+            
+            cmbPort.SelectedIndex = Properties.Settings.Default.nPort >= cmbPort.Items.Count?-1: Properties.Settings.Default.nPort;
             cmbBaudRate.SelectedIndex = Properties.Settings.Default.nBaudRate;
             cmbParity.Items.Add(System.IO.Ports.Parity.None);
             cmbParity.Items.Add(System.IO.Ports.Parity.Odd);
@@ -32,38 +34,53 @@ namespace LogReader
             port.DataReceived += Port_DataReceived;
         }
 
-
-        private enum Flags
-        {
-            None,
-            PacketName,
-            PpsTime,
-            Error,
-            TsipPacket
-        }
-
-        private Flags flag = Flags.None;
-        private byte oldByte = 0;
-        private int uartNumber = 0;
-        private const byte DLE = 0x10;
-        private const byte ETX = 0x03;
-
         void addLog(byte c)
         {
             ((uartNumber == 1) ? txtLog2 : txtLog).AppendText(string.Format("{0:X2} ",(int)c));
+            if (c < 0x20) c = 0x2E;
+            txtAscii.AppendText(string.Format("{0}", (char)c));
         }
+
+        private const int bufferSize = 1024;
+        private byte[] readBuffer = new byte[bufferSize];
+        private int rxStart = 0, rxEnd = 0;
+
+        byte ReadBuff(int index)
+        {
+            if (index < 0) index += bufferSize;
+            if (index >= bufferSize) index -= bufferSize;
+            return readBuffer[index];
+        }
+
+        private int uartNumber = 0;
+        private const byte DLE = 0x10;
+        private const byte ETX = 0x03;
+        private bool isNewPacket = true;
+        private DateTime oldTime = DateTime.Now;
 
         private void Port_DataReceived(object sender, System.IO.Ports.SerialDataReceivedEventArgs e)
         {
-            byte[] readBuffer = new byte[1024];
-            int readCount = port.Read(ref readBuffer, 1);
+            if(port.Read(ref readBuffer, bufferSize, ref rxStart, ref rxEnd) < 1) return;
 
-            for(int i = 0; i< readCount; i++)
+            for (; rxStart != rxEnd; rxStart++)
             {
-                byte c = readBuffer[i];
+                if (rxStart >= bufferSize) rxStart -= bufferSize;
+
+                if (isNewPacket || DateTime.Now.Subtract(oldTime).TotalMilliseconds > 100)
+                {
+                    isNewPacket = false;
+                    var dtText = string.Format("\r\n\r\n[{0:HH:mm:ss.ff}]  ", DateTime.Now);
+                    ((uartNumber == 1) ? txtLog2 : txtLog).AppendText(dtText);
+                    txtAscii.AppendText(dtText);
+                }
+                oldTime = DateTime.Now;
+
+                byte c = readBuffer[rxStart];
+                byte oldByte = ReadBuff(rxStart - 1);
+
                 if (c == 0xAA)
                 { }
-                else if(c == 0xB0 && oldByte == 0xAA)
+                else if (c == 0xB0 && oldByte == 0xAA)
                 {
                     uartNumber = 0;
                 }
@@ -78,15 +95,14 @@ namespace LogReader
                         addLog(oldByte);
                     }
                     addLog(c);
-                    if(c == ETX && oldByte == DLE)
+                    if (c == ETX && oldByte == DLE || c == 0x0A && oldByte == 0x0D)
                     {
-                        ((uartNumber == 1) ? txtLog2 : txtLog).AppendText(
-                            string.Format("\r\n{0:D2}:{1:D2}:  ", DateTime.Now.Minute, DateTime.Now.Second));
+                        isNewPacket = true;
                     }
                 }
-                   
-                oldByte = readBuffer[i];
             }
+
+           
 
 
 
@@ -171,6 +187,48 @@ namespace LogReader
         {
             txtLog.Text = "";
             txtLog2.Text = "";
+            txtAscii.Text = "";
+        }
+
+        private void btnSendNMEA_Click(object sender, EventArgs e)
+        {
+            byte[] payload = new byte[256];
+            int len = 0;
+            payload[len++] = (byte)'$';
+            byte CK = (byte)(payload[1] ^ payload[2]);
+            foreach (var txtChar in txtHexData.Text)
+            {
+                byte val = (byte)txtChar;
+                payload[len] = val;
+                len++;
+                CK ^= val;
+            }
+            payload[len++] = (byte) '*';
+            payload[len++] = (byte)string.Format("{0:X2}", (int)CK)[0];
+            payload[len++] = (byte)string.Format("{0:X2}", (int)CK)[1];
+            payload[len++] = 0x0D;
+            payload[len++] = 0x0A;
+            port.Write(payload, len);
+        }
+
+        private void btnSendUBX_Click(object sender, EventArgs e)
+        {
+            byte[] payload = new byte[256];
+            int len = 0;
+            payload[len++] = 0xB5;
+            payload[len++] = 0x62;
+            byte CK_A = 0, CK_B = 0;
+            foreach (var txtByte in txtHexData.Text.Split(new[] { ' ' }, StringSplitOptions.RemoveEmptyEntries))
+            {
+                byte val = byte.Parse(txtByte, NumberStyles.AllowHexSpecifier);
+                payload[len] = val;
+                len++;
+                CK_A += val;
+                CK_B += CK_A;
+            }
+            payload[len++] = CK_A;
+            payload[len++] = CK_B;
+            port.Write(payload, len);
         }
     }
 }

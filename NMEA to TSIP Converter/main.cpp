@@ -67,7 +67,7 @@ ISR(INT1_vect)
 }
 
 ISR(TIMER1_CAPT_vect) //9600*3
-{
+{	
 	if(++timePrescaler >= 29)
 	{
 		timePrescaler = 0; 
@@ -117,6 +117,7 @@ void mainLoop()
 		//sei();
 		//tsipBuffer.Push(tmp);
 		parser.Parse(c);
+	}
 		if(ppsTimeMSec > 1 && ppsTimeMSec < 500)
 		{
 			ppsTimeMSec = 500;
@@ -151,7 +152,7 @@ void mainLoop()
 			//nmeaBuffer.isOverflow = 0;
 			//tsipBuffer.isOverflow = 0;
 		//}
-	}
+	
 }
 
 
