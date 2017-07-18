@@ -20,7 +20,7 @@
 //#define PPS_PORT PIND
 //#define PPS_INTF _BV(INTF0)
 
-#define PPS_OUT_PIN _BV(3)
+#define PPS_OUT_PIN _BV(2)
 
 SoftUart nmeaUart = SoftUart(PIND, GPS_UART_RX_PIN, PORTB, 0);
 SoftUart tsipUart = SoftUart(PIND, MG_UART_RX_PIN, PORTD, MG_UART_TX_PIN, ParityAndStop::Odd1); 
@@ -57,7 +57,7 @@ inline void Wait1us()
 	__asm__ __volatile__ ("nop");
 }
 
-ISR(INT0_vect)
+ISR(INT1_vect)
 {
 	PORTD |= PPS_OUT_PIN;
 	LED_PORT ^= LED_PIN;
@@ -230,7 +230,7 @@ int main()
  // Interrupt on any change on pins PCINT8-14: Off
  // Interrupt on any change on pins PCINT16-23: Off
  EICRA=0x0F;
- EIMSK=0x01; //Прерывание
+ EIMSK=0x02; //Прерывание
  EIFR=0x03; //INTF1 INTF0 
  PCICR=0x00;
 
