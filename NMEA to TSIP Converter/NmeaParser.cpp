@@ -27,6 +27,38 @@ class NmeaParser
 		nmeaHealth.HealthClear();
 	}
 	
+	u16 updateFlag; //Флаги обновления данных
+	enum
+	{
+		UpdateTime = 1,
+		UpdateDate = 2,
+		UpdateLatitude = 4,
+		UpdateLongitude = 8,
+		UpdateAltitude = 16,
+		UpdateSpeed = 32,
+		UpdateCourse = 64,
+		UpdateDateTime = UpdateTime | UpdateDate,
+		UpdatePosition = UpdateLatitude | UpdateLongitude | UpdateAltitude,
+		UpdateVelocity = UpdateSpeed,
+		UpdateDimension = 128,
+		UpdatePrn  = 256,
+		UpdatePDop = 512,
+		UpdateHDop = 1024,
+		UpdateVDop = 2048,
+		UpdatePrecision = UpdateDimension | UpdatePDop | UpdateHDop | UpdateVDop,
+		UpdateQuality = 4096
+	};
+	
+	void DateTimeAdd(u8 sec)
+	{
+		nmeaDateTime.gpsTimeOfWeek += sec;
+		if(nmeaDateTime.gpsTimeOfWeek >= 7 * nmeaDateTime.secInDay)
+		{
+			nmeaDateTime.gpsTimeOfWeek -= 7 * nmeaDateTime.secInDay;
+			nmeaDateTime.gpsWeekNumber += 1;
+		}
+	}
+	
 	private:
 	#define MSG_ENCODE(_a,_b) ((_a)|(u16(_b)<<8))
 	
@@ -54,29 +86,6 @@ class NmeaParser
 		parseError = ReturnCode::Error;
 		return 0;
 	}
-
-	u16 updateFlag; //Флаги обновления данных
-
-	enum
-	{
-		UpdateTime = 1,
-		UpdateDate = 2,
-		UpdateLatitude = 4,
-		UpdateLongitude = 8,
-		UpdateAltitude = 16,
-		UpdateSpeed = 32,
-		UpdateCourse = 64,
-		UpdateDateTime = UpdateTime | UpdateDate,
-		UpdatePosition = UpdateLatitude | UpdateLongitude | UpdateAltitude,
-		UpdateVelocity = UpdateSpeed,
-		UpdateDimension = 128,
-		UpdatePrn  = 256,
-		UpdatePDop = 512,
-		UpdateHDop = 1024,
-		UpdateVDop = 2048,
-		UpdatePrecision = UpdateDimension | UpdatePDop | UpdateHDop | UpdateVDop,
-		UpdateQuality = 4096
-	};
 
 	struct
 	{
