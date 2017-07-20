@@ -1,8 +1,7 @@
 /*
- * NEMA to TSIP Converter.cpp
+ * NEMA to TSIP Converter
  * ATmega328P 16 MHz
  * Created: 28.06.2017 7:30:19
- * Author : Andrey
  */ 
 
 #include "stdafx.h"
@@ -10,74 +9,92 @@
 #include "SoftwareUART.cpp"
 #include "NmeaParser.cpp"
 
-
+//Config
 #define GPS_UART_RX_PIN _BV(4)
 #define GPS_UART_TX_PIN _BV(5)
 #define PPS_PIN _BV(3)
-
-
 SoftUart nmeaUart = SoftUart(PIND, GPS_UART_RX_PIN, PORTD, GPS_UART_TX_PIN);
-HardUart tsipUart = HardUart(9600, ParityAndStop::Odd1); 
+HardUart tsipUart = HardUart(9600, ParityAndStop::Odd1);
 RingBuffer<128> nmeaBuffer = RingBuffer<128>();
+
 inline void TsipPushRaw(u8 data)
 {
 	tsipUart.WaitAndTransmit(data);
 }
 NmeaParser parser = NmeaParser(&TsipPushRaw);
-volatile u16 timeCounter, ppsTimeMSec;
-volatile u8 ppsTimeSec;
-u8 timePrescaler, dateTimeCorrect;
 
-ISR(INT1_vect)
+#if PPS_PIN == _BV(3)
+#define PPS_FLAG _BV(INTF1)
+#else
+#define PPS_FLAG _BV(INTF0)
+#endif
+
+volatile u8 ppsTime5ms, ppsTime1s;
+u8 ppsTimeOfDtFix;
+u8 timerTick, timer5ms, timer996ms;
+volatile enum
 {
-	LED_PORT ^= LED_PIN;
-	ppsTimeMSec = 0;
-	++ppsTimeSec;
-}
+	OutPacketNone,
+	OutPacket1s,
+	OutPacket5s
+} outPacketFlag;
 
 ISR(TIMER1_CAPT_vect) //9600*3
 {	
-	if(++timePrescaler >= 29)
-	{
-		timePrescaler = 0; 
-		++timeCounter;
-		++ppsTimeMSec;
-	}
-	
-	if(ppsTimeMSec > 1500) //При отсутствии pps
-	{
-		ppsTimeMSec = 0;
-	}
-	
 	u8 data;
 	if(nmeaUart.RxProcessing(data))
 	{
 		nmeaBuffer.Push(data);
 	}
+
+	if(--timerTick == 0) //5.004ms
+	{
+		timerTick = 144;
+		++ppsTime5ms;
+
+		if(--timer5ms == 0) //995.796ms
+		{
+			timer5ms = 996/5;
+			outPacketFlag = OutPacket1s;
+			if(++timer996ms >= 5)
+			{
+				timer996ms = 0;
+				outPacketFlag = OutPacket5s;
+			}
+		}
+	}
+
+	if(EIFR & PPS_FLAG) //PPS detect
+	{
+		LED_PORT ^= LED_PIN;
+		ppsTime5ms = 0;
+		++ppsTime1s;
+		EIFR |= PPS_FLAG;
+	}
 }
 
-void mainLoop()
+void MainLoop()
 {
 	if(nmeaBuffer.Size())
 	{
 		parser.Parse(nmeaBuffer.Pop());
 		if((parser.updateFlag & parser.UpdateDateTime) == parser.UpdateDateTime)
 		{
-			dateTimeCorrect = ppsTimeSec;
+			ppsTimeOfDtFix = ppsTime1s;
 		}
 	}
-	if(ppsTimeMSec > 1 && ppsTimeMSec < 500)
+	if(outPacketFlag != OutPacketNone && ppsTime5ms > 0 && ppsTime5ms < 400/5)
 	{
-		ppsTimeMSec = 500;
 		parser.PositionVelocitySend();
-		if(timeCounter > 4800)
+		if(outPacketFlag == OutPacket5s)
 		{
 			timeCounter = 0;
-			parser.DateTimeAdd(ppsTimeSec - dateTimeCorrect);
+			parser.DateTimeAdd(ppsTime1s - ppsTimeOfDtFix);
 			parser.GpsTimeSend();
 			parser.HealthSend();
 		}
 		parser.ViewSatelliteSend();
+		outPacketFlag = OutPacketNone;
 	}
 }
 
@@ -154,7 +171,7 @@ int main()
  // Interrupt on any change on pins PCINT8-14: Off
  // Interrupt on any change on pins PCINT16-23: Off
  EICRA=0x0F;
- EIMSK=0x02; //Прерывание
+ EIMSK=0x00; //Прерывание
  EIFR=0x03; //INTF1 INTF0 
  PCICR=0x00;
 
@@ -205,7 +222,7 @@ int main()
 
   while (1)
   {
-    mainLoop();
+    MainLoop();
 	wdt_reset();
   }
   return 0;

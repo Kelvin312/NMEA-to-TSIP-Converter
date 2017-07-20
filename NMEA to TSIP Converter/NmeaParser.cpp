@@ -1,13 +1,5 @@
-/*
-* NmeaParser.cpp
-*
-* Created: 02.07.2017 20:51:05
-*  Author: Kelvin
-*/
-
 #ifndef NMEA_PARSER_H_
 #define NMEA_PARSER_H_
-
 #include "stdafx.h"
 
 enum class ReturnCode
@@ -17,7 +9,6 @@ enum class ReturnCode
 	CheckSumError
 };
 
-
 class NmeaParser
 {
 	public:
@@ -26,42 +17,8 @@ class NmeaParser
 	{
 		nmeaHealth.HealthClear();
 	}
-	
-	u16 updateFlag; //Флаги обновления данных
-	enum
-	{
-		UpdateTime = 1,
-		UpdateDate = 2,
-		UpdateLatitude = 4,
-		UpdateLongitude = 8,
-		UpdateAltitude = 16,
-		UpdateSpeed = 32,
-		UpdateCourse = 64,
-		UpdateDateTime = UpdateTime | UpdateDate,
-		UpdatePosition = UpdateLatitude | UpdateLongitude | UpdateAltitude,
-		UpdateVelocity = UpdateSpeed,
-		UpdateDimension = 128,
-		UpdatePrn  = 256,
-		UpdatePDop = 512,
-		UpdateHDop = 1024,
-		UpdateVDop = 2048,
-		UpdatePrecision = UpdateDimension | UpdatePDop | UpdateHDop | UpdateVDop,
-		UpdateQuality = 4096
-	};
-	
-	void DateTimeAdd(u8 sec)
-	{
-		nmeaDateTime.gpsTimeOfWeek += sec;
-		if(nmeaDateTime.gpsTimeOfWeek >= 7 * nmeaDateTime.secInDay)
-		{
-			nmeaDateTime.gpsTimeOfWeek -= 7 * nmeaDateTime.secInDay;
-			nmeaDateTime.gpsWeekNumber += 1;
-		}
-	}
-	
-	private:
-	#define MSG_ENCODE(_a,_b) ((_a)|(u16(_b)<<8))
-	
+
+
 	const u8 DLE = 0x10;
 	const u8 ETX = 0x03;
 	float Zero = 0;
@@ -69,6 +26,7 @@ class NmeaParser
 	const u8 MaxDecimalDivisor = 4;
 
 	ReturnCode parseError; //Флаг ошибки пакета NMEA
+	
 	u8 byteCount; //Индекс типа данных
 	u8 comaPoint; //Номер поля данных
 	u8 charPoint; //Номер символа в текущем поле данных
@@ -87,55 +45,214 @@ class NmeaParser
 		return 0;
 	}
 
-	struct
+		void GetFixedDigits(s32 &param, u8 &divisor, u8 first6, u8 size) //Чтение чисел с фиксированной целой частью
+		{
+			if(charPoint == size) return;
+			if(charPoint == 0)
+			{
+				param = 0;
+				divisor = 0;
+			}
+			if(charPoint < size || divisor < MaxDecimalDivisor)
+			{
+				param *= (charPoint < size && (charPoint == first6 || charPoint == first6+2))?6:10;
+				param += Hex2Int();
+				if(charPoint > size) ++divisor;
+			}
+		}
+
+		void GetFloat(float &param)
+		{
+			static bool isSign;
+			static bool isDot;
+			static u8 divisor;
+			if(charPoint == 0)
+			{
+				isSign = false;
+				isDot = false;
+				param = 0;
+				divisor = 0;
+			}
+			switch(data)
+			{
+				case ' ':
+				case '+': break;
+				case '-': isSign = true; break;
+				case '.': isDot = true; break;
+				default:
+				if(isDot)
+				{
+					if(divisor < MaxDecimalDivisor)
+					{
+						++divisor;
+						float temp = Hex2Int();
+						temp /= DecimalDivisor[divisor];
+						if(isSign)
+						{
+							param -= temp;
+						}
+						else
+						{
+							param += temp;
+						}
+					}
+				}
+				else
+				{
+					param *= 10;
+					if(isSign)
+					{
+						param -= Hex2Int();
+					}
+					else
+					{
+						param += Hex2Int();
+					}
+				}
+				break;
+			}
+		}
+		
+
+	enum //Флаги обновления данных
 	{
-		s32 seconds; //Секунд в текущем дне
-		u8 centiSeconds; //Сотых секунд
+		UpdateTime = 1,
+		UpdateDate = 2,
+		UpdateLatitude = 4,
+		UpdateLongitude = 8,
+		UpdateAltitude = 16,
+		UpdateSpeed = 32,
+		UpdateCourse = 64,
+		UpdateDateTime = UpdateTime | UpdateDate,
+		UpdatePosition = UpdateLatitude | UpdateLongitude | UpdateAltitude,
+		UpdateVelocity = UpdateSpeed,
+		UpdateDimension = 128,
+		UpdatePrn  = 256,
+		UpdatePDop = 512,
+		UpdateHDop = 1024,
+		UpdateVDop = 2048,
+		UpdatePrecision = UpdateDimension | UpdatePDop | UpdateHDop | UpdateVDop,
+		UpdateQuality = 4096
+	} updateFlag;
+	
+	
+	
+	
+
+
+	#pragma pack(push, 1)
+
+	struct SgpsTime//0x41 - GPS Time
+	{
+		float gpsTimeOfWeek; //Секунд в текущей GPS неделе
+		s16 gpsWeekNumber; //Расширенный номер текущей GPS недели
+		float gpsUtcOffset; //Смещение времени GPS UTC секунд
+
+		SgpsTime()
+		{
+			gpsTimeOfWeek = 0;
+			gpsWeekNumber = 1958;
+			gpsUtcOffset = 18;
+		}
+
+		s32 second; //Секунд в текущем дне
+		u8 centiSecond; //Сотых секунд
 		u8 day;
 		u8 month;
 		u8 year;
-		float gpsTimeOfWeek = 0; //Секунд в текущей GPS неделе
-		u16 gpsWeekNumber = 1958; //Расширенный номер текущей GPS недели
-		float gpsUtcOffset = 18; //Смещение времени GPS UTC секунд
+		u8 dayOfWeek;
+		const u32 secInDay = u32(24)*60*60; //Секунд в сутках 
 		
-		const u8 gpsUtcOffsetConst = 18; //то-же, но задано константой
-		u32 gpsDaySec = 0; //День недели и UTC смещение в секундах
-		const u32 secInDay = u32(24)*60*60; //Секунд в сутках
-		
+		void DateTimeCalc() //Вычисление времени недели и номера недели GPS
+		{
+			u16 m = month;
+			u16 y = year;
+			if (m > 2) { m -= 3; }
+			else	   { m += 12 - 3; --y;}
+			//https://ru.stackoverflow.com/a/455866
+			//Количество дней с January 6, 1980
+			u16 daysPassed = day + (153 * m + 2) / 5 + 365 * y + (y >> 2) + 7359; //- y / 100 + y / 400 - 723126;
+			gpsWeekNumber = daysPassed / 7;
+			dayOfWeek = daysPassed % 7;
+			gpsTimeOfWeek = dayOfWeek*secInDay + second + float(centiSecond)/100.0 + gpsUtcOffset;
+			if(gpsTimeOfWeek >= 7 * secInDay)
+			{
+				gpsTimeOfWeek -= 7 * secInDay;
+				gpsWeekNumber += 1;
+			}
+		}
+
+		void DateTimeAdd(u8 sec)
+		{
+			if(sec == 0) return;
+			gpsTimeOfWeek += sec;
+			if(gpsTimeOfWeek >= 7 * secInDay)
+			{
+				gpsTimeOfWeek -= 7 * secInDay;
+				gpsWeekNumber += 1;
+			}
+		}
+
 		void TimeOfFixCalc(float &timeOfFix)
 		{
-			timeOfFix = gpsDaySec + seconds + float(centiSeconds)/100;
+			timeOfFix = dayOfWeek*secInDay + second + float(centiSecond)/100.0 + gpsUtcOffset;
 			if(timeOfFix >= 7 * secInDay)
 			{
 				timeOfFix -= 7 * secInDay;
 			}
 		}
 
-		bool DateTimeCalc() //Вычисление времени недели и номера недели GPS
+		void GetTime()
 		{
-			u16 m = month;
-			u16 y = year;
-			if (m > 2) { m -= 3; }
-			else	   { m += 12 - 3; --y;}
-			if(y > 99)
+			switch(charPoint)
 			{
-				return true;
+				case 7:
+				gpsTime.centiSecond = Hex2Int()*10;
+				break;
+				case 8:
+				gpsTime.centiSecond += Hex2Int();
+				break;
+				case 5:
+				updateFlag |= UpdateTime;
+				default:
+				GetFixedDigits(gpsTime.second, gpsTime.centiSecond, 2, 6);
+				break;
 			}
-			//https://ru.stackoverflow.com/questions/455831/%D0%92%D1%8B%D1%87%D0%B8%D1%81%D0%BB%D0%B8%D1%82%D1%8C-%D0%BA%D0%BE%D0%BB%D0%B8%D1%87%D0%B5%D1%81%D1%82%D0%B2%D0%BE-%D0%B4%D0%BD%D0%B5%D0%B9-%D0%B1%D0%B5%D0%B7-%D0%BC%D0%B0%D1%81%D1%81%D0%B8%D0%B2%D0%B0-%D0%B8-%D1%80%D0%B5%D0%BA%D1%83%D1%80%D1%81%D0%B8%D0%B8
-			//Количество дней с January 6, 1980
-			u16 gpsTime = day + (153 * m + 2) / 5 + 365 * y + (y >> 2) + 7359;//- y / 100 + y / 400 - 723126;
-			gpsWeekNumber = gpsTime / 7;
-			gpsDaySec = (gpsTime % 7) * secInDay + gpsUtcOffsetConst;
-			gpsTimeOfWeek = gpsDaySec + seconds + float(centiSeconds)/100;
-			gpsUtcOffset = gpsUtcOffsetConst;
-			if(gpsTimeOfWeek >= 7 * secInDay)
-			{
-				gpsTimeOfWeek -= 7 * secInDay;
-				gpsWeekNumber += 1;
-			}
-			return false;
 		}
-	} nmeaDateTime;
+
+		void GetDate()
+		{
+			switch(charPoint)
+			{
+				case 0:
+				gpsTime.month = 0;
+				gpsTime.year = 0;
+				gpsTime.day = Hex2Int();
+				break;
+				case 1:
+				gpsTime.day *= 10;
+				gpsTime.day += Hex2Int();
+				break;
+				case 2:
+				gpsTime.month = Hex2Int();
+				break;
+				case 3:
+				gpsTime.month *= 10;
+				gpsTime.month += Hex2Int();
+				break;
+				case 4:
+				gpsTime.year = Hex2Int();
+				break;
+				case 5:
+				gpsTime.year *= 10;
+				gpsTime.year += Hex2Int();
+
+				updateFlag |= UpdateDate;
+				break;
+			}
+		}
+
+	} gpsTime;
 
 	struct
 	{
@@ -235,123 +352,10 @@ class NmeaParser
 		
 	} nmeaHealth;
 
-	void GetFixedDigits(s32 &param, u8 &divisor, u8 first6, u8 size) //Чтение чисел с фиксированной целой частью
-	{
-		if(charPoint == size) return;
-		if(charPoint == 0)
-		{
-			param = 0;
-			divisor = 0;
-		}
-		if(charPoint < size || divisor < MaxDecimalDivisor)
-		{
-			param *= (charPoint < size && (charPoint == first6 || charPoint == first6+2))?6:10;
-			param += Hex2Int();
-			if(charPoint > size) ++divisor;
-		}
-	}
+	#pragma pack(pop)
 
-	void GetFloat(float &param)
-	{
-		static bool isSign;
-		static bool isDot;
-		static u8 divisor;
-		if(charPoint == 0)
-		{
-			isSign = false;
-			isDot = false;
-			param = 0;
-			divisor = 0;
-		}
-		switch(data)
-		{
-			case ' ':
-			case '+': break;
-			case '-': isSign = true; break;
-			case '.': isDot = true; break;
-			default:
-			if(isDot)
-			{
-				if(divisor < MaxDecimalDivisor)
-				{
-					++divisor;
-					float temp = Hex2Int();
-					temp /= DecimalDivisor[divisor];
-					if(isSign)
-					{
-						param -= temp;
-					}
-					else
-					{
-						param += temp;
-					}
-				}
-			}
-			else
-			{
-				param *= 10;
-				if(isSign)
-				{
-					param -= Hex2Int();
-				}
-				else
-				{
-					param += Hex2Int();
-				}
-			}
-			break;
-		}
-	}
+
 	
-	void GetTime()
-	{
-		switch(charPoint)
-		{
-			case 7:
-			nmeaDateTime.centiSeconds = Hex2Int()*10;
-			break;
-			case 8:
-			nmeaDateTime.centiSeconds += Hex2Int();
-			break;
-			case 5:
-			updateFlag |= UpdateTime;
-			default:
-			GetFixedDigits(nmeaDateTime.seconds, nmeaDateTime.centiSeconds, 2, 6);
-			break;
-		}
-	}
-
-	void GetDate()
-	{
-		switch(charPoint)
-		{
-			case 0:
-			nmeaDateTime.month = 0;
-			nmeaDateTime.year = 0;
-			nmeaDateTime.day = Hex2Int();
-			break;
-			case 1:
-			nmeaDateTime.day *= 10;
-			nmeaDateTime.day += Hex2Int();
-			break;
-			case 2:
-			nmeaDateTime.month = Hex2Int();
-			break;
-			case 3:
-			nmeaDateTime.month *= 10;
-			nmeaDateTime.month += Hex2Int();
-			break;
-			case 4:
-			nmeaDateTime.year = Hex2Int();
-			break;
-			case 5:
-			nmeaDateTime.year *= 10;
-			nmeaDateTime.year += Hex2Int();
-
-			updateFlag |= UpdateDate;
-			break;
-		}
-	}
 
 	void GetLatitude()
 	{
@@ -425,9 +429,9 @@ class NmeaParser
 	void GpsTimeSend()
 	{
 		TsipPushDle(0x41); //0x41 GPS Время
-		FloatPush(nmeaDateTime.gpsTimeOfWeek); //Секунд с воскресенья
-		Int16Push(nmeaDateTime.gpsWeekNumber); //Недель с January 6, 1980
-		FloatPush(nmeaDateTime.gpsUtcOffset); //Разница GPS и UTC в секундах
+		FloatPush(gpsTime.gpsTimeOfWeek); //Секунд с воскресенья
+		Int16Push(gpsTime.gpsWeekNumber); //Недель с January 6, 1980
+		FloatPush(gpsTime.gpsUtcOffset); //Разница GPS и UTC в секундах
 		TsipPushDleEtx();
 	}
 
@@ -465,6 +469,84 @@ class NmeaParser
 		TsipPush((nmeaHealth.qualityIndicator == 2)?3:2); //DGPS/GPS
 		TsipPushDleEtx();
 	}
+
+
+	#define MSG_ENCODE(_p) u16(u16(*(_p)) << 10 ^ u16(*((_p)+1)) << 5 ^ u16(*((_p)+2)))
+
+	enum
+	{
+		MsgStart = 0,
+		MsgID,
+		MsgData,
+		MsgCSh,
+		MsgCSl
+	} dataType;
+
+	u8 iCmd, iCharCmd;
+	u16 msgId;
+	char msgName[3];
+
+	ReturnCode Parse(u8 c, u8 b)
+	{
+	if(c < 0x20 || c >= 0x7F)
+	{
+		dataType = MsgStart;
+	}
+		switch(dataType)
+		{
+			case MsgStart: 
+				if(c == '$')
+				{
+					dataType = MsgID;
+					iCmd = 0;
+					iCharCmd = -1;
+				}
+			break;
+			case MsgID:
+				switch(iCharCmd)
+				{
+					case 0: if(c != 'G')  dataType = MsgStart; break;
+					case 1: if(c != 'P' && c != 'N') dataType = MsgStart; break; //«GP» - GPS, «GN» - ГЛОНАСС+GPS
+					default: 
+						if(c < 'A' || c > 'Z') 
+						{ 
+							dataType = MsgStart; 
+							break; 
+						}
+						msgName[iCharCmd - 2] = c;
+						if(iCharCmd == 4)
+						{
+							msgId = MSG_ENCODE(msgName); 
+							dataType = MsgData;
+						} 
+					break;
+				}
+			break;
+			case MsgData:
+				if(c == '*')
+				{
+					dataType = MsgCSh;
+					break;
+				}
+			break;
+			case MsgCSh:
+				dataType = MsgCSl;
+			break;
+			case MsgCSl:
+			break;
+		}
+		++iCharCmd;
+		if(c == ',') 
+		{
+			++iCmd;
+			iCharCmd = 0;
+		}
+	}
+
+
+
+
+	// индекс типа данных
 	
 	ReturnCode Parse(u8 c)
 	{
@@ -582,16 +664,16 @@ class NmeaParser
 			if((updateFlag & UpdatePosition) == UpdatePosition) //0x4A Позиция
 			{
 				nmeaPosition.PositionCalc();
-				nmeaDateTime.TimeOfFixCalc(nmeaPosition.timeOfFixSec);
+				gpsTime.TimeOfFixCalc(nmeaPosition.timeOfFixSec);
 			}
 			if((updateFlag & UpdateVelocity) == UpdateVelocity) //0x56 Скорость
 			{
 				nmeaVelocity.VelocityCalc();
-				nmeaDateTime.TimeOfFixCalc(nmeaVelocity.timeOfFixSec);
+				gpsTime.TimeOfFixCalc(nmeaVelocity.timeOfFixSec);
 			}
 			if((updateFlag & UpdateDateTime) == UpdateDateTime) //0x41 GPS Время
 			{
-				if(nmeaDateTime.DateTimeCalc()) parseError = ReturnCode::Error;
+				if(gpsTime.DateTimeCalc()) parseError = ReturnCode::Error;
 			}
 			if((updateFlag & UpdatePrecision) == UpdatePrecision) //0x6D Точность и PRN
 			{
