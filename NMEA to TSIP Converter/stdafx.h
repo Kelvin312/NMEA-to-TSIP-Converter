@@ -23,6 +23,25 @@ typedef signed short s16;
 typedef unsigned long u32;
 typedef signed long s32;
 
+template<class T> inline T operator~ (T a) { return static_cast<T>(~static_cast<int>(a)); }
+template<class T> inline T operator| (T a, T b) { return static_cast<T>(static_cast<int>(a) | static_cast<int>(b)); }
+template<class T> inline T operator& (T a, T b) { return static_cast<T>(static_cast<int>(a) & static_cast<int>(b)); }
+template<class T> inline T operator^ (T a, T b) { return static_cast<T>(static_cast<int>(a) ^ static_cast<int>(b)); }
+template<class T> inline T& operator|= (T& a, T b) { return static_cast<T&>(static_cast<int&>(a) |= static_cast<int>(b)); }
+template<class T> inline T& operator&= (T& a, T b) { return static_cast<T&>(static_cast<int&>(a) &= static_cast<int>(b)); }
+template<class T> inline T& operator^= (T& a, T b) { return static_cast<T&>(static_cast<int&>(a) ^= static_cast<int>(b)); }
+
+inline bool isDigit(u8 c)
+{
+	return c >= '0' && c <= '9';
+}
+
+inline u8 Dec2Int(u8 c)
+{
+	return c - '0';
+}
+
+
 // TEMPLATE CLASS conditional
 template<bool _Test,
 class _Ty1,

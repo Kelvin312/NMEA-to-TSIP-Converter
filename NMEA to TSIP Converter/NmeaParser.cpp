@@ -357,13 +357,13 @@ class NmeaParser
 
 	
 
-	void GetLatitude()
+	void GetLatitude() 
 	{
 		GetFixedDigits(nmeaPosition.latitudeMinutes, nmeaPosition.latitudeDivisor, 2, 4);
 		if(charPoint == 3) updateFlag |= UpdateLatitude;
 	}
 
-	void GetLongitude()
+	void GetLongitude() 
 	{
 		GetFixedDigits(nmeaPosition.longitudeMinutes,nmeaPosition.longitudeDivisor, 3, 5);
 		if(charPoint == 4) updateFlag |= UpdateLongitude;
