@@ -621,14 +621,22 @@ public:
 
 		ErrorCode GetSvPrn(u8 iCharCmd, u8 c)
 		{
-			if (!isDigit(dataCmd))
-			{
-				result = ErrorCode::Error;
-				break;
-			}
-			if (iCharCmd == 0) satelliteView.svPrn[satelliteView.numberSv] = Dec2Int(dataCmd) << 4;
-			else satelliteView.svPrn[satelliteView.numberSv++] |= Dec2Int(dataCmd);
+			if (!isDigit(c)) return ErrorCode::Error;
+			if (iCharCmd == 0) svPrn[numberSv] = Dec2Int(c) << 4;
+			else svPrn[numberSv++] |= Dec2Int(c);
+			return ErrorCode::Ok;
 		}
+
+		ErrorCode GetSmode(u8 c)
+		{
+			
+		}
+
+		ErrorCode GetFixStatus(u8 c)
+		{
+
+		}
+
 
 	} satelliteView;
 
