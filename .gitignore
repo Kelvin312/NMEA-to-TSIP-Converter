@@ -4,3 +4,6 @@ Debug/
 NMEA to TSIP Converter/NMEA to TSIP Converter.componentinfo.xml
 *.workspace
 *.pdsbak
+*.doc#
+*.odt#
+Docs/Резервная_копия_Блок-схема железа.cdr
