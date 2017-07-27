@@ -16,13 +16,13 @@ typedef unsigned long u32;
 typedef signed long s32;
 
 
-template<class T> inline T operator~ (T a) { return static_cast<T>(~static_cast<int>(a)); }
-template<class T> inline T operator| (T a, T b) { return static_cast<T>(static_cast<int>(a) | static_cast<int>(b)); }
-template<class T> inline T operator& (T a, T b) { return static_cast<T>(static_cast<int>(a) & static_cast<int>(b)); }
-template<class T> inline T operator^ (T a, T b) { return static_cast<T>(static_cast<int>(a) ^ static_cast<int>(b)); }
-template<class T> inline T& operator|= (T& a, T b) { return static_cast<T&>(static_cast<int&>(a) |= static_cast<int>(b)); }
-template<class T> inline T& operator&= (T& a, T b) { return static_cast<T&>(static_cast<int&>(a) &= static_cast<int>(b)); }
-template<class T> inline T& operator^= (T& a, T b) { return static_cast<T&>(static_cast<int&>(a) ^= static_cast<int>(b)); }
+template<class T> inline constexpr T operator~ (T a) { return static_cast<T>(~static_cast<int>(a)); }
+template<class T> inline constexpr T operator| (T a, T b) { return static_cast<T>(static_cast<int>(a) | static_cast<int>(b)); }
+template<class T> inline constexpr T operator& (T a, T b) { return static_cast<T>(static_cast<int>(a) & static_cast<int>(b)); }
+template<class T> inline constexpr T operator^ (T a, T b) { return static_cast<T>(static_cast<int>(a) ^ static_cast<int>(b)); }
+template<class T> inline T& operator|= (T& a, T b) { return reinterpret_cast<T&>(reinterpret_cast<int&>(a) |= static_cast<int>(b)); }
+template<class T> inline T& operator&= (T& a, T b) { return reinterpret_cast<T&>(reinterpret_cast<int&>(a) &= static_cast<int>(b)); }
+template<class T> inline T& operator^= (T& a, T b) { return reinterpret_cast<T&>(reinterpret_cast<int&>(a) ^= static_cast<int>(b)); }
 
 inline bool isDigit(u8 c)
 {
@@ -60,8 +60,84 @@ public:
 	static const float clockBiasRateConst;
 	static const float gpsUtcOffsetConst;
 
+	const u8 DLE = 0x10;
+	const u8 ETX = 0x03;
+
 	NmeaParser(void(*tsipPushRawA)(u8)) : tsipPushRaw(tsipPushRawA)
 	{
+	}
+
+	void TsipPushDle(u8 c) const
+	{
+		tsipPushRaw(DLE);
+		tsipPushRaw(c);
+	}
+	void TsipPush(u8 c) const
+	{
+		if (c == DLE) tsipPushRaw(DLE);
+		tsipPushRaw(c);
+	}
+	void TsipPushDleEtx() const
+	{
+		tsipPushRaw(DLE);
+		tsipPushRaw(ETX);
+	}
+
+	void TsipPayload(void *sptr, u8 size) const
+	{
+		u8 *ptr = static_cast<u8*>(sptr);
+		ptr += size;
+		while(size--)
+		{
+			--ptr;
+			TsipPush(*ptr);
+		}
+	}
+
+	void PositionAndVelocitySend()
+	{
+		TsipPushDle(0x4A); //0x4A Позиция
+		TsipPayload(&llaPosition, llaPosition.size);
+		TsipPushDleEtx();
+
+		TsipPushDle(0x56); //0x56 Скорость
+		TsipPayload(&enuVelocity, enuVelocity.size);
+		TsipPushDleEtx();
+	}
+
+	void GpsTimeSend()
+	{
+		TsipPushDle(0x41); //0x41 GPS Время
+		TsipPayload(&gpsTime, gpsTime.size);
+		TsipPushDleEtx();
+	}
+
+	void HealthSend()
+	{
+		TsipPushDle(0x46); //0x46 Здоровье приемника
+		TsipPayload(&healthReceiver, healthReceiver.size);
+		TsipPushDleEtx();
+
+		TsipPushDle(0x4B); //0x4B Дополнительный статус
+		TsipPush(0x5A);
+		TsipPush(0x00);
+		TsipPush(0x01);
+		TsipPushDleEtx();
+	}
+
+	void SatelliteViewSend()
+	{
+		TsipPushDle(0x6D); //0x6D Точность и PRN
+		TsipPayload(&satelliteView, satelliteView.size);
+		for (u8 i = 0; i < satelliteView.numberSv; i++)
+		{
+			TsipPush(satelliteView.svPrn[i]); //PRN спутников
+		}
+		TsipPushDleEtx();
+
+		TsipPushDle(0x82); //0x82 Режим фиксации положения
+		TsipPush((healthReceiver.qualityIndicator == 2) ? 3 : 2); //DGPS/GPS
+		TsipPushDleEtx();
 	}
 
 	u8 Hex2Int(u8 c) //Перевод ASCII в число
@@ -122,6 +198,9 @@ public:
 		}
 	}
 
+
+
+
 	enum
 	{
 		MsgStart,
@@ -138,6 +217,7 @@ public:
 
 	enum UpdateFlag //Флаги обновления данных
 	{
+		UpdateNone = 0,
 		UpdateTime = 1,
 		UpdateDate = 2,
 		UpdateLatitude = 4,
@@ -148,13 +228,8 @@ public:
 		UpdateDateTime = UpdateTime | UpdateDate,
 		UpdatePosition = UpdateLatitude | UpdateLongitude | UpdateAltitude,
 		UpdateVelocity = UpdateSpeed,
-		UpdateDimension = 128,
-		UpdatePrn = 256,
-		UpdatePDop = 512,
-		UpdateHDop = 1024,
-		UpdateVDop = 2048,
-		UpdatePrecision = UpdateDimension | UpdatePDop | UpdateHDop | UpdateVDop,
-		UpdateQuality = 4096
+		UpdatePrn = 128,
+		UpdateQuality = 256
 	} updateFlag;
 
 	void RmcParse() //RMC - Рекомендованный минимальный набор GPS данных
@@ -169,7 +244,7 @@ public:
 		case 6: if (dataCmd == 'W') llaPosition.longitudeMinutes *= -1; break; //«E» для восточной или «W» для западной долготы
 		case 7: GetFloat(enuVelocity.speedKnots); enuVelocity.courseDegrees = 0; updateFlag |= UpdateSpeed; break; //скорость относительно земли в узлах
 		case 8: GetFloat(enuVelocity.courseDegrees); updateFlag |= UpdateCourse; break; // путевой угол (направление скорости) в градусах по часовой от севера
-		case 9: gpsTime.GetDate(iCharCmd, dataCmd, updateFlag); break; //дата ddmmyy
+		case 9: result |= gpsTime.GetDate(iCharCmd, dataCmd, updateFlag); break; //дата ddmmyy
 		case 10: break; //магнитное склонение в градусах
 		case 11: break; //для получения магнитного курса «E» — вычесть, «W» — прибавить
 		case 12: break; //индикатор режима: «A» — автономный, «D» — дифференциальный, «E» — аппроксимация, «N» — недостоверные данные
@@ -185,8 +260,8 @@ public:
 		case 3:	if (dataCmd == 'S') llaPosition.latitudeMinutes *= -1; break; //«N» для северной или «S» для южной широты
 		case 4:  result |= llaPosition.GetLongitude(iCharCmd, dataCmd, updateFlag); break; //долгота
 		case 5:	if (dataCmd == 'W') llaPosition.longitudeMinutes *= -1; break; //«E» для восточной или «W» для западной долготы
-		case 6://	nmeaHealth.qualityIndicator = Hex2Int(); updateFlag |= UpdateQuality; break; //Качество фиксации позиции: 0 = No GPS, 1 = GPS, 2 = DGPS
-		case 7://	nmeaHealth.numberSv = Hex2Int(); break; //количество используемых спутников
+		case 6: result |= healthReceiver.GetQualityIndicator(dataCmd); updateFlag |= UpdateQuality; break; //Качество фиксации позиции: 0 = No GPS, 1 = GPS, 2 = DGPS
+		case 7: result |= healthReceiver.GetNumberSv(iCharCmd, dataCmd); break; //количество используемых спутников
 		case 8:	 break; //HDOP
 		case 9:	GetFloat(llaPosition.mslAltitudeMeters); llaPosition.mslAboveHae = 0; updateFlag |= UpdateAltitude; break; //высота над уровнем моря
 		case 10: break; //M - метры
@@ -201,14 +276,16 @@ public:
 	{
 		switch (iCmd) //GSA,Smode,FS{,sv},PDOP,HDOP,VDOP
 		{
-		case 1: // satelliteView.dimension = dataCmd == 'M' ? _BV(3) : 0; updateFlag |= UpdateDimension;  break;//выбора между 2D и 3D: A - автоматический, M - ручной
-		case 2:	// satelliteView.dimension += Dec2Int(dataCmd) == 3 ? 4 : 3; break;//режим: 1 = данные не доступны, 2 = 2D, 3 = 3D
+		case 1: satelliteView.GetSmode(dataCmd); break; //выбора между 2D и 3D: A - автоматический, M - ручной
+		case 2: satelliteView.GetFixStatus(dataCmd);  //режим: 1 = данные не доступны, 2 = 2D, 3 = 3D
+			satelliteView.numberSv = 0;  updateFlag |= UpdatePrn;
+			break;
 
-		case 15: GetFloat(satelliteView.pDop); updateFlag |= UpdatePDop; break;//PDOP
-		case 16: GetFloat(satelliteView.hDop); updateFlag |= UpdateHDop; break;//HDOP
-		case 17: GetFloat(satelliteView.vDop); updateFlag |= UpdateVDop; break;//VDOP
+		case 15: GetFloat(satelliteView.pDop); break;//PDOP
+		case 16: GetFloat(satelliteView.hDop); break;//HDOP
+		case 17: GetFloat(satelliteView.vDop); break;//VDOP
 
-		case 3: satelliteView.numberSv = 0; updateFlag |= UpdatePrn; //PRN коды используемых в подсчете позиции спутников (12 полей)
+		//PRN коды используемых в подсчете позиции спутников (12 полей)
 		default: if (iCmd < 15) result |= satelliteView.GetSvPrn(iCharCmd, dataCmd); 
 		break;
 		}
@@ -216,7 +293,26 @@ public:
 
 	void Nmea2Tsip()
 	{
-		
+		if((updateFlag & UpdateDateTime) == UpdateDateTime)
+		{
+			gpsTime.DateTimeCalc();
+		}
+		if((updateFlag & UpdatePosition) == UpdatePosition)
+		{
+			llaPosition.PositionCalc();
+		}
+		if ((updateFlag & UpdateVelocity) == UpdateVelocity)
+		{
+			enuVelocity.VelocityCalc();
+		}
+		if ((updateFlag & UpdatePrn) == UpdatePrn)
+		{
+			satelliteView.NumberSvCalc();
+		}
+		if ((updateFlag & UpdateQuality) == UpdateQuality)
+		{
+			healthReceiver.HealthCalc();
+		}
 	}
 
 	ErrorCode Parse(u8 c)
@@ -239,6 +335,7 @@ public:
 				iCmd = 0;
 				iCharCmd = -1;
 				checkSum = 0;
+				updateFlag = UpdateNone;
 			}
 			break;
 		case MsgID:
@@ -270,12 +367,15 @@ public:
 			}
 			checkSum ^= c;
 			dataCmd = c;
-			switch (msgId)
+			if (c != ',')
 			{
-			case MSG_ENCODE("RMC"): RmcParse(); break;
-			case MSG_ENCODE("GGA"): GgaParse(); break;
-			case MSG_ENCODE("GSA"): GsaParse(); break;
-			default: ;
+				switch (msgId)
+				{
+				case MSG_ENCODE("RMC"): RmcParse(); break;
+				case MSG_ENCODE("GGA"): GgaParse(); break;
+				case MSG_ENCODE("GSA"): GsaParse(); break;
+				default:;
+				}
 			}
 			break;
 		case MsgCSh:
@@ -343,7 +443,7 @@ public:
 			u16 daysPassed = day + (153 * m + 2) / 5 + 365 * y + (y >> 2) + 7359; //- y / 100 + y / 400 - 723126;
 			gpsWeekNumber = daysPassed / 7;
 			dayOfWeek = daysPassed % 7;
-			gpsTimeOfWeek = dayOfWeek*secInDay + second + float(centiSecond) / 100.0 + gpsUtcOffset;
+			gpsTimeOfWeek = dayOfWeek*secInDay + second + float(centiSecond) / 100 + gpsUtcOffset;
 			if (gpsTimeOfWeek >= 7 * secInDay)
 			{
 				gpsTimeOfWeek -= 7 * secInDay;
@@ -364,7 +464,7 @@ public:
 
 		void TimeOfFixCalc(float &timeOfFix) const
 		{
-			timeOfFix = dayOfWeek*secInDay + second + float(centiSecond) / 100.0 + gpsUtcOffset;
+			timeOfFix = dayOfWeek*secInDay + second + float(centiSecond) / 100 + gpsUtcOffset;
 			if (timeOfFix >= 7 * secInDay)
 			{
 				timeOfFix -= 7 * secInDay;
@@ -472,7 +572,7 @@ public:
 		float mslAltitudeMeters;
 		float mslAboveHae;
 
-		float RDCalc(const u16 divisor) const { return M_PI / 180 / 60 / divisor; }
+		float RDCalc(const u16 divisor) const { return float(M_PI / 180 / 60 / divisor); }
 		const float RadiansDivisor[5] = { RDCalc(1),RDCalc(10),RDCalc(100),RDCalc(1000),RDCalc(10000) };
 		const u8 MaxDivisor = 4;
 		
@@ -579,11 +679,11 @@ public:
 
 		float speedKnots;
 		float courseDegrees;
-		const float knots2m = 0.514;
+		const float knots2m = 0.514f;
 
 		void VelocityCalc()
 		{
-			float fi = courseDegrees * M_PI / 180;
+			float fi = courseDegrees * float(M_PI / 180);
 			float speedMps = speedKnots * knots2m;
 			eastVelocityMps = speedMps * sin(fi);
 			northVelocityMps = speedMps * cos(fi);
@@ -591,7 +691,7 @@ public:
 
 	} enuVelocity;
 
-	struct SSatelliteView
+	struct SSatelliteView //0x6D - All-In-View Satellite Selection
 	{
 		float tDop;
 		float vDop;
@@ -604,41 +704,98 @@ public:
 		SSatelliteView()
 		{
 			dimension = 3;
-			tDop = 0;
-			vDop = 0;
-			hDop = 0;
-			pDop = 0;
+			tDop = 1.0;
+			vDop = 99.0;
+			hDop = 99.0;
+			pDop = 99.0;
 		}
 
 		u8 numberSv;
 
-		void SatelliteViewCalc()
+		void NumberSvCalc()
 		{
 			dimension &= 0x0F;
 			dimension |= numberSv << 4;
-			tDop = 1.0;
 		}
 
 		ErrorCode GetSvPrn(u8 iCharCmd, u8 c)
 		{
 			if (!isDigit(c)) return ErrorCode::Error;
-			if (iCharCmd == 0) svPrn[numberSv] = Dec2Int(c) << 4;
-			else svPrn[numberSv++] |= Dec2Int(c);
+			if (iCharCmd == 0)
+			{
+				++numberSv;
+				svPrn[numberSv - 1] = 0;
+			}
+			svPrn[numberSv - 1] *= 10;
+			svPrn[numberSv - 1] += Dec2Int(c);
 			return ErrorCode::Ok;
 		}
 
 		ErrorCode GetSmode(u8 c)
 		{
-			
+			dimension &= 0xF7;
+			if (c == 'M') dimension |= _BV(3);
+			return ErrorCode::Ok;
 		}
 
 		ErrorCode GetFixStatus(u8 c)
 		{
-
+			if (!isDigit(c)) return ErrorCode::Error;
+			dimension &= 0xF8;
+			dimension |= (c == '3') ? 4 : 3;
+			return ErrorCode::Ok;
 		}
 
-
 	} satelliteView;
+
+	struct SHealthReceiver //0x46 - Health of Receiver
+	{
+		u8 errorCode;
+		u8 statusCode;
+		const u8 size = 2;
+
+		SHealthReceiver()
+		{
+			errorCode = 0;
+			statusCode = 1;
+		}
+
+		u8 numberSv;
+		u8 qualityIndicator;
+
+		void HealthCalc()
+		{
+			if(qualityIndicator == 0)
+			{
+				statusCode = 1;
+			}
+			else if(numberSv < 4)
+			{
+				statusCode = 0x08 + numberSv;
+			}
+			else
+			{
+				statusCode = 0;
+			}
+		}
+
+		ErrorCode GetQualityIndicator(u8 c)
+		{
+			if (!isDigit(c)) return ErrorCode::Error;
+			qualityIndicator = Dec2Int(c);
+			return ErrorCode::Ok;
+		}
+
+		ErrorCode GetNumberSv(u8 iCharCmd, u8 c)
+		{
+			if (!isDigit(c)) return ErrorCode::Error;
+			if (iCharCmd == 0) numberSv = 0;
+			numberSv *= 10;
+			numberSv += Dec2Int(c);
+			return ErrorCode::Ok;
+		}
+
+	} healthReceiver;
 
 #pragma pack(pop)
 };

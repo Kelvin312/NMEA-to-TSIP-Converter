@@ -29,15 +29,8 @@ NmeaParser parser = NmeaParser(&TsipPushRaw);
 #define PPS_FLAG _BV(INTF0)
 #endif
 
-volatile u8 ppsTime5ms, ppsTime1s;
-u8 ppsTimeOfDtFix;
-u8 timerTick, timer5ms, timer996ms;
-volatile enum
-{
-	OutPacketNone,
-	OutPacket1s,
-	OutPacket5s
-} outPacketFlag;
+volatile u8 ppsTime5ms, ppsTime1s, timer5ms;
+u8 timerTick;
 
 ISR(TIMER1_CAPT_vect) //9600*3
 {	
@@ -51,17 +44,8 @@ ISR(TIMER1_CAPT_vect) //9600*3
 	{
 		timerTick = 144;
 		++ppsTime5ms;
-
-		if(--timer5ms == 0) //995.796ms
-		{
-			timer5ms = 996/5;
-			outPacketFlag = OutPacket1s;
-			if(++timer996ms >= 5)
-			{
-				timer996ms = 0;
-				outPacketFlag = OutPacket5s;
-			}
-		}
+		++timer5ms;
+		 //995.796ms
 	}
 
 	if(EIFR & PPS_FLAG) //PPS detect
@@ -73,28 +57,34 @@ ISR(TIMER1_CAPT_vect) //9600*3
 	}
 }
 
+u8 ppsTimeOfDtFix, time5s;
+bool isDtFixOld;
+
 void MainLoop()
 {
 	if(nmeaBuffer.Size())
 	{
 		parser.Parse(nmeaBuffer.Pop());
-		if((parser.updateFlag & parser.UpdateDateTime) == parser.UpdateDateTime)
+		
+		bool isDtFix = (parser.updateFlag & parser.UpdateDateTime) == parser.UpdateDateTime;
+		if(isDtFix && !isDtFixOld)
 		{
 			ppsTimeOfDtFix = ppsTime1s;
 		}
+		isDtFixOld = isDtFix;
 	}
-	if(outPacketFlag != OutPacketNone && ppsTime5ms > 0 && ppsTime5ms < 400/5)
+	if(timer5ms > 995/5 && ppsTime5ms < 200/5 && parser.dataType != parser.MsgData)
 	{
-		parser.PositionVelocitySend();
-		if(outPacketFlag == OutPacket5s)
+		timer5ms = 0;
+		parser.PositionAndVelocitySend();
+		if(++time5s >= 5)
 		{
-			timeCounter = 0;
-			parser.DateTimeAdd(ppsTime1s - ppsTimeOfDtFix);
+			time5s = 0;
+			parser.gpsTime.DateTimeAdd(ppsTime1s - ppsTimeOfDtFix);
 			parser.GpsTimeSend();
 			parser.HealthSend();
 		}
-		parser.ViewSatelliteSend();
-		outPacketFlag = OutPacketNone;
+		parser.SatelliteViewSend();
 	}
 }
 
