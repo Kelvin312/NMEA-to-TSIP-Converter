@@ -187,10 +187,12 @@ class NmeaParser
 		if((updateFlag & UpdatePosition) == UpdatePosition)
 		{
 			llaPosition.PositionCalc();
+			gpsTime.TimeOfFixCalc(llaPosition.timeOfFixSec);
 		}
 		if ((updateFlag & UpdateVelocity) == UpdateVelocity)
 		{
 			enuVelocity.VelocityCalc();
+			gpsTime.TimeOfFixCalc(enuVelocity.timeOfFixSec);
 		}
 		if ((updateFlag & UpdatePrn) == UpdatePrn)
 		{

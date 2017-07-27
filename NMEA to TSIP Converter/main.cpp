@@ -73,7 +73,8 @@ void MainLoop()
 		}
 		isDtFixOld = isDtFix;
 	}
-	if(timer5ms > 995/5 && ppsTime5ms < 200/5 && parser.dataType != parser.MsgData)
+	//Если прошло > 990мс с последней посылки && < 200мс с начала PPS && мы не в середине разбора пакета
+	if(timer5ms > 990/5 && ppsTime5ms < 200/5 && parser.dataType != parser.MsgData)
 	{
 		timer5ms = 0;
 		parser.PositionAndVelocitySend();
