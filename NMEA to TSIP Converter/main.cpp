@@ -64,6 +64,7 @@ void MainLoop()
 {
 	if(nmeaBuffer.Size())
 	{
+		wdt_reset();
 		parser.Parse(nmeaBuffer.Pop());
 		
 		bool isDtFix = (parser.updateFlag & parser.UpdateDateTime) == parser.UpdateDateTime;
@@ -73,18 +74,22 @@ void MainLoop()
 		}
 		isDtFixOld = isDtFix;
 	}
+	
 	//Если прошло > 990мс с последней посылки && < 200мс с начала PPS && мы не в середине разбора пакета
 	if(timer5ms > 990/5 && ppsTime5ms < 200/5 && parser.dataType != parser.MsgData)
 	{
 		timer5ms = 0;
+		wdt_reset();
 		parser.PositionAndVelocitySend();
 		if(++time5s >= 5)
 		{
 			time5s = 0;
+			wdt_reset();
 			parser.gpsTime.DateTimeAdd(ppsTime1s - ppsTimeOfDtFix);
 			parser.GpsTimeSend();
 			parser.HealthSend();
 		}
+		wdt_reset();
 		parser.SatelliteViewSend();
 	}
 }
@@ -206,15 +211,18 @@ int main()
 	for(u8 i=0; i<15; i++)
 	{
 		TsipPushRaw(pgm_read_byte(&softwareVersion[i]));
-		wdt_reset();
 	}
 	parser.HealthSend();
 	wdt_reset();
+	set_sleep_mode(SLEEP_MODE_IDLE);
 
   while (1)
   {
     MainLoop();
 	wdt_reset();
+	sleep_enable();
+	if(nmeaBuffer.Empty()) sleep_cpu();
+	sleep_disable();
   }
   return 0;
 }
