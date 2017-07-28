@@ -1,9 +1,9 @@
 #ifndef STDAFX_H_
 #define STDAFX_H_
 
-#define F_CPU 16000000UL  // 16 MHz
-#define LED_PIN _BV(5)
-#define LED_PORT PORTB
+#define F_CPU 16000000UL  // 16 MHz //Частота тактирования МК
+#define LED_PIN _BV(5)  //Пин отладочного светодиода
+#define LED_PORT PORTB //Порт этого светодиода
 
 #include <avr/io.h>
 #include <avr/interrupt.h>
@@ -31,16 +31,17 @@ template<class T> inline T& operator|= (T& a, T b) { return reinterpret_cast<T&>
 template<class T> inline T& operator&= (T& a, T b) { return reinterpret_cast<T&>(reinterpret_cast<int&>(a) &= static_cast<int>(b)); }
 template<class T> inline T& operator^= (T& a, T b) { return reinterpret_cast<T&>(reinterpret_cast<int&>(a) ^= static_cast<int>(b)); }
 
-inline bool isDigit(u8 c)
+inline bool isDigit(u8 c) //Цифра ли это / ответ / символ
 {
 	return c >= '0' && c <= '9';
 }
 
-inline u8 Dec2Int(u8 c)
+inline u8 Dec2Int(u8 c) //Преобразование символа в цифру / цифра / символ
 {
 	return c - '0';
 }
 
+//Шаблонная магия для задания типа по булеву флагу
 // TEMPLATE CLASS conditional
 template<bool _Test,
 class _Ty1,
@@ -57,20 +58,21 @@ struct conditional<true, _Ty1, _Ty2>
 	typedef _Ty1 type;
 };
 
-template<u16 S> struct RingBuffer
+//Кольцевой буфер
+template<u16 S> struct RingBuffer //Размер буфера в байтах
 {
 	private:
 	typedef typename conditional<(S>128), u16, u8 >::type T;
-	static const u16 S0 = S-1, S1 = S0 | S0 >> 1, S2 = S1 | S1 >> 2, S4 = S2 | S2 >> 4, S8 = S4 | S4 >> 8;
+	static const u16 S0 = S-1, S1 = S0 | S0 >> 1, S2 = S1 | S1 >> 2, S4 = S2 | S2 >> 4, S8 = S4 | S4 >> 8; //Число степени двойки, что-бы поместился буфер
 
-	static const T bufferSize = S8 + 1;
-	volatile T writeIndex = 0, readIndex = 0;
-	volatile u8 buffer[bufferSize];
+	static const T bufferSize = S8 + 1; //Размер буфера
+	volatile T writeIndex = 0, readIndex = 0; //Индексы записи и чтения
+	volatile u8 buffer[bufferSize]; //Сам буфер
 
 	public:
-	volatile bool isOverflow = false;
+	volatile bool isOverflow = false; //Фалг переполнения буфера
 
-	void Push(u8 data)
+	void Push(u8 data) //Вставить в буфер / байт
 	{
 		if (Size() == bufferSize) //Переполнение
 		{
@@ -79,30 +81,30 @@ template<u16 S> struct RingBuffer
 		}
 		buffer[writeIndex++ & (bufferSize - 1)] = data;
 	}
-	u8 Pop()
+	u8 Pop() //Взять из буфера байт и удалить его / байт
 	{
 		if (Empty()) return 0; //Буфер пустой
 		return buffer[readIndex++  & (bufferSize - 1)];
 	}
-	u8 Front() const
+	u8 Front() const //Взять из начала буфера байт / байт
 	{
 		if (Empty()) return 0;
 		return buffer[readIndex & (bufferSize - 1)];
 	}
-	u8 Back() const
+	u8 Back() const //Взять из конца буфера байт / байт
 	{
 		if (Empty()) return 0;
 		return buffer[writeIndex - 1 & (bufferSize - 1)];
 	}
-	void Clear()
+	void Clear() //Очистить буфер
 	{
 		readIndex = writeIndex = 0;
 	}
-	T Size() const
+	T Size() const //Занятый размер буфера / размер буфера
 	{
 		return writeIndex - readIndex;
 	}
-	bool Empty() const
+	bool Empty() const //Пустой ли буфер / флаг пустого буфера
 	{
 		return writeIndex == readIndex;
 	}

@@ -13,24 +13,24 @@ enum class ErrorCode:u8
 
 class NmeaParser
 {
-	public:
+	public: //Преобразование строки символов в хэш
 	#define MSG_ENCODE(_p) u16(u16(*(_p)) << 10 ^ u16(*((_p)+1)) << 5 ^ u16(*((_p)+2)))
 	
-	ErrorCode result;
-	void(*tsipPushRaw)(u8);
+	ErrorCode result; //Результат разбора пакета NMEA
+	void(*tsipPushRaw)(u8); //Функция отправки байта TSIP 
 	
-	static const float clockBiasConst;
-	static const float clockBiasRateConst;
-	static const float gpsUtcOffsetConst;
+	static const float clockBiasConst; //Значение Clock Bias при включении питания
+	static const float clockBiasRateConst; //Скорость изменения Clock Bias
+	static const float gpsUtcOffsetConst; //Смещение времени GPS относительно UTC
 
-	const u8 DLE = 0x10;
-	const u8 ETX = 0x03;
+	const u8 DLE = 0x10; //Байт DLE протокола TSIP
+	const u8 ETX = 0x03; //Байт ETX протокола TSIP
 
-	NmeaParser(void(*tsipPushRawA)(u8)) : tsipPushRaw(tsipPushRawA)
+	NmeaParser(void(*tsipPushRawA)(u8)) : tsipPushRaw(tsipPushRawA) //Функция отправки байта TSIP 
 	{
 	}
 
-	u8 Hex2Int(u8 c) //Перевод ASCII в число
+	u8 Hex2Int(u8 c) //Перевод ASCII в число / число / символ ASCII
 	{
 		if (isDigit(c))
 			return c - '0';
@@ -42,11 +42,11 @@ class NmeaParser
 		return 0;
 	}
 
-	void GetFloat(float &param)
+	void GetFloat(float &param) //Перевод ASCII вещественного числа в число одинарной точности IEEE 754 / число одинарной точности IEEE 754
 	{
-		static bool isSign;
-		static bool isDot;
-		static float divisor;
+		static bool isSign; //Флаг отрицательного числа
+		static bool isDot; //Флаг точки
+		static float divisor; //Делитель дробной части числа
 		if (iCharCmd == 0)
 		{
 			isSign = false;
@@ -96,11 +96,11 @@ class NmeaParser
 		MsgCSh,
 		MsgCSl,
 		MsgEnd
-	} dataType = MsgStart;
+	} dataType = MsgStart; //Тип части пакета NMEA
 
-	u8 iCmd, iCharCmd, dataCmd, checkSum;
-	u16 msgId;
-	char msgName[3];
+	u8 iCmd, iCharCmd, dataCmd, checkSum; //Номер команды в пакете / номер символа в команде / символ команды / контрольная сумма
+	u16 msgId; //Хэш ID пакета NMEA
+	char msgName[3]; //ID пакета NMEA
 
 	enum UpdateFlag //Флаги обновления данных
 	{
@@ -178,7 +178,7 @@ class NmeaParser
 		}
 	}
 
-	void Nmea2Tsip()
+	void Nmea2Tsip() //Вычисления для преобразования пакета NMEA в TSIP
 	{
 		if((updateFlag & UpdateDateTime) == UpdateDateTime)
 		{
@@ -204,7 +204,7 @@ class NmeaParser
 		}
 	}
 
-	ErrorCode Parse(u8 c)
+	ErrorCode Parse(u8 c) //Главная функция разбора пакетов NMEA
 	{
 		result = ErrorCode::Ok;
 		if (c < 0x20 || c >= 0x7F)
@@ -301,7 +301,7 @@ class NmeaParser
 		float gpsUtcOffset; //Смещение времени GPS UTC секунд
 		s16 gpsWeekNumber; //Расширенный номер текущей GPS недели
 		float gpsTimeOfWeek; //Секунд в текущей GPS неделе
-		const u8 size = 4 + 2 + 4;
+		const u8 size = 4 + 2 + 4; //Количество байт полей выше
 
 		SGpsTime()
 		{
@@ -313,16 +313,16 @@ class NmeaParser
 
 		s32 second; //Секунд в текущем дне
 		u8 centiSecond; //Сотых секунд
-		u8 day;
-		u8 month;
-		u8 year;
-		u8 dayOfWeek;
+		u8 day; //Число
+		u8 month; //Месяц
+		u8 year; //Год
+		u8 dayOfWeek; //День недели
 		const u32 secInDay = u32(24) * 60 * 60; //Секунд в сутках
 
 		void DateTimeCalc() //Вычисление времени недели и номера недели GPS
 		{
-			u16 m = month;
-			u16 y = year;
+			u16 m = month; //Месяц
+			u16 y = year; //Год
 			if (m > 2) { m -= 3; }
 			else { m += 12 - 3; --y; }
 			//https://ru.stackoverflow.com/a/455866
@@ -338,7 +338,7 @@ class NmeaParser
 			}
 		}
 
-		void DateTimeAdd(u8 sec)
+		void DateTimeAdd(u8 sec) //Прибавление секунд к времени GPS / секунд
 		{
 			if (sec == 0) return;
 			gpsTimeOfWeek += sec;
@@ -349,7 +349,7 @@ class NmeaParser
 			}
 		}
 
-		void TimeOfFixCalc(float &timeOfFix) const
+		void TimeOfFixCalc(float &timeOfFix) const //Вычисление GPS времени момента измерения / вычисленное GPS время 
 		{
 			timeOfFix = dayOfWeek*secInDay + second + float(centiSecond) / 100 + gpsUtcOffset;
 			if (timeOfFix >= 7 * secInDay)
@@ -358,7 +358,7 @@ class NmeaParser
 			}
 		}
 
-		ErrorCode GetTime(u8 iCharCmd, u8 c, UpdateFlag &flag) //hhmmss.ss
+		ErrorCode GetTime(u8 iCharCmd, u8 c, UpdateFlag &flag) //hhmmss.ss // Перевод ASCII времени в секунды / код ошибки / номер символа в команде / символ команды / флаг обновления данных
 		{
 			if(!(isDigit(c) || (iCharCmd == 6 && c == '.')))
 			{
@@ -393,7 +393,7 @@ class NmeaParser
 			return ErrorCode::Ok;
 		}
 
-		ErrorCode GetDate(u8 iCharCmd, u8 c, UpdateFlag &flag) //ddmmyy
+		ErrorCode GetDate(u8 iCharCmd, u8 c, UpdateFlag &flag) //ddmmyy // Перевод ASCII даты в год, месяц и число / код ошибки / номер символа в команде / символ команды / флаг обновления данных
 		{
 			if (!isDigit(c))
 			{
@@ -430,16 +430,16 @@ class NmeaParser
 			return ErrorCode::Ok;
 		}
 
-	} gpsTime;
+	} gpsTime; //GPS время
 
 	struct SLlaPosition //0x4A - LLA Position
 	{
-		float timeOfFixSec;
-		float clockBiasMeters;
-		float haeAltitudeMeters;
-		float longitudeRadians;
-		float latitudeRadians;
-		const u8 size = 4 * 5;
+		float timeOfFixSec; //GPS время момента измерения
+		float clockBiasMeters; //Clock Bias
+		float haeAltitudeMeters; //Высота над эллипсойдом
+		float longitudeRadians; //Долгота
+		float latitudeRadians; //Широта
+		const u8 size = 4 * 5; //Количество байт полей выше
 
 		SLlaPosition()
 		{
@@ -459,11 +459,11 @@ class NmeaParser
 		float mslAltitudeMeters;
 		float mslAboveHae;
 
-		float RDCalc(const u16 divisor) const { return float(M_PI / 180 / 60 / divisor); }
-		const float RadiansDivisor[5] = { RDCalc(1),RDCalc(10),RDCalc(100),RDCalc(1000),RDCalc(10000) };
-		const u8 MaxDivisor = 4;
+		float RDCalc(const u16 divisor) const { return float(M_PI / 180 / 60 / divisor); } //Вычисление делителя для радиан / делитель / десятичный делитель
+		const float RadiansDivisor[5] = { RDCalc(1),RDCalc(10),RDCalc(100),RDCalc(1000),RDCalc(10000) }; //Массив делителей для радиан
+		const u8 MaxDivisor = 4; //Максимальный индекс делителя
 		
-		void PositionCalc()
+		void PositionCalc() //Перевод минут в радианы и вычисление высоты над уровнем моря
 		{
 			latitudeRadians = latitudeMinutes * RadiansDivisor[latitudeDivisor];
 			longitudeRadians = longitudeMinutes * RadiansDivisor[longitudeDivisor];
@@ -471,7 +471,7 @@ class NmeaParser
 			clockBiasMeters += clockBiasRateConst;
 		}
 
-		ErrorCode GetLatitude(u8 iCharCmd, u8 c, UpdateFlag &flag) //llmm.mmm
+		ErrorCode GetLatitude(u8 iCharCmd, u8 c, UpdateFlag &flag) //llmm.mmm // Перевод ASCII широты в минуты / код ошибки / номер символа в команде / символ команды / флаг обновления данных
 		{
 			if (!(isDigit(c) || (iCharCmd == 4 && c == '.')))
 			{
@@ -507,7 +507,7 @@ class NmeaParser
 			return ErrorCode::Ok;
 		}
 
-		ErrorCode GetLongitude(u8 iCharCmd, u8 c, UpdateFlag &flag) //yyymm.mmm
+		ErrorCode GetLongitude(u8 iCharCmd, u8 c, UpdateFlag &flag) //yyymm.mmm // Перевод ASCII долготы в минуты / код ошибки / номер символа в команде / символ команды / флаг обновления данных
 		{
 			if (!(isDigit(c) || (iCharCmd == 5 && c == '.')))
 			{
@@ -544,16 +544,16 @@ class NmeaParser
 			return ErrorCode::Ok;
 		}
 
-	} llaPosition;
+	} llaPosition; //Позиция
 
 	struct SEnuVelocity //0x56 - ENU Velocity
 	{
-		float timeOfFixSec;
-		float clockBiasRateMps;
-		float upVelocityMps;
-		float northVelocityMps;
-		float eastVelocityMps;
-		const u8 size = 4 * 5;
+		float timeOfFixSec; //GPS время момента измерения
+		float clockBiasRateMps; //Скорость изменения Clock Bias
+		float upVelocityMps; //Скорость вверх
+		float northVelocityMps; //Скорость на север
+		float eastVelocityMps; //Скорость на восток
+		const u8 size = 4 * 5; //Количество байт полей выше
 
 		SEnuVelocity()
 		{
@@ -564,29 +564,29 @@ class NmeaParser
 			eastVelocityMps = 0;
 		}
 
-		float speedKnots;
-		float courseDegrees;
-		const float knots2m = 0.514f;
+		float speedKnots; //Скорость в узлах
+		float courseDegrees; //Путевой угол в градусах
+		const float knots2m = 0.514f; //Отношение узлов к метрам
 
-		void VelocityCalc()
+		void VelocityCalc() //Перевод полярных скоростей в декартовые с переводом узлов в метры
 		{
-			float fi = courseDegrees * float(M_PI / 180);
-			float speedMps = speedKnots * knots2m;
+			float fi = courseDegrees * float(M_PI / 180); //Путевой угол в радианах
+			float speedMps = speedKnots * knots2m; //Скорость в метрах
 			eastVelocityMps = speedMps * sin(fi);
 			northVelocityMps = speedMps * cos(fi);
 		}
 
-	} enuVelocity;
+	} enuVelocity; //Скорость
 
 	struct SSatelliteView //0x6D - All-In-View Satellite Selection
 	{
-		float tDop;
-		float vDop;
-		float hDop;
-		float pDop;
-		u8 dimension;
-		const u8 size = 4 * 4 + 1;
-		u8 svPrn[12];
+		float tDop; //Снижение точности по времени
+		float vDop; //Снижение точности в вертикальной плоскости
+		float hDop; //Снижение точности в горизонтальной плоскости
+		float pDop; //Снижение точности по местоположению
+		u8 dimension; //Количество используемых спутников, 2D или 3D и автоматический или ручной режим
+		const u8 size = 4 * 4 + 1; //Количество байт полей выше
+		u8 svPrn[12]; //ID спутников
 
 		SSatelliteView()
 		{
@@ -597,15 +597,15 @@ class NmeaParser
 			pDop = 99.0;
 		}
 
-		u8 numberSv;
+		u8 numberSv; //Количество спутников
 
-		void NumberSvCalc()
+		void NumberSvCalc() //Занесение количества спутников в dimension
 		{
 			dimension &= 0x0F;
 			dimension |= numberSv << 4;
 		}
 
-		ErrorCode GetSvPrn(u8 iCharCmd, u8 c)
+		ErrorCode GetSvPrn(u8 iCharCmd, u8 c) //Перевод ASCII ID спутника в число / код ошибки / номер символа в команде / символ команды
 		{
 			if (!isDigit(c)) return ErrorCode::Error;
 			if (iCharCmd == 0)
@@ -618,14 +618,14 @@ class NmeaParser
 			return ErrorCode::Ok;
 		}
 
-		ErrorCode GetSmode(u8 c)
+		ErrorCode GetSmode(u8 c) //Чтение режима / код ошибки / символ команды
 		{
 			dimension &= 0xF7;
 			if (c == 'M') dimension |= _BV(3);
 			return ErrorCode::Ok;
 		}
 
-		ErrorCode GetFixStatus(u8 c)
+		ErrorCode GetFixStatus(u8 c) //Чтение статуса / код ошибки / символ команды
 		{
 			if (!isDigit(c)) return ErrorCode::Error;
 			dimension &= 0xF8;
@@ -633,13 +633,13 @@ class NmeaParser
 			return ErrorCode::Ok;
 		}
 
-	} satelliteView;
+	} satelliteView; //Информация о спутниках и снижении точности
 
 	struct SHealthReceiver //0x46 - Health of Receiver
 	{
-		u8 errorCode;
-		u8 statusCode;
-		const u8 size = 2;
+		u8 errorCode; //Код аппаратных ошибок
+		u8 statusCode; //Код статуса
+		const u8 size = 2; //Количество байт полей выше
 
 		SHealthReceiver()
 		{
@@ -647,10 +647,10 @@ class NmeaParser
 			statusCode = 1;
 		}
 
-		u8 numberSv;
-		u8 qualityIndicator;
+		u8 numberSv; //Количество спутников
+		u8 qualityIndicator; //Индикатор качества
 
-		void HealthCalc()
+		void HealthCalc() //Вычисление кода статуса
 		{
 			if(qualityIndicator == 0)
 			{
@@ -666,14 +666,14 @@ class NmeaParser
 			}
 		}
 
-		ErrorCode GetQualityIndicator(u8 c)
+		ErrorCode GetQualityIndicator(u8 c) //Чтение индикатора качества / код ошибки / символ команды
 		{
 			if (!isDigit(c)) return ErrorCode::Error;
 			qualityIndicator = Dec2Int(c);
 			return ErrorCode::Ok;
 		}
 
-		ErrorCode GetNumberSv(u8 iCharCmd, u8 c)
+		ErrorCode GetNumberSv(u8 iCharCmd, u8 c) //Чтение количества спутников / код ошибки / номер символа в команде / символ команды
 		{
 			if (!isDigit(c)) return ErrorCode::Error;
 			if (iCharCmd == 0) numberSv = 0;
@@ -682,32 +682,32 @@ class NmeaParser
 			return ErrorCode::Ok;
 		}
 
-	} healthReceiver;
+	} healthReceiver; //Здоровье приемника
 
 	#pragma pack(pop)
 	
 	//_TsipSend
 	#pragma region _TsipSend
 	
-	void TsipPushDle(u8 c) const
+	void TsipPushDle(u8 c) const //Отправка заголовка пакета TSIP
 	{
 		tsipPushRaw(DLE);
 		tsipPushRaw(c);
 	}
-	void TsipPush(u8 c) const
+	void TsipPush(u8 c) const //Отправка данных пакета TSIP
 	{
 		if (c == DLE) tsipPushRaw(DLE);
 		tsipPushRaw(c);
 	}
-	void TsipPushDleEtx() const
+	void TsipPushDleEtx() const //Отправка хвоста пакета TSIP
 	{
 		tsipPushRaw(DLE);
 		tsipPushRaw(ETX);
 	}
 
-	void TsipPayload(void *sptr, u8 size) const
+	void TsipPayload(void *sptr, u8 size) const //Отправка структуры с данными пакета TSIP / указатель на структуру / количество отправляемых байт
 	{
-		u8 *ptr = static_cast<u8*>(sptr);
+		u8 *ptr = static_cast<u8*>(sptr); //указатель на структуру
 		ptr += size;
 		while(size--)
 		{
@@ -716,7 +716,7 @@ class NmeaParser
 		}
 	}
 
-	void PositionAndVelocitySend()
+	void PositionAndVelocitySend() //Отправка положения и скорости
 	{
 		TsipPushDle(0x4A); //0x4A Позиция
 		TsipPayload(&llaPosition, llaPosition.size);
@@ -727,14 +727,14 @@ class NmeaParser
 		TsipPushDleEtx();
 	}
 
-	void GpsTimeSend()
+	void GpsTimeSend() //Отправка GPS времени
 	{
 		TsipPushDle(0x41); //0x41 GPS Время
 		TsipPayload(&gpsTime, gpsTime.size);
 		TsipPushDleEtx();
 	}
 
-	void HealthSend()
+	void HealthSend() //Отправка здоровья приемника и дополнительного статуса
 	{
 		TsipPushDle(0x46); //0x46 Здоровье приемника
 		TsipPayload(&healthReceiver, healthReceiver.size);
@@ -747,7 +747,7 @@ class NmeaParser
 		TsipPushDleEtx();
 	}
 
-	void SatelliteViewSend()
+	void SatelliteViewSend() //Отправка снижения точности, ID спутников и режима фиксации
 	{
 		TsipPushDle(0x6D); //0x6D Точность и PRN
 		TsipPayload(&satelliteView, satelliteView.size);

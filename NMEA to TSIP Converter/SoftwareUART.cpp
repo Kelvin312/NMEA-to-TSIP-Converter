@@ -5,46 +5,46 @@
 class SoftUart
 {
 	private:
-	volatile u8 &rxPort;
-	volatile u8 &txPort;
-	const u8 rxPin, txPin;
-	const ParityAndStop mode;
+	volatile u8 &rxPort; //Программный RX порт контроллера
+	volatile u8 &txPort; //Программный TX порт контроллера
+	const u8 rxPin, txPin; //Номера RX и TX пинов 
+	const ParityAndStop mode; //Бит четности и стоп бит
 	
-	inline u8 GetRxPin(){ return rxPort & rxPin; }
-	inline void SetTxPinHigh(){ txPort |= txPin; }
-	inline void SetTxPinLow(){ txPort &= ~txPin; }
+	inline u8 GetRxPin(){ return rxPort & rxPin; } //Чтение состояния RX
+	inline void SetTxPinHigh(){ txPort |= txPin; } //Установка TX в 1 
+	inline void SetTxPinLow(){ txPort &= ~txPin; } //Установка TX в 0
 	
 	enum
 	{
 		WaitStartBit,
 		ReadData,
 		WaitStopBit
-	} rxFlag;
+	} rxFlag; //Флаг состояния приемника
 	
-	u8 timerRxCtr, rxFrameCounter;
-	u8 rxFrameBuffer, rxMask, rxParityBit;
+	u8 timerRxCtr, rxFrameCounter; //счетчик делителя частоты / счетчик принятых битов 
+	u8 rxFrameBuffer, rxMask, rxParityBit; //принятые биты / маска текущего бита / бит четности
 	const u8 rxFrameDataBits = (mode == ParityAndStop::None1) ? 8 : 9; //Количество бит данных
 	
-	volatile bool transmitComplete;
-	u8 timerTxCtr;
-	volatile u8 txFrameCounter, txParityBit;
-	volatile u16 txFrameBuffer;
+	volatile bool transmitComplete; //Флаг завершения передачи
+	u8 timerTxCtr; //счетчик делителя частоты
+	volatile u8 txFrameCounter, txParityBit; //Счетчик переданных битов / бит четности
+	volatile u16 txFrameBuffer; //Передаваемые биты
 	const u8 txFrameSize = (mode == ParityAndStop::None1) ? 10 : 11; //Количество бит данных + стоп и старт бит
 	
 	public:
 	SoftUart(volatile u8 &rxPort, u8 rxPin, volatile u8 &txPort, u8 txPin, ParityAndStop mode = ParityAndStop::None1):
-	rxPort(rxPort),
-	rxPin(rxPin),
-	txPort(txPort),
-	txPin(txPin),
-	mode(mode)
+	rxPort(rxPort), //RX порт
+	rxPin(rxPin), //RX пин
+	txPort(txPort), //TX порт
+	txPin(txPin), //TX пин
+	mode(mode) //Бит четности и стоп бит
 	{
 		txFrameCounter = txFrameSize;
 		transmitComplete = true;
 		rxFlag = WaitStartBit;
 	}
 	
-	bool RxProcessing(u8 &data)
+	bool RxProcessing(u8 &data) //Прием байта / флаг принятого байта / принятый байт
 	{
 		switch(rxFlag)
 		{
@@ -93,7 +93,7 @@ class SoftUart
 		return false;
 	}
 
-	void Transmit(u8 data)
+	void Transmit(u8 data) //Передача байта / передаваемый байт
 	{
 		if(transmitComplete)
 		{
@@ -108,7 +108,7 @@ class SoftUart
 		}
 	}
 
-	bool TxProcessing()
+	bool TxProcessing() //Процесс передачи байта / флаг завершения передачи
 	{
 		if(transmitComplete) return true;
 		if(--timerTxCtr == 0)
@@ -134,7 +134,7 @@ class SoftUart
 		return false;
 	}
 	
-	void WaitAndTransmit(u8 data)
+	void WaitAndTransmit(u8 data) //Ожидание возможности передачи байта и передача байта / передаваемый байт
 	{
 		while(!transmitComplete);
 		Transmit(data);
