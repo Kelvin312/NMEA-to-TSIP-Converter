@@ -214,6 +214,7 @@ class NmeaParser
 				result = ErrorCode::Error;
 			}
 			dataType = MsgStart;
+			return result;
 		}
 		switch (dataType)
 		{
@@ -595,6 +596,7 @@ class NmeaParser
 			vDop = 99.0;
 			hDop = 99.0;
 			pDop = 99.0;
+			numberSv = 0;
 		}
 
 		u8 numberSv; //Количество спутников
@@ -645,6 +647,7 @@ class NmeaParser
 		{
 			errorCode = 0;
 			statusCode = 1;
+			qualityIndicator = 0;
 		}
 
 		u8 numberSv; //Количество спутников

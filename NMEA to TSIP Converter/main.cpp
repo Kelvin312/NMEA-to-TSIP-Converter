@@ -10,29 +10,36 @@
 #include "NmeaParser.cpp"
 
 //Настройки
-#define GPS_UART_RX_PIN _BV(4) //Номер программного RX, к которому подключен GPS TX
-#define GPS_UART_TX_PIN _BV(5) //Номер программного TX, к которому подключен GPS RX
-#define PPS_PIN _BV(3)	//Номер пина, к которому подключен PPS
+#define GPS_UART_RX_PIN _BV(4) //Смещение программного RX, к которому подключен GPS TX
+#define GPS_UART_TX_PIN _BV(5) //Смещение программного TX, к которому подключен GPS RX
+#define PPS_PIN _BV(3)	//Смещение пина, к которому подключен PPS
 SoftUart nmeaUart = SoftUart(PIND, GPS_UART_RX_PIN, PORTD, GPS_UART_TX_PIN); //Программный UART
 HardUart tsipUart = HardUart(9600, ParityAndStop::Odd1); //Аппаратный UART
 RingBuffer<128> nmeaBuffer = RingBuffer<128>(); //Кольцевой буфер пакетов NMEA
 
-inline void TsipPushRaw(u8 data) //Отправка байта TSIP / отправляемый байт
+//См. описание WaitAndTransmit
+inline void TsipPushRaw(u8 data)
 {
 	tsipUart.WaitAndTransmit(data);
 }
 NmeaParser parser = NmeaParser(&TsipPushRaw); //Преобразователь пакетов NMEA в TSIP
 
-#if PPS_PIN == _BV(3) //Выбор флага прерывания в зависимости от номера пина
+//Выбор флага прерывания в зависимости от смещения пина PPS
+#if PPS_PIN == _BV(3) 
 #define PPS_FLAG _BV(INTF1)
 #else
 #define PPS_FLAG _BV(INTF0)
 #endif
 
-volatile u8 ppsTime5ms, ppsTime1s, timer5ms; //Время, в 5мс интервалах, от фронта PPS / номер текущего PPS / время, в 5мс интервалах, от предыдущей отправки пакетов TSIP
-u8 timerTick; //Счетчик прерываний таймера для формирования 5мс интервалов
+//ppsTime5ms: Время, в 5мс интервалах, от фронта PPS
+//ppsTime1s: Номер текущего PPS
+//timer5ms: Время, в 5мс интервалах, от предыдущей отправки пакетов TSIP
+//timerTick: Счетчик прерываний таймера для формирования 5мс интервалов
+volatile u8 ppsTime5ms, ppsTime1s, timer5ms;
+u8 timerTick; 
 
-ISR(TIMER1_CAPT_vect) //9600*3 //Прерывание таймера с частотой 9600*3 Гц
+//Прерывание таймера с частотой 9600*3 Гц
+ISR(TIMER1_CAPT_vect) 
 {	
 	u8 data; //Принятый байт
 	if(nmeaUart.RxProcessing(data))
@@ -40,15 +47,14 @@ ISR(TIMER1_CAPT_vect) //9600*3 //Прерывание таймера с частотой 9600*3 Гц
 		nmeaBuffer.Push(data);
 	}
 
-	if(--timerTick == 0) //5.004ms
+	if(--timerTick == 0)
 	{
 		timerTick = 144;
 		++ppsTime5ms;
-		++timer5ms;
-		 //995.796ms
+		if(++timer5ms == 0) timer5ms = 255;
 	}
 
-	if(EIFR & PPS_FLAG) //PPS detect //Проверка флага аппаратного прерывания по PPS
+	if(EIFR & PPS_FLAG) //Проверка флага аппаратного прерывания по PPS
 	{
 		LED_PORT ^= LED_PIN;
 		ppsTime5ms = 0;
@@ -57,17 +63,21 @@ ISR(TIMER1_CAPT_vect) //9600*3 //Прерывание таймера с частотой 9600*3 Гц
 	}
 }
 
-u8 ppsTimeOfDtFix, time5s; //Номер PPS, когда был принят пакет с датой и временем / количество секунд, прошедшее с последней отправки пакета с GPS временем
-bool isDtFixOld; //Флаг для однократной установки ppsTimeOfDtFix в процессе приема и обработки пакета с датой и временем
+//ppsTimeOfDtFix: Номер PPS, когда был принят пакет с датой и временем
+//time5s: Количество секунд, прошедшее с последней отправки пакета с GPS временем
+//isDtFixOld: Флаг, для однократной установки ppsTimeOfDtFix в процессе приема и обработки пакета с датой и временем
+u8 ppsTimeOfDtFix, time5s;
+bool isDtFixOld; 
 
-void MainLoop() //Основной рабочий цикл
+//Функция основного рабочего цикла
+void MainLoop()
 {
-	if(nmeaBuffer.Size())
+	if(!nmeaBuffer.Empty())
 	{
 		wdt_reset();
 		parser.Parse(nmeaBuffer.Pop());
 		
-		bool isDtFix = (parser.updateFlag & parser.UpdateDateTime) == parser.UpdateDateTime; //Флаг флага parser.UpdateDateTime
+		bool isDtFix = (parser.updateFlag & parser.UpdateDateTime) == parser.UpdateDateTime; //Флаг наличия флага parser.UpdateDateTime
 		if(isDtFix && !isDtFixOld)
 		{
 			ppsTimeOfDtFix = ppsTime1s;
@@ -75,8 +85,8 @@ void MainLoop() //Основной рабочий цикл
 		isDtFixOld = isDtFix;
 	}
 	
-	//Если прошло > 990мс с последней посылки && < 200мс с начала PPS && мы не в середине разбора пакета
-	if(timer5ms > 990/5 && ppsTime5ms < 200/5 && parser.dataType != parser.MsgData)
+	//Если прошло > 990мс с последней посылки && < 100мс с начала PPS && мы не в середине разбора пакета
+	if(timer5ms > 990/5 && ppsTime5ms < 100/5 && parser.dataType != parser.MsgData)
 	{
 		timer5ms = 0;
 		wdt_reset();
@@ -97,10 +107,7 @@ void MainLoop() //Основной рабочий цикл
 
 int main()
 {
-	// Declare your local variables here
-	
 	//Установка делителя частоты кварца в 1
-	// Crystal Oscillator division factor: 1
 	clock_prescale_set(clock_div_1); 
 
 	//Инициализация портов
@@ -121,18 +128,6 @@ int main()
   OCR0B=0x00;
 
 	//Таймер 1 в режиме CTC (обнуление таймера по совпадению)
-  // Timer/Counter 1 initialization
-  // Clock source: System Clock
-  // Clock value: 16000,000 kHz
-  // Mode: CTC top=ICR1
-  // OC1A output: Discon.
-  // OC1B output: Discon.
-  // Noise Canceler: Off
-  // Input Capture on Falling Edge
-  // Timer1 Overflow Interrupt: Off
-  // Input Capture Interrupt: On
-  // Compare A Match Interrupt: Off
-  // Compare B Match Interrupt: Off
   TCCR1A=0x00;
   TCCR1B=0x19;
   TCNT1H=0x00;
@@ -151,16 +146,10 @@ int main()
   OCR2A=0x00;
   OCR2B=0x00;
 
- // External Interrupt(s) initialization
- // INT0 Mode: Rising Edge
- // INT1 Mode: Rising Edge
- // Interrupt on any change on pins PCINT0-7: Off
- // Interrupt on any change on pins PCINT8-14: Off
- // Interrupt on any change on pins PCINT16-23: Off
- EICRA=0x0F; //Прерывания INT0 и INT1 по нарастающему фронту
- EIMSK=0x00; //Запретить вызов обработчика прерывания
- EIFR=0x03; //Обнулить флаги INTF1 INTF0 
- PCICR=0x00;
+	EICRA=0x0F; //Прерывания INT0 и INT1 по нарастающему фронту
+	EIMSK=0x00; //Запретить вызов обработчика прерывания
+	EIFR=0x03; //Обнулить флаги INTF1 INTF0 
+	PCICR=0x00; //Выключить все PCINT
 
   // Timer/Counter 0 Interrupt(s) initialization
   TIMSK0=0x00;
@@ -185,7 +174,7 @@ int main()
 	//Выключить TWI
   TWCR=0x00;
 
-	//Включить сторожевой таймер с интервалом 120мс
+	//Сторожевой таймер с интервалом 120мс
   wdt_enable(WDTO_120MS);
 
 	//Разрешить глобально прервания
@@ -206,7 +195,7 @@ int main()
     MainLoop();
 	wdt_reset();
 	sleep_enable();
-	if(nmeaBuffer.Empty()) sleep_cpu(); //Если буфер NMEA пустой, спать
+	sleep_cpu(); //спать
 	sleep_disable();
   }
   return 0;

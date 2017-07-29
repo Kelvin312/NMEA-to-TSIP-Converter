@@ -1,7 +1,7 @@
 #ifndef STDAFX_H_
 #define STDAFX_H_
 
-#define F_CPU 16000000UL  // 16 MHz //Частота тактирования МК
+#define F_CPU 16000000UL //Частота тактирования МК 16 МГц
 #define LED_PIN _BV(5)  //Пин отладочного светодиода
 #define LED_PORT PORTB //Порт этого светодиода
 
@@ -23,6 +23,7 @@ typedef signed short s16;
 typedef unsigned long u32;
 typedef signed long s32;
 
+//Шаблоны для применения побитовых операций к перечислениям
 template<class T> inline constexpr T operator~ (T a) { return static_cast<T>(~static_cast<int>(a)); }
 template<class T> inline constexpr T operator| (T a, T b) { return static_cast<T>(static_cast<int>(a) | static_cast<int>(b)); }
 template<class T> inline constexpr T operator& (T a, T b) { return static_cast<T>(static_cast<int>(a) & static_cast<int>(b)); }
@@ -31,40 +32,37 @@ template<class T> inline T& operator|= (T& a, T b) { return reinterpret_cast<T&>
 template<class T> inline T& operator&= (T& a, T b) { return reinterpret_cast<T&>(reinterpret_cast<int&>(a) &= static_cast<int>(b)); }
 template<class T> inline T& operator^= (T& a, T b) { return reinterpret_cast<T&>(reinterpret_cast<int&>(a) ^= static_cast<int>(b)); }
 
-inline bool isDigit(u8 c) //Цифра ли это / ответ / символ
-{
-	return c >= '0' && c <= '9';
-}
+//Функция возвращает true, если символ является цифрой
+//c: проверяемый символ
+inline bool isDigit(u8 c) { return c >= '0' && c <= '9'; }
 
-inline u8 Dec2Int(u8 c) //Преобразование символа в цифру / цифра / символ
-{
-	return c - '0';
-}
+//Функция возвращает цифру, соответствующую десятичному символу
+//c: символ
+inline u8 Dec2Int(u8 c) { return c - '0'; }
 
-//Шаблонная магия для задания типа по булеву флагу
-// TEMPLATE CLASS conditional
-template<bool _Test,
-class _Ty1,
-class _Ty2>
+//Шаблон, задающий тип type в зависимости от _Test
+//Если _Test == false, то type будет типа _Ty2
+template<bool _Test, class _Ty1, class _Ty2>
 struct conditional
-{	// type is _Ty2 for assumed !_Test
+{	
 	typedef _Ty2 type;
 };
-
-template<class _Ty1,
-class _Ty2>
+//Если _Test == true, то type будет типа _Ty1
+template<class _Ty1, class _Ty2>
 struct conditional<true, _Ty1, _Ty2>
-{	// type is _Ty1 for _Test
+{	
 	typedef _Ty1 type;
 };
 
 //Кольцевой буфер
-template<u16 S> struct RingBuffer //Размер буфера в байтах
+//S: желаемый размер буфера
+template<u16 S> struct RingBuffer
 {
 	private:
+	//Тип индексов
 	typedef typename conditional<(S>128), u16, u8 >::type T;
-	static const u16 S0 = S-1, S1 = S0 | S0 >> 1, S2 = S1 | S1 >> 2, S4 = S2 | S2 >> 4, S8 = S4 | S4 >> 8; //Число степени двойки, что-бы поместился буфер
-
+	//Округление размера буфера вверх к ближайшему 2^x
+	static const u16 S0 = S-1, S1 = S0 | S0 >> 1, S2 = S1 | S1 >> 2, S4 = S2 | S2 >> 4, S8 = S4 | S4 >> 8;
 	static const T bufferSize = S8 + 1; //Размер буфера
 	volatile T writeIndex = 0, readIndex = 0; //Индексы записи и чтения
 	volatile u8 buffer[bufferSize]; //Сам буфер
@@ -72,7 +70,9 @@ template<u16 S> struct RingBuffer //Размер буфера в байтах
 	public:
 	volatile bool isOverflow = false; //Фалг переполнения буфера
 
-	void Push(u8 data) //Вставить в буфер / байт
+	//Функция добавляет байт в конец буфера
+	//data: добавляемый байт
+	void Push(u8 data)
 	{
 		if (Size() == bufferSize) //Переполнение
 		{
@@ -81,36 +81,42 @@ template<u16 S> struct RingBuffer //Размер буфера в байтах
 		}
 		buffer[writeIndex++ & (bufferSize - 1)] = data;
 	}
-	u8 Pop() //Взять из буфера байт и удалить его / байт
+	//Функция возвращает байт из начала буфера и удаляет его из буфера
+	u8 Pop()
 	{
 		if (Empty()) return 0; //Буфер пустой
 		return buffer[readIndex++  & (bufferSize - 1)];
 	}
-	u8 Front() const //Взять из начала буфера байт / байт
+	//Функция возвращает байт из начала буфера
+	u8 Front() const 
 	{
 		if (Empty()) return 0;
 		return buffer[readIndex & (bufferSize - 1)];
 	}
-	u8 Back() const //Взять из конца буфера байт / байт
+	//Функция возвращает байт из конца буфера
+	u8 Back() const 
 	{
 		if (Empty()) return 0;
 		return buffer[writeIndex - 1 & (bufferSize - 1)];
 	}
-	void Clear() //Очистить буфер
+	//Функция очищает буфер
+	void Clear()
 	{
 		readIndex = writeIndex = 0;
 	}
-	T Size() const //Занятый размер буфера / размер буфера
+	//Функция возвращает занятый размер буфера
+	T Size() const
 	{
 		return writeIndex - readIndex;
 	}
-	bool Empty() const //Пустой ли буфер / флаг пустого буфера
+	//Функция возвращает true, если буфер пустой
+	bool Empty() const
 	{
 		return writeIndex == readIndex;
 	}
 };
 
-
+//Перечисление режимов работы UART (бита четности и количества стоп битов)
 enum class ParityAndStop:u8
 {
 	None1 =  0,

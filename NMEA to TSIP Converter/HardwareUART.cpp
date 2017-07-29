@@ -11,7 +11,10 @@
 class HardUart
 {
 	public:
-	HardUart(u32 baudRate = 9600, ParityAndStop mode = ParityAndStop::None1) //Скорость, бод / бит четности и стоп бит
+	//Конструктор
+	//baudRate: скорость UART, бод
+	//mode: режим работы UART
+	HardUart(u32 baudRate = 9600, ParityAndStop mode = ParityAndStop::None1)
 	{
 		UCSR0A=0x00;
 		UCSR0B=0x18;
@@ -19,25 +22,33 @@ class HardUart
 		UBRR0 = F_CPU / (baudRate * 16UL) - 1;
 	}
 
-	bool RxProcessing(u8 &data) //Прием байта / флаг принятого байта / принятый байт
+	//Финкция принимает байт по UART
+	//возвращает true, если байт успешно принят
+	//data: принятый байт
+	bool RxProcessing(u8 &data)
 	{
-		char status; //Статут UART
+		char status; //Статус UART
 		if (((status=UCSR0A) & RX_COMPLETE) == 0) return false;
 		data = UDR0;
 		return (status & (FRAMING_ERROR | PARITY_ERROR | DATA_OVERRUN)) == 0;
 	}
 	
-	bool TxProcessing() //Определение возможности передать байт / флаг возможности передать байт
+	//Функция возвращает true, если UART готов к передаче
+	bool TxProcessing()
 	{
 		return (UCSR0A & DATA_REGISTER_EMPTY) != 0;
 	}
 	
-	void Transmit(u8 data) //Передача байта / передаваемый байт
+	//Функция передает байт по UART
+	//data: передаваемый байт
+	void Transmit(u8 data)
 	{
 		UDR0 = data;
 	}
 	
-	void WaitAndTransmit(u8 data) //Ожидание возможности передачи байта и передача байта / передаваемый байт
+	//Функция ждет готовности UART к передаче, а затем передает байт
+	//data: передаваемый байт
+	void WaitAndTransmit(u8 data)
 	{
 		while((UCSR0A & DATA_REGISTER_EMPTY)==0);
 		UDR0 = data;
