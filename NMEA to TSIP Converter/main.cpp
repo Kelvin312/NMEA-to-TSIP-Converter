@@ -16,11 +16,12 @@
 SoftUart nmeaUart = SoftUart(PIND, GPS_UART_RX_PIN, PORTD, GPS_UART_TX_PIN); //Программный UART
 HardUart tsipUart = HardUart(9600, ParityAndStop::Odd1); //Аппаратный UART
 RingBuffer<128> nmeaBuffer = RingBuffer<128>(); //Кольцевой буфер пакетов NMEA
+RingBuffer<64> tsipBuffer = RingBuffer<64>(); //Кольцевой буфер пакетов TSIP
 
 //См. описание WaitAndTransmit
 inline void TsipPushRaw(u8 data)
 {
-	tsipUart.WaitAndTransmit(data);
+	tsipBuffer.Push(data);
 }
 NmeaParser parser = NmeaParser(&TsipPushRaw); //Преобразователь пакетов NMEA в TSIP
 
@@ -30,6 +31,111 @@ NmeaParser parser = NmeaParser(&TsipPushRaw); //Преобразователь пакетов NMEA в T
 #else
 #define PPS_FLAG _BV(INTF0)
 #endif
+
+
+
+volatile u16 parseTime;
+static u8 EEMEM eepromResetCount[4];
+struct SDebugInfo
+{
+	u8 powerOnResetCount;
+	u8 externalResetCount;
+	u8 brownOutResetCount;
+	u8 watchdogResetCount;
+
+	u8 parseErrorCount;
+	u8 checkSumErrorCount;
+	u16 lastErrorMsgId;
+
+	u16 maxParseTime;
+	u8 BufferOverflowCount;
+	u8 resetFlags;
+	u16 nDebugMessage;
+
+	const u8 size = 4+4+3*2;
+	SDebugInfo()
+	{
+		parseErrorCount=0;
+		checkSumErrorCount=0;
+		lastErrorMsgId=0;
+		maxParseTime=0;
+		BufferOverflowCount=0;
+		nDebugMessage=0;
+	}
+
+	void ResetSourceCalc()
+	{
+		resetFlags = MCUSR;
+		MCUSR = 0;
+
+		if(resetFlags & _BV(PORF))
+		{
+			powerOnResetCount++;
+		}
+		if(resetFlags & _BV(EXTRF))
+		{
+			externalResetCount++;
+		}
+		if(resetFlags & _BV(BORF))
+		{
+			brownOutResetCount++;
+		}
+		if(resetFlags & _BV(WDRF))
+		{
+			watchdogResetCount++;
+		}
+	}
+
+	void CheckBufferOverflow()
+	{
+		if(nmeaBuffer.isOverflow)
+		{
+			BufferOverflowCount += 0x01;
+			nmeaBuffer.isOverflow = false;
+		}
+		if(tsipBuffer.isOverflow)
+		{
+			BufferOverflowCount += 0x10;
+			tsipBuffer.isOverflow = false;
+		}
+	}
+
+	void CheckParse(ErrorCode returnCode)
+	{
+		if(returnCode == ErrorCode::Error)
+		{
+			parseErrorCount++;
+			lastErrorMsgId = parser.msgId;
+		}
+		if(returnCode == ErrorCode::CheckSumError)
+		{
+			checkSumErrorCount++;
+			lastErrorMsgId = parser.msgId;
+		}
+	}
+
+	void CalcParseTime(u16 curParseTime)
+	{
+		if(curParseTime > maxParseTime) maxParseTime = curParseTime;
+	}
+} debugInfo;
+
+//Функция отправляет диагностическую информацию
+void DebugSend()
+{
+	debugInfo.CheckBufferOverflow();
+	TsipPushRaw(0xAA);
+	TsipPushRaw(0xB1);
+	for(u8 *ptr = reinterpret_cast<u8*>(&debugInfo); ptr < ptr+debugInfo.size; ++ptr)
+	{
+		TsipPushRaw(*ptr);
+	}
+	TsipPushRaw(0xAA);
+	TsipPushRaw(0xB0);
+	debugInfo.maxParseTime = 0;
+}
+
+
 
 //ppsTime5ms: Время, в 5мс интервалах, от фронта PPS
 //ppsTime1s: Номер текущего PPS
@@ -46,6 +152,10 @@ ISR(TIMER1_CAPT_vect)
 	{
 		nmeaBuffer.Push(data);
 	}
+	if(tsipUart.TxProcessing() && !tsipBuffer.Empty())
+	{
+		tsipUart.Transmit(tsipBuffer.Pop());
+	}
 
 	if(--timerTick == 0)
 	{
@@ -61,21 +171,25 @@ ISR(TIMER1_CAPT_vect)
 		++ppsTime1s;
 		EIFR |= PPS_FLAG;
 	}
+
+	++parseTime;
 }
 
 //ppsTimeOfDtFix: Номер PPS, когда был принят пакет с датой и временем
 //time5s: Количество секунд, прошедшее с последней отправки пакета с GPS временем
+//nPacketSend: Номер отправляемого пакета TSIP
 //isDtFixOld: Флаг, для однократной установки ppsTimeOfDtFix в процессе приема и обработки пакета с датой и временем
-u8 ppsTimeOfDtFix, time5s;
-bool isDtFixOld; 
+u8 ppsTimeOfDtFix, time5s, nPacketSend;
+bool isDtFixOld;
 
 //Функция основного рабочего цикла
 void MainLoop()
 {
 	if(!nmeaBuffer.Empty())
 	{
-		wdt_reset();
-		parser.Parse(nmeaBuffer.Pop());
+		parseTime = 0;
+		debugInfo.CheckParse(parser.Parse(nmeaBuffer.Pop()));
+		debugInfo.CalcParseTime(parseTime);
 		
 		bool isDtFix = (parser.updateFlag & parser.UpdateDateTime) == parser.UpdateDateTime; //Флаг наличия флага parser.UpdateDateTime
 		if(isDtFix && !isDtFixOld)
@@ -89,18 +203,29 @@ void MainLoop()
 	if(timer5ms > 990/5 && ppsTime5ms < 100/5 && parser.dataType != parser.MsgData)
 	{
 		timer5ms = 0;
-		wdt_reset();
-		parser.PositionAndVelocitySend();
-		if(++time5s >= 5)
+		++time5s;
+		nPacketSend = 1;
+	}
+	if(nPacketSend > 0 && tsipBuffer.Size() < 64-(4*4*2+1+12+4))
+	{
+		switch(nPacketSend)
 		{
-			time5s = 0;
-			wdt_reset();
-			parser.gpsTime.DateTimeAdd(ppsTime1s - ppsTimeOfDtFix);
-			parser.GpsTimeSend();
-			parser.HealthSend();
+			case 1: parser.PositionSend(); break;
+			case 2: parser.VelocitySend(); break;
+			case 3: if(time5s < 5) break;
+				parser.gpsTime.DateTimeAdd(ppsTime1s - ppsTimeOfDtFix);
+				parser.GpsTimeSend();
+			break;
+			case 4: if(time5s < 5) break;
+				time5s = 0;
+				parser.HealthSend();
+			break;
+			case 5: parser.SatelliteViewSend(); break;
+			case 6: parser.FixModeSend(); break;
+			case 7: if(time5s == 1) DebugSend(); break;
+			default: nPacketSend = 0; break;
 		}
-		wdt_reset();
-		parser.SatelliteViewSend();
+		++nPacketSend;
 	}
 }
 
@@ -177,6 +302,13 @@ int main()
 	//Сторожевой таймер с интервалом 120мс
   wdt_enable(WDTO_120MS);
 
+	//Прочитать из EEPROM счетчики источников сброса, добавить текущий сброс и записать обратно
+  eeprom_read_block(&debugInfo, eepromResetCount, 4);
+  wdt_reset();
+  debugInfo.ResetSourceCalc();
+  eeprom_write_block(&debugInfo, eepromResetCount, 4);
+  wdt_reset();
+
 	//Разрешить глобально прервания
   sei();
 
@@ -195,7 +327,7 @@ int main()
     MainLoop();
 	wdt_reset();
 	sleep_enable();
-	sleep_cpu(); //спать
+	sleep_cpu(); //Спать
 	sleep_disable();
   }
   return 0;

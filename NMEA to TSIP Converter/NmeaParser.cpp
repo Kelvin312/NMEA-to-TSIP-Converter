@@ -469,7 +469,7 @@ class NmeaParser
 			latitudeRadians = latitudeMinutes * RadiansDivisor[latitudeDivisor];
 			longitudeRadians = longitudeMinutes * RadiansDivisor[longitudeDivisor];
 			haeAltitudeMeters = mslAltitudeMeters + mslAboveHae;
-			clockBiasMeters += clockBiasRateConst;
+			//clockBiasMeters += clockBiasRateConst;
 		}
 
 		ErrorCode GetLatitude(u8 iCharCmd, u8 c, UpdateFlag &flag) //llmm.mmm // Перевод ASCII широты в минуты / код ошибки / номер символа в команде / символ команды / флаг обновления данных
@@ -719,24 +719,24 @@ class NmeaParser
 		}
 	}
 
-	void PositionAndVelocitySend() //Отправка положения и скорости
+	void PositionSend() //Отправка положения
 	{
 		TsipPushDle(0x4A); //0x4A Позиция
 		TsipPayload(&llaPosition, llaPosition.size);
 		TsipPushDleEtx();
-
+	}
+	void VelocitySend()
+	{
 		TsipPushDle(0x56); //0x56 Скорость
 		TsipPayload(&enuVelocity, enuVelocity.size);
 		TsipPushDleEtx();
 	}
-
 	void GpsTimeSend() //Отправка GPS времени
 	{
 		TsipPushDle(0x41); //0x41 GPS Время
 		TsipPayload(&gpsTime, gpsTime.size);
 		TsipPushDleEtx();
 	}
-
 	void HealthSend() //Отправка здоровья приемника и дополнительного статуса
 	{
 		TsipPushDle(0x46); //0x46 Здоровье приемника
@@ -754,12 +754,15 @@ class NmeaParser
 	{
 		TsipPushDle(0x6D); //0x6D Точность и PRN
 		TsipPayload(&satelliteView, satelliteView.size);
-		for (u8 i = 0; i < satelliteView.numberSv; i++)
+		u8 nsv = satelliteView.dimension>>4;
+		for (u8 i = 0; i < nsv; i++)
 		{
 			TsipPush(satelliteView.svPrn[i]); //PRN спутников
 		}
 		TsipPushDleEtx();
-
+	}
+	void FixModeSend()
+	{
 		TsipPushDle(0x82); //0x82 Режим фиксации положения
 		TsipPush((healthReceiver.qualityIndicator == 2) ? 3 : 2); //DGPS/GPS
 		TsipPushDleEtx();
