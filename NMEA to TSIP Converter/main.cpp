@@ -10,9 +10,9 @@
 #include "NmeaParser.cpp"
 
 //Настройки
-#define GPS_UART_RX_PIN _BV(4) //Смещение программного RX, к которому подключен GPS TX
-#define GPS_UART_TX_PIN _BV(5) //Смещение программного TX, к которому подключен GPS RX
-#define PPS_PIN _BV(3)	//Смещение пина, к которому подключен PPS
+#define GPS_UART_RX_PIN _BV(3) //Смещение программного RX, к которому подключен GPS TX
+#define GPS_UART_TX_PIN _BV(4) //Смещение программного TX, к которому подключен GPS RX
+#define PPS_PIN _BV(2)	//Смещение пина, к которому подключен PPS
 SoftUart nmeaUart = SoftUart(PIND, GPS_UART_RX_PIN, PORTD, GPS_UART_TX_PIN); //Программный UART
 HardUart tsipUart = HardUart(9600, ParityAndStop::Odd1); //Аппаратный UART
 RingBuffer<128> nmeaBuffer = RingBuffer<128>(); //Кольцевой буфер пакетов NMEA
