@@ -126,13 +126,16 @@ void DebugSend()
 	debugInfo.CheckBufferOverflow();
 	TsipPushRaw(0xAA);
 	TsipPushRaw(0xB1);
-	for(u8 *ptr = reinterpret_cast<u8*>(&debugInfo); ptr < ptr+debugInfo.size; ++ptr)
+	u8 *ptr = reinterpret_cast<u8*>(&debugInfo);
+	u8 *ptrend = ptr + debugInfo.size;
+	for(; ptr < ptrend; ++ptr)
 	{
 		TsipPushRaw(*ptr);
 	}
 	TsipPushRaw(0xAA);
 	TsipPushRaw(0xB0);
 	debugInfo.maxParseTime = 0;
+	debugInfo.nDebugMessage++;
 }
 
 
