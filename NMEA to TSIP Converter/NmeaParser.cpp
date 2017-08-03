@@ -469,7 +469,8 @@ class NmeaParser
 			latitudeRadians = latitudeMinutes * RadiansDivisor[latitudeDivisor];
 			longitudeRadians = longitudeMinutes * RadiansDivisor[longitudeDivisor];
 			haeAltitudeMeters = mslAltitudeMeters + mslAboveHae;
-			//clockBiasMeters += clockBiasRateConst;
+			clockBiasMeters += clockBiasRateConst;
+			if(clockBiasMeters > -clockBiasConst) clockBiasMeters = clockBiasConst;
 		}
 
 		ErrorCode GetLatitude(u8 iCharCmd, u8 c, UpdateFlag &flag) //llmm.mmm // Перевод ASCII широты в минуты / код ошибки / номер символа в команде / символ команды / флаг обновления данных

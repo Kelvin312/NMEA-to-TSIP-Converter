@@ -226,7 +226,7 @@ void MainLoop()
 			case 5: parser.SatelliteViewSend(); break;
 			case 6: parser.FixModeSend(); break;
 			case 7: if(time5s == 1) DebugSend(); break;
-			default: nPacketSend = 0; break;
+			default: nPacketSend = -1; break;
 		}
 		++nPacketSend;
 	}
