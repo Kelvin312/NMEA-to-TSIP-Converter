@@ -33,13 +33,14 @@ namespace LogReader
                 return false;
             }
         }
+
         public bool Close()
         {
             try 
             {
                 if (_port.IsOpen)
                 {
-                    _port.Close();
+                   _port.Close();
                 }
                 return true;
             }
@@ -48,6 +49,13 @@ namespace LogReader
                 return false;
             }
         }
+
+        public void SetDtr(bool val)
+        {
+            _port.DtrEnable = val;
+        }
+
+
         public string[] PortNames()
         {
             var temp = SerialPort.GetPortNames();

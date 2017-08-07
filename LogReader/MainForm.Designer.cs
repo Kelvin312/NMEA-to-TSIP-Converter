@@ -29,7 +29,6 @@
         private void InitializeComponent()
         {
             this.components = new System.ComponentModel.Container();
-            this.bindingSource1 = new System.Windows.Forms.BindingSource(this.components);
             this.cmbPort = new System.Windows.Forms.ComboBox();
             this.cmbBaudRate = new System.Windows.Forms.ComboBox();
             this.label1 = new System.Windows.Forms.Label();
@@ -50,7 +49,8 @@
             this.label4 = new System.Windows.Forms.Label();
             this.btnSendNMEA = new System.Windows.Forms.Button();
             this.label5 = new System.Windows.Forms.Label();
-            ((System.ComponentModel.ISupportInitialize)(this.bindingSource1)).BeginInit();
+            this.btnReset = new System.Windows.Forms.Button();
+            this.timer100ms = new System.Windows.Forms.Timer(this.components);
             ((System.ComponentModel.ISupportInitialize)(this.splitContainer1)).BeginInit();
             this.splitContainer1.Panel1.SuspendLayout();
             this.splitContainer1.Panel2.SuspendLayout();
@@ -267,11 +267,26 @@
             this.label5.TabIndex = 17;
             this.label5.Text = "$[ID],[Payload]*[CK]<CR><LF>";
             // 
+            // btnReset
+            // 
+            this.btnReset.Location = new System.Drawing.Point(331, 37);
+            this.btnReset.Name = "btnReset";
+            this.btnReset.Size = new System.Drawing.Size(50, 23);
+            this.btnReset.TabIndex = 18;
+            this.btnReset.Text = "Reset";
+            this.btnReset.UseVisualStyleBackColor = true;
+            this.btnReset.Click += new System.EventHandler(this.btnReset_Click);
+            // 
+            // timer100ms
+            // 
+            this.timer100ms.Tick += new System.EventHandler(this.timer100ms_Tick);
+            // 
             // MainForm
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.ClientSize = new System.Drawing.Size(1054, 550);
+            this.Controls.Add(this.btnReset);
             this.Controls.Add(this.label5);
             this.Controls.Add(this.btnSendNMEA);
             this.Controls.Add(this.label4);
@@ -292,7 +307,6 @@
             this.Text = "LogReader";
             this.FormClosing += new System.Windows.Forms.FormClosingEventHandler(this.MainForm_FormClosing);
             this.Load += new System.EventHandler(this.MainForm_Load);
-            ((System.ComponentModel.ISupportInitialize)(this.bindingSource1)).EndInit();
             this.splitContainer1.Panel1.ResumeLayout(false);
             this.splitContainer1.Panel2.ResumeLayout(false);
             this.splitContainer1.Panel2.PerformLayout();
@@ -310,8 +324,6 @@
         }
 
         #endregion
-
-        private System.Windows.Forms.BindingSource bindingSource1;
         private System.Windows.Forms.ComboBox cmbPort;
         private System.Windows.Forms.ComboBox cmbBaudRate;
         private System.Windows.Forms.Label label1;
@@ -332,6 +344,8 @@
         private System.Windows.Forms.TextBox txtAscii;
         private System.Windows.Forms.Button btnSendNMEA;
         private System.Windows.Forms.Label label5;
+        private System.Windows.Forms.Button btnReset;
+        private System.Windows.Forms.Timer timer100ms;
     }
 }
 
