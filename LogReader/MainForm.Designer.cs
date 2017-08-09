@@ -279,6 +279,7 @@
             // 
             // timer100ms
             // 
+            this.timer100ms.Enabled = true;
             this.timer100ms.Tick += new System.EventHandler(this.timer100ms_Tick);
             // 
             // MainForm

@@ -55,13 +55,17 @@ namespace LogReader
         StringBuilder txtLogBuf = new StringBuilder();
         StringBuilder txtLog2Buf = new StringBuilder();
         StringBuilder txtAsciiBuf = new StringBuilder();
+        
 
         void addLog(byte c)
         {
-            
-            ((uartNumber == 1) ? txtLog2Buf : txtLogBuf).Append(string.Format("{0:X2} ", (int)c));
-            if (c < 0x20) c = 0x2E;
-            txtAsciiBuf.Append(string.Format("{0}", (char)c));
+
+            lock (txtLogBuf)
+            {
+                ((uartNumber == 1) ? txtLog2Buf : txtLogBuf).Append(string.Format("{0:X2} ", (int) c));
+                if (c < 0x20) c = 0x2E;
+                txtAsciiBuf.Append(string.Format("{0}", (char) c));
+            }
         }
 
         private void Port_DataReceived(object sender, System.IO.Ports.SerialDataReceivedEventArgs e)
@@ -76,8 +80,11 @@ namespace LogReader
                 {
                     isNewPacket = false;
                     var dtText = string.Format("\r\n\r\n[{0:HH:mm:ss.ff}]  ", DateTime.Now);
-                    ((uartNumber == 1) ? txtLog2Buf : txtLogBuf).Append(dtText);
-                    txtAsciiBuf.Append(dtText);
+                    lock (txtLogBuf)
+                    {
+                        ((uartNumber == 1) ? txtLog2Buf : txtLogBuf).Append(dtText);
+                        txtAsciiBuf.Append(dtText);
+                    }
                 }
                 oldTime = DateTime.Now;
 
@@ -170,20 +177,23 @@ namespace LogReader
             if (isAReset == 1) port.SetDtr(false);
             if (++isAReset > 10) isAReset = 10;
 
-            if (txtAsciiBuf.Length > 0)
+            lock (txtLogBuf)
             {
-                txtAscii.AppendText(txtAsciiBuf.ToString());
-                txtAsciiBuf.Clear();
-            }
-            if (txtLogBuf.Length > 0)
-            {
-                txtLog.AppendText(txtLogBuf.ToString());
-                txtLogBuf.Clear();
-            }
-            if (txtLog2Buf.Length > 0)
-            {
-                txtLog2.AppendText(txtLog2Buf.ToString());
-                txtLog2Buf.Clear();
+                if (txtAsciiBuf.Length > 0)
+                {
+                    txtAscii.AppendText(txtAsciiBuf.ToString());
+                    txtAsciiBuf.Clear();
+                }
+                if (txtLogBuf.Length > 0)
+                {
+                    txtLog.AppendText(txtLogBuf.ToString());
+                    txtLogBuf.Clear();
+                }
+                if (txtLog2Buf.Length > 0)
+                {
+                    txtLog2.AppendText(txtLog2Buf.ToString());
+                    txtLog2Buf.Clear();
+                }
             }
         }
 
