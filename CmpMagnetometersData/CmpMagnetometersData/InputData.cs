@@ -91,7 +91,8 @@ namespace CmpMagnetometersData
 
         public void UpdateTime(DateTime time)
         {
-            
+            DateTime deltaTime = time;
+            deltaTime.Subtract(StartFileTime);
         }
 
         public void Save(string filePath)
