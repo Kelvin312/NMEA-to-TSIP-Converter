@@ -87,8 +87,8 @@ namespace CmpMagnetometersData
             ptrView.Zoom(newStart, newEnd);
         }
 
-        private bool _mouseDowned = false;
-        private double _xStart = 0, _yStart = 0;
+        private bool _mouseDowned;
+        private double _xStart, _yStart;
 
         private void ChartControl_MouseDown(object sender, MouseEventArgs e)
         {
@@ -123,8 +123,7 @@ namespace CmpMagnetometersData
                 return;
             }
             var ptrChartArea = chartControl.ChartAreas[0];
-            double selX, selY, selX2, selY2;
-            selX = selY = selX2 = selY2 = 0;
+            double selX, selY;
             try
             {
                 selX = ptrChartArea.AxisX.PixelPositionToValue(e.Location.X);
