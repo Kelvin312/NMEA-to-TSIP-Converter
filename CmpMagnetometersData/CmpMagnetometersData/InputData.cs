@@ -28,7 +28,7 @@ namespace CmpMagnetometersData
         public DataPoint GetPixel()
         {
             DataPoint result = new DataPoint();
-            result.SetValueXY(Time, Config.IsMagneticField ? MagneticField : RmsDeviation);
+            result.SetValueXY(Time.ToOADate(), Config.IsMagneticField ? MagneticField : RmsDeviation);
             result.Color = Config.ErrorColor;
             if ((StateCode & 0x80) != 0) result.Color = Config.WarningColor;
             if (StateCode == 0x80) result.Color = Config.NormalColor;
@@ -45,7 +45,7 @@ namespace CmpMagnetometersData
                 var args = txt.Split(new [] { ' ' }, StringSplitOptions.RemoveEmptyEntries);
                 MagneticField = int.Parse(args[0]);
                 RmsDeviation = ushort.Parse(args[2]);
-                StateCode = (byte)uint.Parse(args[3].Trim('[', ']'));
+                StateCode = Convert.ToByte(args[3].Trim('[', ']'), 16);
                 CultureInfo provider = CultureInfo.InvariantCulture;
                 Time = DateTime.ParseExact(args[4] + ' ' + args[5], "MM-dd-yy HH:mm:ss.ff", provider);
         }
@@ -57,13 +57,18 @@ namespace CmpMagnetometersData
         public DateTime StartFileTime;
         public string FileName;
 
+        public IEnumerable<DataPoint> GetPoints()
+        {
+            return dataPoints.Select(point => point.GetPixel());
+        }
+
         public void Read(string filePath)
         {
-            FileName = "";
-            dataPoints.Clear();
-            int pointIndex = 0;
             using (var objReader = new StreamReader(filePath, Encoding.Default))
             {
+                FileName = "";
+                dataPoints.Clear();
+                int pointIndex = 0;
                 foreach (var s in objReader.ReadToEnd().Split(new char[] {'\0'}, 
                     StringSplitOptions.RemoveEmptyEntries))
                 {
@@ -93,6 +98,7 @@ namespace CmpMagnetometersData
         {
             DateTime deltaTime = time;
             deltaTime.Subtract(StartFileTime);
+
         }
 
         public void Save(string filePath)
