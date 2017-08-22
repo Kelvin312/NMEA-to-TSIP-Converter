@@ -36,9 +36,9 @@ namespace CmpMagnetometersData
         public void ScaleViewResize(ChartRect resize)
         {
             ChartRect current = new ChartRect(_ptrChartArea);
-            var temp = current.Substract(resize);
-            bool isXChange = Math.Abs(temp.MaxXTime) + Math.Abs(temp.MinXTime) > 0.1/24/60/60;
-            bool isYZoomChange = Math.Abs(current.GetYSize() - resize.GetYSize()) > 0.1;
+
+            bool isXChange = current.IsXChange(resize);
+            bool isYZoomChange = current.IsYZoomChange(resize);
             if (!isXChange && !isYZoomChange) return;
 
             current.MinXTime = resize.MinXTime;
@@ -46,14 +46,7 @@ namespace CmpMagnetometersData
 
             if (isXChange) _ptrAxisX.ScaleView.Zoom(current.MinXTime, current.MaxXTime);
 
-            if (isYZoomChange)
-            {
-                var yMid = current.GetYMid();
-                var yDelta = resize.GetYSize() / 2;
-
-                current.MaxYVal = yMid + yDelta;
-                current.MinYVal = yMid - yDelta;
-            }
+            if (isYZoomChange) current.YResize(resize.GetYSize());
 
             var isYMove = YScrollCorrect(current);
             if (isYZoomChange || isYMove) _ptrAxisY.ScaleView.Zoom(current.MinYVal, current.MaxYVal);
@@ -67,13 +60,7 @@ namespace CmpMagnetometersData
             var yf = _ptrSeries.Points[bet.FirstOrDefault().Value].YValues.FirstOrDefault();
             var yl = _ptrSeries.Points[bet.LastOrDefault().Value].YValues.FirstOrDefault();
             bool isYMove = rect.MinYVal > Math.Max(yf, yl) || rect.MaxYVal < Math.Min(yf, yl);
-            if (isYMove)
-            {
-                var yMid = rect.GetYMid();
-                var yDelta = rect.GetYSize() / 2;
-                rect.MaxYVal = yMid + yDelta;
-                rect.MinYVal = yMid - yDelta;
-            }
+            if (isYMove) rect.YMove((yf + yl) / 2);
             return isYMove;
         }
 

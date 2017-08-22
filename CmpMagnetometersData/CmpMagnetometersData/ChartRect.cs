@@ -53,14 +53,31 @@ namespace CmpMagnetometersData
             return (MaxYVal + MinYVal)/2;
         }
 
-        public ChartRect Substract(ChartRect rect)
+        public bool IsXChange(ChartRect newRect)
         {
-            ChartRect res = new ChartRect(this);
-            res.MinXTime -= rect.MinXTime;
-            res.MaxXTime -= rect.MaxXTime;
-            res.MinYVal -= rect.MinYVal;
-            res.MaxYVal -= rect.MaxYVal;
-            return res;
+            return Math.Abs(MaxXTime - newRect.MaxXTime) 
+                + Math.Abs(MinXTime - newRect.MinXTime) > 0.1 / 24 / 60 / 60;
+        }
+
+        public bool IsYZoomChange(ChartRect newRect)
+        {
+            return Math.Abs(GetYSize() - newRect.GetYSize()) > 0.1;
+        }
+
+        public void YResize(double newSize)
+        {
+            var yMid = GetYMid();
+            var yDelta = newSize / 2;
+            MaxYVal = yMid + yDelta;
+            MinYVal = yMid - yDelta;
+        }
+
+        public void YMove(double newMid)
+        {
+            var yMid = newMid;
+            var yDelta = GetYSize() / 2;
+            MaxYVal = yMid + yDelta;
+            MinYVal = yMid - yDelta;
         }
 
         public void Union(ChartRect rect)
