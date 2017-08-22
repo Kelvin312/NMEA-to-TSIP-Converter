@@ -23,10 +23,11 @@ namespace CmpMagnetometersData
         private void ChartConfig()
         {
             var ptrChartArea = chartControl.ChartAreas[0];
-            chartControl.Series[0].ChartType = SeriesChartType.Spline;
-            chartControl.Legends[0].Enabled = false;
+            var ptrSeries = chartControl.Series[0];
+            chartControl.Legends.Clear();
+            ptrSeries.ChartType = SeriesChartType.Spline;
             
-            chartControl.Series[0].XValueType = ChartValueType.DateTime;
+            ptrSeries.XValueType = ChartValueType.DateTime;
             ptrChartArea.AxisX.LabelStyle.Format = "yy.MM.dd-HH:mm:ss";
             ptrChartArea.AxisX.LabelStyle.IsEndLabelVisible = false;
             ptrChartArea.AxisX.IntervalAutoMode = IntervalAutoMode.VariableCount;
@@ -34,16 +35,17 @@ namespace CmpMagnetometersData
             ptrChartArea.CursorX.IntervalType = DateTimeIntervalType.Seconds;
             ptrChartArea.AxisX.ScrollBar.Enabled = false;
 
-            chartControl.Series[0].YValueType = ChartValueType.Int32;
+            ptrSeries.YValueType = ChartValueType.Int32;
             ptrChartArea.AxisY.LabelStyle.Format = "#";
             ptrChartArea.AxisY.LabelStyle.IsEndLabelVisible = false;
             ptrChartArea.AxisY.IntervalAutoMode = IntervalAutoMode.VariableCount;
             ptrChartArea.CursorY.IsUserSelectionEnabled = true;
             ptrChartArea.AxisY.ScrollBar.Enabled = false;
 
-            chartControl.MouseWheel += ChartControl_MouseWheel;
+            
             chartControl.MouseEnter += ChartControl_MouseEnter;
             chartControl.MouseLeave += ChartControl_MouseLeave;
+            chartControl.MouseWheel += ChartControl_MouseWheel;
             chartControl.MouseDown += ChartControl_MouseDown;
             chartControl.MouseMove += ChartControl_MouseMove;
             
@@ -150,6 +152,16 @@ namespace CmpMagnetometersData
        
 
         InputData inputData = new InputData();
+
+        private void chartControl_SelectionRangeChanged(object sender, CursorEventArgs e)
+        {
+            
+        }
+
+        private void chartControl_AxisViewChanged(object sender, ViewEventArgs e)
+        {
+            
+        }
 
         private void btnAdd_Click(object sender, EventArgs e)
         {
