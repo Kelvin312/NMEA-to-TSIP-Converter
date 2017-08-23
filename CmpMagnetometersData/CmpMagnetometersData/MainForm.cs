@@ -31,33 +31,56 @@ namespace CmpMagnetometersData
                 {
                     try
                     {
-                            var chartForm = new ChartFormData(fName);
-                            if (chartForm.IsReady)
+                        var chartForm = new ChartFormData(fName);
+                        if (chartForm.IsReady)
+                        {
+                            if (_chartForms.Count == 0)
                             {
-                                _chartForms.Add(chartForm);
-
-                                chartForm.Dock = DockStyle.Fill;
-                                tlbContent.RowCount++;
-                                tlbContent.RowStyles.Add(new RowStyle(SizeType.Percent,100F));
-                                tlbContent.Controls.Add(chartForm, 0, tlbContent.RowCount-1);
+                                Config.GlobalRect = chartForm.GetRect();
                             }
+                            else
+                            {
+                                Config.GlobalRect.Union(chartForm.GetRect());
+                            }
+                            _chartForms.Add(chartForm);
+                            chartForm.ScaleViewChanged += ChartForm_ScaleViewChanged;
+                            chartForm.ResetZoom += ChartForm_ResetZoom;
+
+                            chartForm.Dock = DockStyle.Fill;
+                            tlbContent.RowCount++;
+                            tlbContent.RowStyles.Add(new RowStyle(SizeType.Percent, 100F));
+                            tlbContent.Controls.Add(chartForm, 0, tlbContent.RowCount - 1);
+                        }
                     }
                     catch (Exception ex)
                     {
-                        MessageBox.Show(fName + "\r\n"+ex.Message, "Ошибка открытия файла", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                        MessageBox.Show(fName + "\r\n" + ex.Message, 
+                            "Ошибка открытия файла", 
+                            MessageBoxButtons.OK, 
+                            MessageBoxIcon.Error);
                         throw;
                     }
                 }
-                
-                //inputData.Read(ofdAddFile.FileName);
-                //chartControl.Series[0].Points.Clear();
-                //foreach (var p in inputData.GetPoints())
-                //{
-                //    chartControl.Series[0].Points.Add(p);
-                //}
-
             }
-
         }
+
+        private void ChartForm_ScaleViewChanged(object sender, ViewEventArgs e)
+        {
+            var resize = new ChartRect(e.ChartArea);
+            foreach (var chartForm in _chartForms)
+            {
+                if(!sender.Equals(chartForm)) chartForm.ScaleViewResize(resize);
+            }
+        }
+
+        private void ChartForm_ResetZoom()
+        {
+            foreach (var chartForm in _chartForms)
+            {
+                chartForm.ScaleViewResize(Config.GlobalRect, true);
+            }
+        }
+
+
     }
 }

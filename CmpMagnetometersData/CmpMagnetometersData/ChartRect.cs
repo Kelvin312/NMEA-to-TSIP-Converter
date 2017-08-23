@@ -21,9 +21,9 @@ namespace CmpMagnetometersData
         public ChartRect(double minXTime, double maxXTime, double minYVal, double maxYVal)
         {
             MinXTime = minXTime;
-            MaxXTime = Math.Max(maxXTime, minXTime);
+            MaxXTime = maxXTime;
             MinYVal = minYVal;
-            MaxYVal = Math.Max(maxYVal, minYVal);
+            MaxYVal = maxYVal;
         }
         public ChartRect(ChartArea ca, bool isView = true)
         {

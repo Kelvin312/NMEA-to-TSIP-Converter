@@ -18,6 +18,7 @@ namespace CmpMagnetometersData
         private readonly ChartArea _ptrChartArea;
         private readonly Axis _ptrAxisX;
         private readonly Axis _ptrAxisY;
+        private bool _isEvent = false;
 
         public bool IsReady = false;
         public ChartFormData(string fileName)
@@ -44,6 +45,12 @@ namespace CmpMagnetometersData
             bool isXChange = current.IsXChange(resize);
             bool isYZoomChange = current.IsYZoomChange(resize);
             if (!isXChange && !isYZoomChange) return;
+
+            if (isScrollY)
+            {
+                if (resize.MaxXTime > _ptrAxisX.Maximum) _ptrAxisX.Maximum = resize.MaxXTime;
+                if (resize.MinXTime < _ptrAxisX.Minimum) _ptrAxisX.Minimum = resize.MinXTime;
+            }
 
             current.MinXTime = resize.MinXTime;
             current.MaxXTime = resize.MaxXTime;
@@ -72,6 +79,22 @@ namespace CmpMagnetometersData
             bool isYMove = rect.MinYVal > Math.Max(yf, yl) || rect.MaxYVal < Math.Min(yf, yl);
             if (isYMove) rect.YMove((yf + yl) / 2);
             return isYMove;
+        }
+
+        public ChartRect GetRect()
+        {
+            var cr = new ChartRect(double.PositiveInfinity, double.NegativeInfinity, 
+                double.PositiveInfinity, double.NegativeInfinity);
+            foreach (var p in _filePoints)
+            {
+                var pix = p.GetPixel();
+                if (cr.MaxXTime < pix.XValue) cr.MaxXTime = pix.XValue;
+                if (cr.MinXTime > pix.XValue) cr.MinXTime = pix.XValue;
+                if (cr.MaxYVal < pix.YValues.FirstOrDefault()) cr.MaxYVal = pix.YValues.FirstOrDefault();
+                if (cr.MinYVal > pix.YValues.FirstOrDefault()) cr.MinYVal = pix.YValues.FirstOrDefault();
+            }
+
+            return cr;
         }
 
         private void ChartControlInit()
@@ -103,18 +126,27 @@ namespace CmpMagnetometersData
             _chartControl.MouseDown += ChartControl_MouseDown;
             _chartControl.MouseMove += ChartControl_MouseMove;
             _chartControl.AxisViewChanged += ChartControl_AxisViewChanged;
+            _chartControl.SelectionRangeChanging += ChartControl_SelectionRangeChanging;
         }
 
+        
         public event EventHandler<ViewEventArgs> ScaleViewChanged;
 
         private void ChartControl_AxisViewChanged(object sender, ViewEventArgs e)
         {
+            if (!_isEvent) return;
             ScaleViewChanged?.Invoke(this, e);
+            _isEvent = false;
         }
 
         public delegate void ResetZoomEventHandler();
 
         public event ResetZoomEventHandler ResetZoom;
+
+        private void ChartControl_SelectionRangeChanging(object sender, CursorEventArgs e)
+        {
+            _isEvent = true;
+        }
 
         #region MouseEvents
 
@@ -138,6 +170,7 @@ namespace CmpMagnetometersData
                 ScaleViewZoom(_ptrAxisX, e.Delta, out xMin, out xMax);
                 ScaleViewZoom(_ptrAxisY, e.Delta, out yMin, out yMax);
                 ChartRect newZoom = new ChartRect(xMin,xMax,yMin,yMax);
+                _isEvent = true;
                 ScaleViewResize(newZoom);
             }
         }
@@ -194,10 +227,10 @@ namespace CmpMagnetometersData
             {
                 double dx = -selX + _xStart;
                 double dy = -selY + _yStart;
-
                 double newX = _ptrAxisX.ScaleView.Position + dx;
                 double newY = _ptrAxisY.ScaleView.Position + dy;
 
+                _isEvent = true;
                 _ptrAxisX.ScaleView.Scroll(newX);
                 _ptrAxisY.ScaleView.Scroll(newY);
             }
