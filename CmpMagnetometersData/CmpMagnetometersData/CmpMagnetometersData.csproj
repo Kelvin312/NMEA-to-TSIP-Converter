@@ -50,7 +50,12 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="ChartRect.cs" />
+    <Compile Include="Config.cs" />
+    <Compile Include="FileData.cs" />
+    <Compile Include="FileDataPoint.cs" />
     <Compile Include="InputData.cs" />
+    <Compile Include="KeyValueHolder.cs" />
     <Compile Include="MainForm.cs">
       <SubType>Form</SubType>
     </Compile>
