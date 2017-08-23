@@ -36,6 +36,7 @@
             this.label1 = new System.Windows.Forms.Label();
             this.dateTimePicker1 = new System.Windows.Forms.DateTimePicker();
             this.chartControl = new System.Windows.Forms.DataVisualization.Charting.Chart();
+            this.lblFileName = new System.Windows.Forms.Label();
             ((System.ComponentModel.ISupportInitialize)(this.chartControl)).BeginInit();
             this.SuspendLayout();
             // 
@@ -43,7 +44,7 @@
             // 
             this.btnSave.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
             this.btnSave.Image = ((System.Drawing.Image)(resources.GetObject("btnSave.Image")));
-            this.btnSave.Location = new System.Drawing.Point(4, 95);
+            this.btnSave.Location = new System.Drawing.Point(4, 75);
             this.btnSave.Name = "btnSave";
             this.btnSave.Size = new System.Drawing.Size(84, 23);
             this.btnSave.TabIndex = 5;
@@ -55,7 +56,7 @@
             // 
             this.btnDelete.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
             this.btnDelete.Image = ((System.Drawing.Image)(resources.GetObject("btnDelete.Image")));
-            this.btnDelete.Location = new System.Drawing.Point(3, 124);
+            this.btnDelete.Location = new System.Drawing.Point(3, 104);
             this.btnDelete.Name = "btnDelete";
             this.btnDelete.Size = new System.Drawing.Size(85, 23);
             this.btnDelete.TabIndex = 4;
@@ -66,7 +67,7 @@
             // label1
             // 
             this.label1.AutoSize = true;
-            this.label1.Location = new System.Drawing.Point(3, 35);
+            this.label1.Location = new System.Drawing.Point(2, 21);
             this.label1.Name = "label1";
             this.label1.Size = new System.Drawing.Size(79, 13);
             this.label1.TabIndex = 3;
@@ -77,7 +78,7 @@
             this.dateTimePicker1.Checked = false;
             this.dateTimePicker1.CustomFormat = "yy.MM.dd/HH:mm:ss";
             this.dateTimePicker1.Format = System.Windows.Forms.DateTimePickerFormat.Custom;
-            this.dateTimePicker1.Location = new System.Drawing.Point(4, 51);
+            this.dateTimePicker1.Location = new System.Drawing.Point(3, 37);
             this.dateTimePicker1.Name = "dateTimePicker1";
             this.dateTimePicker1.ShowUpDown = true;
             this.dateTimePicker1.Size = new System.Drawing.Size(135, 20);
@@ -96,21 +97,32 @@
             series1.ChartType = System.Windows.Forms.DataVisualization.Charting.SeriesChartType.Spline;
             series1.Name = "Series1";
             this.chartControl.Series.Add(series1);
-            this.chartControl.Size = new System.Drawing.Size(456, 144);
+            this.chartControl.Size = new System.Drawing.Size(456, 124);
             this.chartControl.TabIndex = 6;
             this.chartControl.Text = "chart1";
+            // 
+            // lblFileName
+            // 
+            this.lblFileName.AutoSize = true;
+            this.lblFileName.Location = new System.Drawing.Point(3, 3);
+            this.lblFileName.Name = "lblFileName";
+            this.lblFileName.Size = new System.Drawing.Size(51, 13);
+            this.lblFileName.TabIndex = 7;
+            this.lblFileName.Text = "FileName";
             // 
             // ChartForm
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
+            this.Controls.Add(this.lblFileName);
             this.Controls.Add(this.chartControl);
             this.Controls.Add(this.btnSave);
             this.Controls.Add(this.btnDelete);
             this.Controls.Add(this.label1);
             this.Controls.Add(this.dateTimePicker1);
+            this.MinimumSize = new System.Drawing.Size(600, 130);
             this.Name = "ChartForm";
-            this.Size = new System.Drawing.Size(600, 150);
+            this.Size = new System.Drawing.Size(600, 130);
             ((System.ComponentModel.ISupportInitialize)(this.chartControl)).EndInit();
             this.ResumeLayout(false);
             this.PerformLayout();
@@ -123,5 +135,6 @@
         private System.Windows.Forms.Label label1;
         private System.Windows.Forms.DateTimePicker dateTimePicker1;
         protected System.Windows.Forms.DataVisualization.Charting.Chart chartControl;
+        protected System.Windows.Forms.Label lblFileName;
     }
 }

@@ -31,18 +31,16 @@ namespace CmpMagnetometersData
                 {
                     try
                     {
-                        using (StreamReader sr = new StreamReader(fName))
-                        {
-                            var chartForm = new ChartFormData(sr);
+                            var chartForm = new ChartFormData(fName);
                             if (chartForm.IsReady)
                             {
                                 _chartForms.Add(chartForm);
+
                                 chartForm.Dock = DockStyle.Fill;
                                 tlbContent.RowCount++;
-                                tlbContent.RowStyles.Add(new RowStyle(SizeType.Percent, 33F));
+                                tlbContent.RowStyles.Add(new RowStyle(SizeType.Percent,100F));
                                 tlbContent.Controls.Add(chartForm, 0, tlbContent.RowCount-1);
                             }
-                        }
                     }
                     catch (Exception ex)
                     {

@@ -104,6 +104,7 @@
             // ofdAddFile
             // 
             this.ofdAddFile.Filter = "txt|*.txt";
+            this.ofdAddFile.Multiselect = true;
             this.ofdAddFile.Title = "Добавить файл";
             // 
             // tlbContent

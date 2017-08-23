@@ -20,15 +20,16 @@ namespace CmpMagnetometersData
         private readonly Axis _ptrAxisY;
 
         public bool IsReady = false;
-        public ChartFormData(StreamReader fileReader):base()
+        public ChartFormData(string fileName)
         {
+            lblFileName.Text = Path.GetFileNameWithoutExtension(fileName);
             _chartControl = chartControl;
             _ptrSeries = _chartControl.Series[0];
             _ptrChartArea = _chartControl.ChartAreas[0];
             _ptrAxisX = _ptrChartArea.AxisX;
             _ptrAxisY = _ptrChartArea.AxisY;
             ChartControlInit();
-            ReadFile(fileReader);
+            ReadFile(fileName);
             if (_filePoints.Count > 1) IsReady = true;
         }
 
@@ -65,6 +66,7 @@ namespace CmpMagnetometersData
             var bet = _sortedXlist.GetViewBetween(
                 new KeyValueHolder<double, int>(rect.MinXTime),
                 new KeyValueHolder<double, int>(rect.MaxXTime));
+            if (bet.Count == 0) return false;
             var yf = _ptrSeries.Points[bet.FirstOrDefault().Value].YValues.FirstOrDefault();
             var yl = _ptrSeries.Points[bet.LastOrDefault().Value].YValues.FirstOrDefault();
             bool isYMove = rect.MinYVal > Math.Max(yf, yl) || rect.MaxYVal < Math.Min(yf, yl);
@@ -202,27 +204,30 @@ namespace CmpMagnetometersData
         }
         #endregion
 
-        private void ReadFile(StreamReader fileReader)
+        private void ReadFile(string fileName)
         {
             _filePoints.Clear();
             _ptrSeries.Points.Clear();
             _sortedXlist.Clear();
             int pointIndex = -3;
-            foreach (var str in fileReader.ReadToEnd()
-                .Split(new [] { '\0' }, StringSplitOptions.RemoveEmptyEntries))
+            using (StreamReader sr = new StreamReader(fileName))
             {
-                if (++pointIndex < 0) continue;
-                try
+                foreach (var str in sr.ReadToEnd()
+                    .Split(new[] {'\0'}, StringSplitOptions.RemoveEmptyEntries))
                 {
-                    var fdp = new FileDataPoint(str);
-                    var p = fdp.GetPixel();
-                    _sortedXlist.Add(new KeyValueHolder<double, int>(p.XValue, _filePoints.Count));
-                    _filePoints.Add(fdp);
-                    _ptrSeries.Points.Add(p);
-                }
-                catch (Exception)
-                {
-                    // throw;
+                    if (++pointIndex < 0) continue;
+                    try
+                    {
+                        var fdp = new FileDataPoint(str);
+                        var p = fdp.GetPixel();
+                        _sortedXlist.Add(new KeyValueHolder<double, int>(p.XValue, _filePoints.Count));
+                        _filePoints.Add(fdp);
+                        _ptrSeries.Points.Add(p);
+                    }
+                    catch (Exception)
+                    {
+                        // throw;
+                    }
                 }
             }
         }
