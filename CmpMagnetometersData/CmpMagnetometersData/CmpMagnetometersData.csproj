@@ -33,7 +33,8 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <PropertyGroup>
-    <ApplicationIcon>Saved-Data-Utility.ico</ApplicationIcon>
+    <ApplicationIcon>
+    </ApplicationIcon>
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="System" />
@@ -50,11 +51,18 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="ChartForm.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="ChartForm.Designer.cs">
+      <DependentUpon>ChartForm.cs</DependentUpon>
+    </Compile>
     <Compile Include="ChartRect.cs" />
     <Compile Include="Config.cs" />
-    <Compile Include="FileData.cs" />
+    <Compile Include="ChartFormData.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
     <Compile Include="FileDataPoint.cs" />
-    <Compile Include="InputData.cs" />
     <Compile Include="KeyValueHolder.cs" />
     <Compile Include="MainForm.cs">
       <SubType>Form</SubType>
@@ -64,6 +72,9 @@
     </Compile>
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <EmbeddedResource Include="ChartForm.resx">
+      <DependentUpon>ChartForm.cs</DependentUpon>
+    </EmbeddedResource>
     <EmbeddedResource Include="MainForm.resx">
       <DependentUpon>MainForm.cs</DependentUpon>
     </EmbeddedResource>
@@ -88,9 +99,6 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config" />
-  </ItemGroup>
-  <ItemGroup>
-    <Content Include="Saved-Data-Utility.ico" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
