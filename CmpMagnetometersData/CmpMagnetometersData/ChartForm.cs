@@ -22,6 +22,26 @@ namespace CmpMagnetometersData
         private readonly Axis _ptrAxisX;
         private readonly Axis _ptrAxisY;
         private ChartRect _maxRect;
+        public bool IsMinimize { get; private set; }
+        public ChartRect GetRect()
+        {
+            return _maxRect;
+        }
+
+        public List<FileDataPoint> GetPoints()
+        {
+            return _filePoints;
+        }
+
+        public SortedSet<KeyValueHolder<double, int>> GetXList()
+        {
+            return _sortedXlist;
+        }
+
+        public string GetFileName()
+        {
+            return lblFileName.Text;
+        }
 
         public bool IsReady = false;
 
@@ -91,11 +111,7 @@ namespace CmpMagnetometersData
             return isYMove;
         }
 
-        public ChartRect GetRect()
-        {
-            return _maxRect;
-
-        }
+       
 
         private void ChartControlInit()
         {
@@ -262,7 +278,11 @@ namespace CmpMagnetometersData
 
         public void RefreshData(DateTime? newTime = null)
         {
-            if (_filePoints.Count < 2) return;
+            if (_filePoints.Count < 2)
+            {
+                IsReady = false;
+                return;
+            }
             _ptrSeries.Points.Clear();
             _sortedXlist.Clear();
             _maxRect = new ChartRect(double.PositiveInfinity, double.NegativeInfinity,
@@ -309,5 +329,35 @@ namespace CmpMagnetometersData
             current.MaxXTime = _maxRect.MaxXTime;
             ScaleViewResize(current);
         }
+
+        public event EventHandler<bool> TurnChange; 
+
+        private void btnTurn_Click(object sender, EventArgs e)
+        {
+            TurnChange?.Invoke(this, IsMinimize);
+        }
+
+        public event EventHandler DeleteForm;  
+
+        private void btnDelete_Click(object sender, EventArgs e)
+        {
+            IsReady = false;
+            DeleteForm?.Invoke(this, null);
+        }
+
+        private void ChartForm_Resize(object sender, EventArgs e)
+        {
+            if(IsMinimize == Height < 145) return;
+            IsMinimize = this.Height < 145;
+                foreach (var c in this.Controls)
+                {
+                    (c as Control).Visible = !IsMinimize;
+                }
+            btnTurn.Visible = true;
+            lblFileNameHid.Visible = IsMinimize;
+            lblFileNameHid.Text = lblFileName.Text;
+            btnTurn.Text = IsMinimize ? "Развернуть" : "Свернуть";
+        }
+
     }
 }

@@ -2,7 +2,7 @@ using System;
 
 namespace CmpMagnetometersData
 {
-    class KeyValueHolder<TKey, TValue> : IComparable<KeyValueHolder<TKey, TValue>>
+    public class KeyValueHolder<TKey, TValue> : IComparable<KeyValueHolder<TKey, TValue>>
         where TKey : IComparable<TKey>
     {
         public KeyValueHolder(TKey key, TValue value = default(TValue))
