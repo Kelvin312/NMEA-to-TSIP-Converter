@@ -1,14 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.ComponentModel;
-using System.Data;
-using System.Drawing;
-using System.IO;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using System.Windows.Forms;
-using System.Windows.Forms.DataVisualization.Charting;
 
 namespace CmpMagnetometersData
 {
@@ -21,7 +13,7 @@ namespace CmpMagnetometersData
             tlbContent.RowStyles.Clear();
         }
 
-        private List<ChartFormData> _chartForms = new List<ChartFormData>();
+        private List<ChartForm> _chartForms = new List<ChartForm>();
 
         private void btnAdd_Click(object sender, EventArgs e)
         {
@@ -31,17 +23,9 @@ namespace CmpMagnetometersData
                 {
                     try
                     {
-                        var chartForm = new ChartFormData(fName);
+                        var chartForm = new ChartForm(fName);
                         if (chartForm.IsReady)
                         {
-                            if (_chartForms.Count == 0)
-                            {
-                                Config.GlobalRect = chartForm.GetRect();
-                            }
-                            else
-                            {
-                                Config.GlobalRect.Union(chartForm.GetRect());
-                            }
                             _chartForms.Add(chartForm);
                             chartForm.ScaleViewChanged += ChartForm_ScaleViewChanged;
                             chartForm.ResetZoom += ChartForm_ResetZoom;
@@ -55,32 +39,74 @@ namespace CmpMagnetometersData
                     catch (Exception ex)
                     {
                         MessageBox.Show(fName + "\r\n" + ex.Message, 
-                            "Ошибка открытия файла", 
+                            "Ошибка открытия файла",
                             MessageBoxButtons.OK, 
                             MessageBoxIcon.Error);
                         throw;
                     }
                 }
+                ChartForm_ResetZoom();
             }
         }
 
-        private void ChartForm_ScaleViewChanged(object sender, ViewEventArgs e)
+        private void ChartForm_ScaleViewChanged(object sender, ChartRect e)
         {
-            var resize = new ChartRect(e.ChartArea);
             foreach (var chartForm in _chartForms)
             {
-                if(!sender.Equals(chartForm)) chartForm.ScaleViewResize(resize);
+                if(!sender.Equals(chartForm)) chartForm.ScaleViewResize(e);
             }
         }
 
         private void ChartForm_ResetZoom()
         {
+            bool isFirst = true;
+            foreach (var chartForm in _chartForms)
+            {
+                if (isFirst)
+                {
+                    Config.GlobalRect = chartForm.GetRect();
+                    isFirst = false;
+                }
+                else
+                {
+                    Config.GlobalRect.Union(chartForm.GetRect());
+                }
+            }
             foreach (var chartForm in _chartForms)
             {
                 chartForm.ScaleViewResize(Config.GlobalRect, true);
             }
         }
 
+        private void btnMagneticField_Click(object sender, EventArgs e)
+        {
+            if (!btnMagneticField.Checked)
+            {
+                btnRmsDeviation.Checked = false;
+                btnMagneticField.Checked = true;
+                Config.IsMagneticField = btnMagneticField.Checked;
+                foreach (var chartForm in _chartForms)
+                {
+                    chartForm.RefreshData();
+                }
 
+                ChartForm_ResetZoom();
+            }
+        }
+
+        private void btnRmsDeviation_Click(object sender, EventArgs e)
+        {
+            if (!btnRmsDeviation.Checked)
+            {
+                btnRmsDeviation.Checked = true;
+                btnMagneticField.Checked = false;
+                Config.IsMagneticField = btnMagneticField.Checked;
+                foreach (var chartForm in _chartForms)
+                {
+                    chartForm.RefreshData();
+                }
+                ChartForm_ResetZoom();
+            }
+        }
     }
 }

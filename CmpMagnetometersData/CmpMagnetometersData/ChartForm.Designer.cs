@@ -34,7 +34,7 @@
             this.btnSave = new System.Windows.Forms.Button();
             this.btnDelete = new System.Windows.Forms.Button();
             this.label1 = new System.Windows.Forms.Label();
-            this.dateTimePicker1 = new System.Windows.Forms.DateTimePicker();
+            this.dtpStartX = new System.Windows.Forms.DateTimePicker();
             this.chartControl = new System.Windows.Forms.DataVisualization.Charting.Chart();
             this.lblFileName = new System.Windows.Forms.Label();
             ((System.ComponentModel.ISupportInitialize)(this.chartControl)).BeginInit();
@@ -73,16 +73,18 @@
             this.label1.TabIndex = 3;
             this.label1.Text = "Начало файла";
             // 
-            // dateTimePicker1
+            // dtpStartX
             // 
-            this.dateTimePicker1.Checked = false;
-            this.dateTimePicker1.CustomFormat = "yy.MM.dd/HH:mm:ss";
-            this.dateTimePicker1.Format = System.Windows.Forms.DateTimePickerFormat.Custom;
-            this.dateTimePicker1.Location = new System.Drawing.Point(3, 37);
-            this.dateTimePicker1.Name = "dateTimePicker1";
-            this.dateTimePicker1.ShowUpDown = true;
-            this.dateTimePicker1.Size = new System.Drawing.Size(135, 20);
-            this.dateTimePicker1.TabIndex = 0;
+            this.dtpStartX.Checked = false;
+            this.dtpStartX.CustomFormat = "yy.MM.dd/HH:mm:ss";
+            this.dtpStartX.Format = System.Windows.Forms.DateTimePickerFormat.Custom;
+            this.dtpStartX.Location = new System.Drawing.Point(3, 37);
+            this.dtpStartX.Name = "dtpStartX";
+            this.dtpStartX.ShowUpDown = true;
+            this.dtpStartX.Size = new System.Drawing.Size(135, 20);
+            this.dtpStartX.TabIndex = 0;
+            this.dtpStartX.ValueChanged += new System.EventHandler(this.dtpStartX_ValueChanged);
+            this.dtpStartX.Leave += new System.EventHandler(this.dtpStartX_Leave);
             // 
             // chartControl
             // 
@@ -119,10 +121,11 @@
             this.Controls.Add(this.btnSave);
             this.Controls.Add(this.btnDelete);
             this.Controls.Add(this.label1);
-            this.Controls.Add(this.dateTimePicker1);
+            this.Controls.Add(this.dtpStartX);
             this.MinimumSize = new System.Drawing.Size(600, 130);
             this.Name = "ChartForm";
             this.Size = new System.Drawing.Size(600, 130);
+            this.Load += new System.EventHandler(this.ChartForm_Load);
             ((System.ComponentModel.ISupportInitialize)(this.chartControl)).EndInit();
             this.ResumeLayout(false);
             this.PerformLayout();
@@ -133,8 +136,8 @@
         private System.Windows.Forms.Button btnSave;
         private System.Windows.Forms.Button btnDelete;
         private System.Windows.Forms.Label label1;
-        private System.Windows.Forms.DateTimePicker dateTimePicker1;
-        protected System.Windows.Forms.DataVisualization.Charting.Chart chartControl;
-        protected System.Windows.Forms.Label lblFileName;
+        private System.Windows.Forms.DateTimePicker dtpStartX;
+        private System.Windows.Forms.DataVisualization.Charting.Chart chartControl;
+        private System.Windows.Forms.Label lblFileName;
     }
 }

@@ -32,10 +32,10 @@
             this.toolStrip1 = new System.Windows.Forms.ToolStrip();
             this.btnAdd = new System.Windows.Forms.ToolStripButton();
             this.toolStripSeparator1 = new System.Windows.Forms.ToolStripSeparator();
-            this.toolStripButton2 = new System.Windows.Forms.ToolStripButton();
-            this.toolStripButton3 = new System.Windows.Forms.ToolStripButton();
+            this.btnMagneticField = new System.Windows.Forms.ToolStripButton();
+            this.btnRmsDeviation = new System.Windows.Forms.ToolStripButton();
             this.toolStripSeparator2 = new System.Windows.Forms.ToolStripSeparator();
-            this.toolStripButton1 = new System.Windows.Forms.ToolStripButton();
+            this.btnConfig = new System.Windows.Forms.ToolStripButton();
             this.ofdAddFile = new System.Windows.Forms.OpenFileDialog();
             this.tlbContent = new System.Windows.Forms.TableLayoutPanel();
             this.toolStrip1.SuspendLayout();
@@ -46,10 +46,10 @@
             this.toolStrip1.Items.AddRange(new System.Windows.Forms.ToolStripItem[] {
             this.btnAdd,
             this.toolStripSeparator1,
-            this.toolStripButton2,
-            this.toolStripButton3,
+            this.btnMagneticField,
+            this.btnRmsDeviation,
             this.toolStripSeparator2,
-            this.toolStripButton1});
+            this.btnConfig});
             this.toolStrip1.Location = new System.Drawing.Point(0, 0);
             this.toolStrip1.Name = "toolStrip1";
             this.toolStrip1.Size = new System.Drawing.Size(1002, 25);
@@ -70,36 +70,38 @@
             this.toolStripSeparator1.Name = "toolStripSeparator1";
             this.toolStripSeparator1.Size = new System.Drawing.Size(6, 25);
             // 
-            // toolStripButton2
+            // btnMagneticField
             // 
-            this.toolStripButton2.Checked = true;
-            this.toolStripButton2.CheckState = System.Windows.Forms.CheckState.Checked;
-            this.toolStripButton2.Image = ((System.Drawing.Image)(resources.GetObject("toolStripButton2.Image")));
-            this.toolStripButton2.ImageTransparentColor = System.Drawing.Color.Magenta;
-            this.toolStripButton2.Name = "toolStripButton2";
-            this.toolStripButton2.Size = new System.Drawing.Size(118, 22);
-            this.toolStripButton2.Text = "Магнитное поле";
+            this.btnMagneticField.Checked = true;
+            this.btnMagneticField.CheckState = System.Windows.Forms.CheckState.Checked;
+            this.btnMagneticField.Image = ((System.Drawing.Image)(resources.GetObject("btnMagneticField.Image")));
+            this.btnMagneticField.ImageTransparentColor = System.Drawing.Color.Magenta;
+            this.btnMagneticField.Name = "btnMagneticField";
+            this.btnMagneticField.Size = new System.Drawing.Size(118, 22);
+            this.btnMagneticField.Text = "Магнитное поле";
+            this.btnMagneticField.Click += new System.EventHandler(this.btnMagneticField_Click);
             // 
-            // toolStripButton3
+            // btnRmsDeviation
             // 
-            this.toolStripButton3.Image = ((System.Drawing.Image)(resources.GetObject("toolStripButton3.Image")));
-            this.toolStripButton3.ImageTransparentColor = System.Drawing.Color.Magenta;
-            this.toolStripButton3.Name = "toolStripButton3";
-            this.toolStripButton3.Size = new System.Drawing.Size(51, 22);
-            this.toolStripButton3.Text = "СКО";
+            this.btnRmsDeviation.Image = ((System.Drawing.Image)(resources.GetObject("btnRmsDeviation.Image")));
+            this.btnRmsDeviation.ImageTransparentColor = System.Drawing.Color.Magenta;
+            this.btnRmsDeviation.Name = "btnRmsDeviation";
+            this.btnRmsDeviation.Size = new System.Drawing.Size(51, 22);
+            this.btnRmsDeviation.Text = "СКО";
+            this.btnRmsDeviation.Click += new System.EventHandler(this.btnRmsDeviation_Click);
             // 
             // toolStripSeparator2
             // 
             this.toolStripSeparator2.Name = "toolStripSeparator2";
             this.toolStripSeparator2.Size = new System.Drawing.Size(6, 25);
             // 
-            // toolStripButton1
+            // btnConfig
             // 
-            this.toolStripButton1.Image = ((System.Drawing.Image)(resources.GetObject("toolStripButton1.Image")));
-            this.toolStripButton1.ImageTransparentColor = System.Drawing.Color.Magenta;
-            this.toolStripButton1.Name = "toolStripButton1";
-            this.toolStripButton1.Size = new System.Drawing.Size(87, 22);
-            this.toolStripButton1.Text = "Настройки";
+            this.btnConfig.Image = ((System.Drawing.Image)(resources.GetObject("btnConfig.Image")));
+            this.btnConfig.ImageTransparentColor = System.Drawing.Color.Magenta;
+            this.btnConfig.Name = "btnConfig";
+            this.btnConfig.Size = new System.Drawing.Size(87, 22);
+            this.btnConfig.Text = "Настройки";
             // 
             // ofdAddFile
             // 
@@ -143,10 +145,10 @@
         private System.Windows.Forms.ToolStrip toolStrip1;
         private System.Windows.Forms.ToolStripButton btnAdd;
         private System.Windows.Forms.ToolStripSeparator toolStripSeparator1;
-        private System.Windows.Forms.ToolStripButton toolStripButton2;
-        private System.Windows.Forms.ToolStripButton toolStripButton3;
+        private System.Windows.Forms.ToolStripButton btnMagneticField;
+        private System.Windows.Forms.ToolStripButton btnRmsDeviation;
         private System.Windows.Forms.ToolStripSeparator toolStripSeparator2;
-        private System.Windows.Forms.ToolStripButton toolStripButton1;
+        private System.Windows.Forms.ToolStripButton btnConfig;
         private System.Windows.Forms.OpenFileDialog ofdAddFile;
         private System.Windows.Forms.TableLayoutPanel tlbContent;
     }
