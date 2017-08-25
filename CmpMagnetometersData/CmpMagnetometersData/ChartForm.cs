@@ -14,104 +14,36 @@ namespace CmpMagnetometersData
 {
     public partial class ChartForm : UserControl
     {
-        private List<FileDataPoint> _filePoints = new List<FileDataPoint>();
-        private SortedSet<KeyValueHolder<double, int>> _sortedXlist = new SortedSet<KeyValueHolder<double, int>>();
         private readonly Chart _chartControl;
         private readonly Series _ptrSeries;
         private readonly ChartArea _ptrChartArea;
         private readonly Axis _ptrAxisX;
         private readonly Axis _ptrAxisY;
-        private ChartRect _maxRect;
-        public bool IsMinimize { get; private set; }
-        public ChartRect GetRect()
-        {
-            return _maxRect;
-        }
 
-        public List<FileDataPoint> GetPoints()
-        {
-            return _filePoints;
-        }
-
-        public SortedSet<KeyValueHolder<double, int>> GetXList()
-        {
-            return _sortedXlist;
-        }
-
-        public string GetFileName()
-        {
-            return lblFileName.Text;
-        }
-
-        public bool IsReady = false;
-
-        public ChartForm(string fileName)
+        public ChartForm(string filePath)
         {
             InitializeComponent();
-            lblFileName.Text = Path.GetFileNameWithoutExtension(fileName);
+
+            IsMinimize = false;
+            FileName = Path.GetFileNameWithoutExtension(filePath);
+            lblFileName.Text = FileName;
+            lblFileNameHid.Text = FileName;
+
             _chartControl = chartControl;
             _ptrSeries = _chartControl.Series[0];
             _ptrChartArea = _chartControl.ChartAreas[0];
             _ptrAxisX = _ptrChartArea.AxisX;
             _ptrAxisY = _ptrChartArea.AxisY;
             ChartControlInit();
-            ReadFile(fileName);
-            if (_filePoints.Count < 2) return;
-            IsReady = true;
+
+            ReadFile(filePath);
         }
 
-        private void ChartForm_Load(object sender, EventArgs e)
-        {
-            dtpStartX.Value = _filePoints.First().Time;
-            _isDtpValueChanged = false;
-        }
-
-        //Зум выделением - синхронно, автоподгонка по вертикали
-        //Зум роликом - синхронно, автоподгонка по вертикали
-        //Перемещение - синхронно по горизонтали
-
-        public void ScaleViewResize(ChartRect resize, bool isSetY = false)
-        {
-            ChartRect current = new ChartRect(_ptrChartArea);
-
-            bool isXChange = current.IsXChange(resize);
-            bool isYZoomChange = current.IsYZoomChange(resize);
-            if (!(isXChange || isYZoomChange || isSetY)) return;
-
-            if (isSetY)
-            {
-                _ptrAxisX.Maximum = resize.MaxXTime;
-                _ptrAxisX.Minimum = resize.MinXTime;
-                _ptrAxisY.Maximum = resize.MaxYVal + 10;
-            }
-            if (isXChange)
-            {
-                _ptrAxisX.ScaleView.Zoom(resize.MinXTime, resize.MaxXTime);
-            }
-            if (isSetY)
-            {
-                _ptrAxisY.ScaleView.Zoom(resize.MinYVal, resize.MaxYVal);
-                return;
-            }
-            if (isYZoomChange) current.YResize(resize.GetYSize());
-            var isYMove = YScrollCorrect(current);
-            if (isYZoomChange || isYMove) _ptrAxisY.ScaleView.Zoom(current.MinYVal, current.MaxYVal);
-        }
-
-        public bool YScrollCorrect(ChartRect rect)
-        {
-            var bet = _sortedXlist.GetViewBetween(
-                new KeyValueHolder<double, int>(rect.MinXTime),
-                new KeyValueHolder<double, int>(rect.MaxXTime));
-            if (bet.Count == 0) return false;
-            var yf = _ptrSeries.Points[bet.First().Value].YValues.FirstOrDefault();
-            var yl = _ptrSeries.Points[bet.Last().Value].YValues.FirstOrDefault();
-            bool isYMove = rect.MinYVal > Math.Max(yf, yl) || rect.MaxYVal < Math.Min(yf, yl);
-            if (isYMove) rect.YMove((yf + yl) / 2);
-            return isYMove;
-        }
-
-       
+        //private void ChartForm_Load(object sender, EventArgs e)
+        //{
+        //    dtpStartX.Value = _filePoints.First().Time;
+        //    _isDtpValueChanged = false;
+        //}
 
         private void ChartControlInit()
         {
@@ -120,7 +52,6 @@ namespace CmpMagnetometersData
 
             //Настраиваем формат данных и вид меток
             _ptrSeries.XValueType = ChartValueType.DateTime;
-            _ptrAxisX.LabelStyle.Format = Config.ViewTimeFormat;
             _ptrAxisX.LabelStyle.IsEndLabelVisible = false;
             _ptrAxisX.IntervalAutoMode = IntervalAutoMode.VariableCount;
             //Y
@@ -144,19 +75,7 @@ namespace CmpMagnetometersData
             _chartControl.AxisViewChanged += ChartControl_AxisViewChanged;
         }
 
-
-        public event EventHandler<ChartRect> ScaleViewChanged;
-
-        private void ChartControl_AxisViewChanged(object sender, ViewEventArgs e)
-        {
-            ScaleViewChanged?.Invoke(this, new ChartRect(e.ChartArea));
-        }
-
-        public delegate void ResetZoomEventHandler();
-
-        public event ResetZoomEventHandler ResetZoom;
-
-        #region MouseEvents
+        #region ChartEvents
 
         private bool _mouseDowned;
         private double _xStart, _yStart;
@@ -178,21 +97,22 @@ namespace CmpMagnetometersData
             {
                 ChartRect newZoom = new ChartRect(_ptrChartArea);
 
-                ScaleViewZoom(e.Delta, ref newZoom.MinXTime, ref newZoom.MaxXTime, Config.XMinZoom);
-                ScaleViewZoom(e.Delta, ref newZoom.MinYVal, ref newZoom.MaxYVal, Config.YMinZoom);
-                newZoom.CutOff(new ChartRect(_ptrChartArea, false));
-                ScaleViewResize(newZoom);
+                ScaleViewZoom(e.Delta, ref newZoom.X, Config.XMinZoom);
+                ScaleViewZoom(e.Delta, ref newZoom.Y, Config.YMinZoom);
+                UpdateAxis(newZoom, true);
                 ScaleViewChanged?.Invoke(this, newZoom);
             }
         }
 
-        private void ScaleViewZoom(int delta, ref double start, ref double end, double minDeltaPos)
+        private void ScaleViewZoom(int delta, ref AxisSize axis, double minZoom)
         {
-            var deltaPos = (end - start) * Config.ZoomSpeed;
-            if (delta < 0) deltaPos = -deltaPos;
-            else if (deltaPos <= minDeltaPos) return;
-            start += deltaPos;
-            end -= deltaPos;
+            var deltaPos = axis.Size * Config.ZoomSpeed;
+            if (delta > 0)
+            {
+                if (axis.Size <= minZoom) return;
+                deltaPos = -deltaPos;
+            }
+            axis.Size = axis.Size + deltaPos;
         }
 
         private void ChartControl_MouseDown(object sender, MouseEventArgs e)
@@ -209,11 +129,11 @@ namespace CmpMagnetometersData
                     }
                     catch (Exception)
                     {
-
+                        // ignored
                     }
                     break;
                 case MouseButtons.Right:
-                    ResetZoom?.Invoke();
+                    OtherEvent?.Invoke(this, true);
                     break;
             }
         }
@@ -245,70 +165,19 @@ namespace CmpMagnetometersData
 
                 _ptrAxisX.ScaleView.Scroll(newX);
                 _ptrAxisY.ScaleView.Scroll(newY);
+                UpdateAxis();
                 _chartControl.Refresh();
                 ScaleViewChanged?.Invoke(this, new ChartRect(_ptrChartArea));
             }
         }
 
+        private void ChartControl_AxisViewChanged(object sender, ViewEventArgs e)
+        {
+            UpdateAxis();
+            ScaleViewChanged?.Invoke(this, new ChartRect(_ptrChartArea));
+        }
+
         #endregion
-
-        private void ReadFile(string fileName)
-        {
-            _filePoints.Clear();
-            int pointIndex = -3;
-            using (StreamReader sr = new StreamReader(fileName))
-            {
-                foreach (var str in sr.ReadToEnd()
-                    .Split(new[] {'\0'}, StringSplitOptions.RemoveEmptyEntries))
-                {
-                    if (++pointIndex < 0) continue;
-                    try
-                    {
-                        var p = new FileDataPoint(str);
-                        _filePoints.Add(p);
-                    }
-                    catch (Exception)
-                    {
-                        // throw;
-                    }
-                }
-            }
-            RefreshData();
-        }
-
-        public void RefreshData(DateTime? newTime = null)
-        {
-            if (_filePoints.Count < 2)
-            {
-                IsReady = false;
-                return;
-            }
-            _ptrSeries.Points.Clear();
-            _sortedXlist.Clear();
-            _maxRect = new ChartRect(double.PositiveInfinity, double.NegativeInfinity,
-                double.PositiveInfinity, double.NegativeInfinity);
-
-            TimeSpan deltaTime = new TimeSpan();
-            _ptrAxisX.LabelStyle.Format = Config.ViewTimeFormat;
-            dtpStartX.CustomFormat = Config.ViewTimeFormat;
-            if (newTime != null)
-            {
-                deltaTime = newTime.Value.Subtract(_filePoints.First().Time);
-            }
-            for (int i = 0; i < _filePoints.Count; i++)
-            {
-                var fPoint = _filePoints[i];
-                if (newTime != null)
-                {
-                    fPoint.Time = fPoint.Time.Add(deltaTime);
-                }
-                var pix = fPoint.GetPixel();
-                _ptrSeries.Points.Add(pix);
-                _sortedXlist.Add(new KeyValueHolder<double, int>(pix.XValue, i));
-                _maxRect.Union(new ChartRect(pix.XValue, pix.XValue,
-                    pix.YValues.First(), pix.YValues.First()));
-            }
-        }
 
         private bool _isDtpValueChanged = false;
         private void dtpStartX_ValueChanged(object sender, EventArgs e)
@@ -319,45 +188,37 @@ namespace CmpMagnetometersData
         private void dtpStartX_Leave(object sender, EventArgs e)
         {
             if (!_isDtpValueChanged) return;
-            RefreshData(dtpStartX.Value);
             _isDtpValueChanged = false;
-
-            var current = new ChartRect(_ptrChartArea);
-            _ptrAxisX.Minimum = Math.Min(_ptrAxisX.Minimum, _maxRect.MinXTime);
-            _ptrAxisX.Maximum = Math.Max(_ptrAxisX.Maximum, _maxRect.MaxXTime);
-            current.MinXTime = _maxRect.MinXTime;
-            current.MaxXTime = _maxRect.MaxXTime;
-            ScaleViewResize(current);
+            RefreshData(dtpStartX.Value);
+            OtherEvent?.Invoke(this, false);
         }
-
-        public event EventHandler<bool> TurnChange; 
 
         private void btnTurn_Click(object sender, EventArgs e)
         {
-            TurnChange?.Invoke(this, IsMinimize);
+            IsMinimize ^= true;
+            foreach (Control c in this.Controls)
+            {
+                c.Visible = !IsMinimize;
+            }
+                OtherEvent?.Invoke(this, false);
         }
 
-        public event EventHandler DeleteForm;  
-
+       
         private void btnDelete_Click(object sender, EventArgs e)
         {
-            IsReady = false;
-            DeleteForm?.Invoke(this, null);
+            
         }
 
-        private void ChartForm_Resize(object sender, EventArgs e)
-        {
-            if(IsMinimize == Height < 145) return;
-            IsMinimize = this.Height < 145;
-                foreach (var c in this.Controls)
-                {
-                    (c as Control).Visible = !IsMinimize;
-                }
-            btnTurn.Visible = true;
-            lblFileNameHid.Visible = IsMinimize;
-            lblFileNameHid.Text = lblFileName.Text;
-            btnTurn.Text = IsMinimize ? "Развернуть" : "Свернуть";
-        }
+        //private void ChartForm_Resize(object sender, EventArgs e)
+        //{
+        //    if(IsMinimize == Height < 145) return;
+        //    IsMinimize = this.Height < 145;
+        //        
+        //    btnTurn.Visible = true;
+        //    lblFileNameHid.Visible = IsMinimize;
+        //    lblFileNameHid.Text = lblFileName.Text;
+        //    btnTurn.Text = IsMinimize ? "Развернуть" : "Свернуть";
+        //}
 
     }
 }

@@ -59,7 +59,7 @@
     </Compile>
     <Compile Include="ChartRect.cs" />
     <Compile Include="Config.cs" />
-    <Compile Include="FileDataPoint.cs" />
+    <Compile Include="FilePoint.cs" />
     <Compile Include="KeyValueHolder.cs" />
     <Compile Include="MainForm.cs">
       <SubType>Form</SubType>
@@ -69,6 +69,9 @@
     </Compile>
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="test.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
     <EmbeddedResource Include="ChartForm.resx">
       <DependentUpon>ChartForm.cs</DependentUpon>
     </EmbeddedResource>

@@ -4,14 +4,14 @@ using System.Windows.Forms.DataVisualization.Charting;
 
 namespace CmpMagnetometersData
 {
-    public class FileDataPoint
+    public class FilePoint
     {
         public DateTime Time;
         public int MagneticField;
         public ushort RmsDeviation;
         public byte StateCode;
 
-        public FileDataPoint(string text)
+        public FilePoint(string text)
         {
             TextParse(text);
         }

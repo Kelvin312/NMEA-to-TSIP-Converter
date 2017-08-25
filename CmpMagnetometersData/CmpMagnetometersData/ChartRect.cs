@@ -1,99 +1,122 @@
 using System;
+using System.Drawing;
 using System.Windows.Forms.DataVisualization.Charting;
 
 namespace CmpMagnetometersData
 {
+    public struct AxisSize
+    {
+        public double Min;
+        public double Max;
+
+        public double Size
+        {
+            get { return Max - Min; }
+            set
+            {
+                var mid = Middle;
+                Min = mid - value / 2.0;
+                Max = mid + value / 2.0;
+            }
+        }
+
+        public double Middle
+        {
+            get { return (Max + Min) / 2.0; }
+            set
+            {
+                var delta = Size / 2.0;
+                Min = value - delta;
+                Max = value + delta;
+            }
+        }
+
+        public void Check(double minSize, AxisSize border)
+        {
+            if (Size > border.Size || minSize > border.Size)
+            {
+                this = border;
+                return;
+            }
+            if (Size < minSize) Size = minSize;
+            if (Min < border.Min) Middle = Middle + border.Min - Min;
+            if (Max > border.Max) Middle = Middle + border.Max - Max;
+        }
+
+        public AxisSize(double min, double max)
+        {
+            Min = min;
+            Max = max;
+        }
+        public AxisSize(Axis axis)
+        {
+            Min = axis.Minimum;
+            Max = axis.Maximum;
+        }
+        public AxisSize(AxisScaleView view)
+        {
+            Min = view.ViewMinimum;
+            Max = view.ViewMaximum;
+        }
+    }
+
     public class ChartRect
     {
-        public double MinXTime;
-        public double MaxXTime;
-        public double MinYVal;
-        public double MaxYVal;
+        public AxisSize X;
+        public AxisSize Y;
 
-        public ChartRect(ChartRect rect)
+        public ChartRect()
         {
-            MinXTime = rect.MinXTime;
-            MaxXTime = rect.MaxXTime;
-            MinYVal = rect.MinYVal;
-            MaxYVal = rect.MaxYVal;
+            X = Y = new AxisSize(double.PositiveInfinity, double.NegativeInfinity);
         }
 
-        public ChartRect(double minXTime, double maxXTime, double minYVal, double maxYVal)
+        public ChartRect(ChartRect other)
         {
-            MinXTime = minXTime;
-            MaxXTime = maxXTime;
-            MinYVal = minYVal;
-            MaxYVal = maxYVal;
+            X = other.X;
+            Y = other.Y;
         }
-        public ChartRect(ChartArea ca, bool isView = true)
+
+        public ChartRect(double xMin, double xMax, double yMin, double yMax)
         {
-            if (isView)
+            X = new AxisSize(xMin, xMax);
+            Y = new AxisSize(yMin, yMax);
+        }
+        public ChartRect(ChartArea ca, bool isBorder = false)
+        {
+            if (isBorder)
             {
-                MinXTime = ca.AxisX.ScaleView.ViewMinimum;
-                MaxXTime = ca.AxisX.ScaleView.ViewMaximum;
-                MinYVal = ca.AxisY.ScaleView.ViewMinimum;
-                MaxYVal = ca.AxisY.ScaleView.ViewMaximum;
+                X = new AxisSize(ca.AxisX);
+                Y = new AxisSize(ca.AxisY);
             }
             else
             {
-                MinXTime = ca.AxisX.Minimum;
-                MaxXTime = ca.AxisX.Maximum;
-                MinYVal = ca.AxisY.Minimum;
-                MaxYVal = ca.AxisY.Maximum;
+                X = new AxisSize(ca.AxisX.ScaleView);
+                Y = new AxisSize(ca.AxisY.ScaleView);
             }
         }
-
-        public double GetYSize()
-        {
-            return MaxYVal - MinYVal;
-        }
-
-        public double GetYMid()
-        {
-            return (MaxYVal + MinYVal)/2;
-        }
-
-        public bool IsXChange(ChartRect newRect)
-        {
-            return Math.Abs(MaxXTime - newRect.MaxXTime)
-                   + Math.Abs(MinXTime - newRect.MinXTime) > 0.1 * Config.XMinZoom;
-        }
-
-        public bool IsYZoomChange(ChartRect newRect)
-        {
-            return Math.Abs(GetYSize() - newRect.GetYSize()) > 0.1 * Config.YMinZoom;
-        }
-
-        public void YResize(double newSize)
-        {
-            var yMid = GetYMid();
-            var yDelta = newSize / 2;
-            MaxYVal = yMid + yDelta;
-            MinYVal = yMid - yDelta;
-        }
-
-        public void YMove(double newMid)
-        {
-            var yMid = newMid;
-            var yDelta = GetYSize() / 2;
-            MaxYVal = yMid + yDelta;
-            MinYVal = yMid - yDelta;
-        }
-
+        
         public void Union(ChartRect rect)
         {
-            MinXTime = Math.Min(MinXTime, rect.MinXTime);
-            MaxXTime = Math.Max(MaxXTime, rect.MaxXTime);
-            MinYVal = Math.Min(MinYVal, rect.MinYVal);
-            MaxYVal = Math.Max(MaxYVal, rect.MaxYVal);
+            X.Min = Math.Min(X.Min, rect.X.Min);
+            X.Max = Math.Max(X.Max, rect.X.Max);
+            Y.Min = Math.Min(Y.Min, rect.Y.Min);
+            Y.Max = Math.Max(Y.Max, rect.Y.Max);
+        }
+
+        public void Union(double x, double y)
+        {
+            X.Min = Math.Min(X.Min, x);
+            X.Max = Math.Max(X.Max, x);
+            Y.Min = Math.Min(Y.Min, y);
+            Y.Max = Math.Max(Y.Max, y);
         }
 
         public void CutOff(ChartRect rect)
         {
-            MinXTime = Math.Max(MinXTime, rect.MinXTime);
-            MaxXTime = Math.Min(MaxXTime, rect.MaxXTime);
-            MinYVal = Math.Max(MinYVal, rect.MinYVal);
-            MaxYVal = Math.Min(MaxYVal, rect.MaxYVal);
+            X.Min = Math.Max(X.Min, rect.X.Min);
+            X.Max = Math.Min(X.Max, rect.X.Max);
+            Y.Min = Math.Max(Y.Min, rect.Y.Min);
+            Y.Max = Math.Min(Y.Max, rect.Y.Max);
         }
     }
 }
