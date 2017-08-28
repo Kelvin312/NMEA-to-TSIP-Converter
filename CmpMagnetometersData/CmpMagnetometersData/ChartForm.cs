@@ -65,6 +65,29 @@ namespace CmpMagnetometersData
             _chartControl.AxisViewChanged += ChartControl_AxisViewChanged;
         }
 
+        private void ChartForm_MouseEnter(object sender, EventArgs e)
+        {
+            Focus();
+        }
+        private void ChartForm_MouseLeave(object sender, EventArgs e)
+        {
+            Parent.Focus();
+        }
+
+        private void ChartForm_MouseWheel(object sender, MouseEventArgs e)
+        {
+            if (ModifierKeys != Keys.Control) return;
+            var child = GetChildAtPoint(e.Location);
+            if (!_chartControl.Equals(child)) return;
+
+            ChartRect newZoom = new ChartRect(_ptrChartArea);
+            ScaleViewZoom(e.Delta, ref newZoom.X, Config.XMinZoom);
+            ScaleViewZoom(e.Delta, ref newZoom.Y, Config.YMinZoom);
+            UpdateAxis(newZoom, true);
+            ScaleViewChanged?.Invoke(this, newZoom);
+        }
+
+
         #region ChartEvents
 
         private bool _mouseDowned;
@@ -83,15 +106,15 @@ namespace CmpMagnetometersData
 
         public void ChartControl_MouseWheel(object sender, MouseEventArgs e)
         {
-            if (ModifierKeys == Keys.Control)
-            {
-                ChartRect newZoom = new ChartRect(_ptrChartArea);
+            if (ModifierKeys != Keys.Control) return;
+            var child = GetChildAtPoint(e.Location);
+            if (!_chartControl.Equals(child)) return;
+            ChartRect newZoom = new ChartRect(_ptrChartArea);
 
-                ScaleViewZoom(e.Delta, ref newZoom.X, Config.XMinZoom);
-                ScaleViewZoom(e.Delta, ref newZoom.Y, Config.YMinZoom);
-                UpdateAxis(newZoom, true);
-                ScaleViewChanged?.Invoke(this, newZoom);
-            }
+            ScaleViewZoom(e.Delta, ref newZoom.X, Config.XMinZoom);
+            ScaleViewZoom(e.Delta, ref newZoom.Y, Config.YMinZoom);
+            UpdateAxis(newZoom, true);
+            ScaleViewChanged?.Invoke(this, newZoom);
         }
 
         private void ScaleViewZoom(int delta, ref AxisSize axis, double minZoom)

@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Drawing;
 using System.Linq;
+using System.Runtime.CompilerServices;
 using System.Windows.Forms;
 
 namespace CmpMagnetometersData
@@ -237,6 +238,16 @@ namespace CmpMagnetometersData
 
     public class CustomPanel : Panel
     {
+        public CustomPanel()
+        {
+            this.MouseEnter += CustomPanel_MouseEnter;
+        }
+
+        private void CustomPanel_MouseEnter(object sender, EventArgs e)
+        {
+            throw new NotImplementedException();
+        }
+
         protected override void OnMouseWheel(MouseEventArgs e)
         {
            if(ModifierKeys == Keys.None) base.OnMouseWheel(e);
