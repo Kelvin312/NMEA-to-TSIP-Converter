@@ -15,7 +15,7 @@ namespace CmpMagnetometersData
         public static double YMinZoom = 1.0;
 
         public static ChartRect GlobalBorder = new ChartRect();
-        public static bool IsYAutoScroll = true;
+        public static bool IsYAutoScroll = false;
         public static bool IsYSyncZoom = false;
 
         public static string ViewTimeFormat = "yy.MM.dd-HH:mm:ss";

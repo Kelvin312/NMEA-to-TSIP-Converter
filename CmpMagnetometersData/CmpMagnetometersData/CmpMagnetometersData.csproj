@@ -69,7 +69,7 @@
     </Compile>
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="test.cs">
+    <Compile Include="ChartForm.Logics.cs">
       <SubType>UserControl</SubType>
     </Compile>
     <EmbeddedResource Include="ChartForm.resx">

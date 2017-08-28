@@ -3,8 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text;
-using System.Threading.Tasks;
-using System.Windows.Forms.DataVisualization.Charting;
+using System.Windows.Forms;
 
 namespace CmpMagnetometersData
 {
@@ -12,6 +11,11 @@ namespace CmpMagnetometersData
     {
         public ChartRect Border { get; private set; }
         public bool IsMinimize { get; private set; }
+        public bool IsEnable
+        {
+            get { return cbEnable.Checked; }
+            private set { cbEnable.Checked = value; }
+        }
         public bool IsValid { get; private set; }
 
         public readonly string FileName;
@@ -21,41 +25,56 @@ namespace CmpMagnetometersData
 
         public event EventHandler<ChartRect> ScaleViewChanged;
 
-        public event EventHandler<bool> OtherEvent; 
+        public event EventHandler<bool> OtherEvent;
 
         private void ReadFile(string filePath)
         {
             _pointsList.Clear();
             var pointIndex = -3;
-            using (var sr = new StreamReader(filePath))
+            try
             {
-                foreach (var str in sr.ReadToEnd()
-                    .Split(new[] { '\0' }, StringSplitOptions.RemoveEmptyEntries))
+                using (var sr = new StreamReader(filePath))
                 {
-                    if (++pointIndex < 0) continue;
-                    try
+                    foreach (var str in sr.ReadToEnd()
+                        .Split(new[] {'\0'}, StringSplitOptions.RemoveEmptyEntries))
                     {
-                        var p = new FilePoint(str);
-                        _pointsList.Add(p);
-                    }
-                    catch (Exception)
-                    {
-                        // throw;
+                        if (++pointIndex < 0) continue;
+                        try
+                        {
+                            var p = new FilePoint(str);
+                            _pointsList.Add(p);
+                        }
+                        catch (Exception)
+                        {
+                            // throw;
+                        }
                     }
                 }
+            }
+            catch (Exception ex)
+            {
+                IsValid = false;
+                MessageBox.Show(FileName + "\r\n" + ex.Message,
+                    "Ошибка открытия файла",
+                    MessageBoxButtons.OK,
+                    MessageBoxIcon.Error);
+                throw;
             }
             RefreshData();
         }
 
-        private void RefreshData(DateTime? newTime = null)
+        public void RefreshData(DateTime? newTime = null)
         {
             IsValid = _pointsList.Count > 1;
-            if(!IsValid) return;
             _ptrSeries.Points.Clear();
             _xList.Clear();
             Border = new ChartRect();
             TimeSpan deltaTime = new TimeSpan();
-            
+            if (!IsValid)
+            {
+                IsEnable = false;
+                return;
+            }
             if (newTime != null)
             {
                 deltaTime = newTime.Value.Subtract(_pointsList[0].Time);
@@ -82,13 +101,12 @@ namespace CmpMagnetometersData
         {
             var curView = new ChartRect(_ptrChartArea);
             var globalBorder = new ChartRect(_ptrChartArea, true);
-            if (newView == null) newView = curView;
 
             if (isUpdateBorder)
             {
                 globalBorder = new ChartRect(Config.GlobalBorder);
-                globalBorder.Y.Min -= 10;
-                globalBorder.Y.Max += 10;
+                //globalBorder.Y.Min -= 5000;
+                globalBorder.Y.Max += Config.YMinZoom * 10.0;
                 _ptrAxisX.Minimum = globalBorder.X.Min;
                 _ptrAxisX.Maximum = globalBorder.X.Max;
                 _ptrAxisY.Minimum = globalBorder.Y.Min;
@@ -101,17 +119,21 @@ namespace CmpMagnetometersData
             }
             else
             {
-                //X
-                curView.X = newView.X;
+                if (newView != null)
+                {
+                    //X
+                    curView.X = newView.X;
+                    //Y
+                    if (isUpdateY)
+                    {
+                        curView.Y = newView.Y;
+                    }
+                    else if (Config.IsYSyncZoom)
+                    {
+                        curView.Y.Size = newView.Y.Size;
+                    }
+                }
                 //Y
-                if (isUpdateY)
-                {
-                    curView.Y = newView.Y;
-                }
-                else if (Config.IsYSyncZoom && !curView.Equals(newView))
-                {
-                    curView.Y.Size = newView.Y.Size;
-                }
                 if (Config.IsYAutoScroll)
                 {
                     var bet = _xList.GetViewBetween(
@@ -127,10 +149,15 @@ namespace CmpMagnetometersData
                     }
                 }
             }
-            curView.X.Check(Config.XMinZoom, globalBorder.X);
-            curView.Y.Check(Config.YMinZoom, globalBorder.Y);
-            _ptrAxisX.ScaleView.Zoom(curView.X.Min, curView.X.Max);
-            _ptrAxisY.ScaleView.Zoom(curView.Y.Min, curView.Y.Max);
+            var oldView = new ChartRect(_ptrChartArea);
+            if (curView.X.Check(oldView.X, Config.XMinZoom, globalBorder.X))
+            {
+                _ptrAxisX.ScaleView.Zoom(curView.X.Min, curView.X.Max);
+            }
+            if (curView.Y.Check(oldView.Y, Config.YMinZoom, globalBorder.Y))
+            {
+                _ptrAxisY.ScaleView.Zoom(curView.Y.Min, curView.Y.Max);
+            }
         }
     }
 }

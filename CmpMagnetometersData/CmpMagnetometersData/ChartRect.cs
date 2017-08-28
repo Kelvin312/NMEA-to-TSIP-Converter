@@ -31,16 +31,31 @@ namespace CmpMagnetometersData
             }
         }
 
-        public void Check(double minSize, AxisSize border)
+        public void Shift(double step)
         {
-            if (Size > border.Size || minSize > border.Size)
+            Min += step;
+            Max += step;
+        }
+
+        public bool Check(AxisSize old, double minSize, AxisSize border)
+        {
+            if (Size + minSize * 0.1 > border.Size || minSize * 3 > border.Size)
             {
                 this = border;
-                return;
+                return true;
             }
-            if (Size < minSize) Size = minSize;
-            if (Min < border.Min) Middle = Middle + border.Min - Min;
-            if (Max > border.Max) Middle = Middle + border.Max - Max;
+            if (Size < minSize) Size = minSize * 3;
+            if (Min < border.Min)
+            {
+                Shift(border.Min - Min);
+                return true;
+            }
+            if (Max > border.Max)
+            {
+                Shift(border.Max - Max);
+                return true;
+            }
+            return Math.Abs(old.Min - Min) + Math.Abs(old.Max - Max) > minSize * 0.1;
         }
 
         public AxisSize(double min, double max)

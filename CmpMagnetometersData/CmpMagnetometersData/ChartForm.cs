@@ -1,12 +1,8 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.ComponentModel;
 using System.Drawing;
-using System.Data;
 using System.IO;
 using System.Linq;
 using System.Text;
-using System.Threading.Tasks;
 using System.Windows.Forms;
 using System.Windows.Forms.DataVisualization.Charting;
 
@@ -19,13 +15,16 @@ namespace CmpMagnetometersData
         private readonly ChartArea _ptrChartArea;
         private readonly Axis _ptrAxisX;
         private readonly Axis _ptrAxisY;
+        private readonly string _filePath;
 
         public ChartForm(string filePath)
         {
             InitializeComponent();
 
             IsMinimize = false;
-            FileName = Path.GetFileNameWithoutExtension(filePath);
+            IsEnable = true;
+            _filePath = filePath;
+            FileName = Path.GetFileNameWithoutExtension(_filePath);
             lblFileName.Text = FileName;
             lblFileNameHid.Text = FileName;
 
@@ -36,20 +35,11 @@ namespace CmpMagnetometersData
             _ptrAxisY = _ptrChartArea.AxisY;
             ChartControlInit();
 
-            ReadFile(filePath);
+            ReadFile(_filePath);
         }
-
-        //private void ChartForm_Load(object sender, EventArgs e)
-        //{
-        //    dtpStartX.Value = _filePoints.First().Time;
-        //    _isDtpValueChanged = false;
-        //}
 
         private void ChartControlInit()
         {
-            _chartControl.Legends.Clear();
-            _ptrSeries.ChartType = SeriesChartType.Spline;
-
             //Настраиваем формат данных и вид меток
             _ptrSeries.XValueType = ChartValueType.DateTime;
             _ptrAxisX.LabelStyle.IsEndLabelVisible = false;
@@ -67,9 +57,9 @@ namespace CmpMagnetometersData
             _ptrChartArea.CursorY.IsUserSelectionEnabled = true;
             _ptrAxisY.ScrollBar.Enabled = false;
             //Mouse
-            _chartControl.MouseEnter += ChartControl_MouseEnter;
-            _chartControl.MouseLeave += ChartControl_MouseLeave;
-            _chartControl.MouseWheel += ChartControl_MouseWheel;
+           // _chartControl.MouseEnter += ChartControl_MouseEnter;
+           // _chartControl.MouseLeave += ChartControl_MouseLeave;
+           // _chartControl.MouseWheel += ChartControl_MouseWheel;
             _chartControl.MouseDown += ChartControl_MouseDown;
             _chartControl.MouseMove += ChartControl_MouseMove;
             _chartControl.AxisViewChanged += ChartControl_AxisViewChanged;
@@ -91,9 +81,9 @@ namespace CmpMagnetometersData
             _chartControl.Parent.Focus();
         }
 
-        private void ChartControl_MouseWheel(object sender, MouseEventArgs e)
+        public void ChartControl_MouseWheel(object sender, MouseEventArgs e)
         {
-            if (Control.ModifierKeys == Keys.None)
+            if (ModifierKeys == Keys.Control)
             {
                 ChartRect newZoom = new ChartRect(_ptrChartArea);
 
@@ -193,6 +183,22 @@ namespace CmpMagnetometersData
             OtherEvent?.Invoke(this, false);
         }
 
+        private void cbEnable_CheckedChanged(object sender, EventArgs e)
+        {
+            if (!IsValid) cbEnable.Checked = false;
+        }
+
+        private void btnReOpen_Click(object sender, EventArgs e)
+        {
+            ReadFile(_filePath);
+            OtherEvent?.Invoke(this, false);
+        }
+
+        private void btnSave_Click(object sender, EventArgs e)
+        {
+            throw new NotImplementedException();
+        }
+
         private void btnTurn_Click(object sender, EventArgs e)
         {
             IsMinimize ^= true;
@@ -200,25 +206,11 @@ namespace CmpMagnetometersData
             {
                 c.Visible = !IsMinimize;
             }
-                OtherEvent?.Invoke(this, false);
+            btnTurn.Visible = true;
+            lblFileNameHid.Visible = IsMinimize;
+            btnTurn.Text = IsMinimize ? "Развернуть" : "Свернуть";
+            MinimumSize = new Size(MinimumSize.Width, IsMinimize ? 30 : 170);
+            OtherEvent?.Invoke(this, false);
         }
-
-       
-        private void btnDelete_Click(object sender, EventArgs e)
-        {
-            
-        }
-
-        //private void ChartForm_Resize(object sender, EventArgs e)
-        //{
-        //    if(IsMinimize == Height < 145) return;
-        //    IsMinimize = this.Height < 145;
-        //        
-        //    btnTurn.Visible = true;
-        //    lblFileNameHid.Visible = IsMinimize;
-        //    lblFileNameHid.Text = lblFileName.Text;
-        //    btnTurn.Text = IsMinimize ? "Развернуть" : "Свернуть";
-        //}
-
     }
 }
