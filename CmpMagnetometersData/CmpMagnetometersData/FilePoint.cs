@@ -34,5 +34,12 @@ namespace CmpMagnetometersData
             CultureInfo provider = CultureInfo.InvariantCulture;
             Time = DateTime.ParseExact(args[4] + ' ' + args[5], "MM-dd-yy HH:mm:ss.ff", provider);
         }
+
+        public double GetRoundTime()
+        {
+            var time = new DateTime(Time.Year, Time.Month,Time.Day,Time.Hour,Time.Minute,Time.Second);
+            if (Time.Millisecond > 500) time = time.AddSeconds(1);
+            return time.ToOADate();
+        }
     }
 }

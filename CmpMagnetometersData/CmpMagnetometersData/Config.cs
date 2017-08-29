@@ -18,6 +18,8 @@ namespace CmpMagnetometersData
         public static bool IsYAutoScroll = false;
         public static bool IsYSyncZoom = false;
 
-        public static string ViewTimeFormat = "yy.MM.dd-HH:mm:ss";
+        public static string ViewTimeText = "yy.MM.dd-HH:mm:ss";
+        public static string ViewTimeDtp = "yy.MM.dd-HH:mm:ss";
+        public static string ViewTimeChart = "yy.MM.dd-HH:mm:ss";
     }
 }

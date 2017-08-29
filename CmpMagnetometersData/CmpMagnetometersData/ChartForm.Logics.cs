@@ -27,6 +27,30 @@ namespace CmpMagnetometersData
 
         public event EventHandler<bool> OtherEvent;
 
+        public SortedSet<KeyValueHolder<double, int>> GetXList() => _xList;
+
+        public int GetValue(int index)
+        {
+            return Config.IsMagneticField ? _pointsList[index].MagneticField : _pointsList[index].RmsDeviation;
+        }
+
+        public int GetCount() => _pointsList.Count;
+
+        public void RemovePoints(SortedSet<KeyValueHolder<double, int>> rlist)
+        {
+            for (int i = _pointsList.Count - 1; i > -1; i--)
+            {
+                var test = new KeyValueHolder<double, int>(_pointsList[i].GetRoundTime());
+                if(rlist.Contains(test)) _pointsList.RemoveAt(i);
+            }
+        }
+
+        public void SetTimeView()
+        {
+            _ptrAxisX.LabelStyle.Format = Config.ViewTimeChart;
+            dtpStartX.CustomFormat = Config.ViewTimeDtp;
+        }
+
         private void ReadFile(string filePath)
         {
             _pointsList.Clear();
@@ -88,12 +112,10 @@ namespace CmpMagnetometersData
                 }
                 var pix = point.GetPixel();
                 _ptrSeries.Points.Add(pix);
-                _xList.Add(new KeyValueHolder<double, int>(pix.XValue, i));
+                _xList.Add(new KeyValueHolder<double, int>(point.GetRoundTime(), i));
                 Border.Union(pix.XValue, pix.YValues.First());
             }
 
-            _ptrAxisX.LabelStyle.Format = Config.ViewTimeFormat;
-            dtpStartX.CustomFormat = Config.ViewTimeFormat;
             dtpStartX.Value = _pointsList[0].Time;
         }
 
@@ -105,7 +127,7 @@ namespace CmpMagnetometersData
             if (isUpdateBorder)
             {
                 globalBorder = new ChartRect(Config.GlobalBorder);
-                //globalBorder.Y.Min -= 5000;
+                globalBorder.Y.Min -= 2;
                 globalBorder.Y.Max += Config.YMinZoom * 10.0;
                 _ptrAxisX.Minimum = globalBorder.X.Min;
                 _ptrAxisX.Maximum = globalBorder.X.Max;

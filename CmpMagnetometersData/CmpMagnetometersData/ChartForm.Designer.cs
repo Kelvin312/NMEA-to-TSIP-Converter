@@ -80,7 +80,6 @@
             this.chartControl.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
             | System.Windows.Forms.AnchorStyles.Left) 
             | System.Windows.Forms.AnchorStyles.Right)));
-            chartArea1.AxisY.Crossing = -1.7976931348623157E+308D;
             chartArea1.Name = "ChartArea1";
             this.chartControl.ChartAreas.Add(chartArea1);
             this.chartControl.Location = new System.Drawing.Point(132, 3);
@@ -93,6 +92,7 @@
             this.chartControl.Size = new System.Drawing.Size(465, 164);
             this.chartControl.TabIndex = 6;
             this.chartControl.Text = "chart1";
+            this.chartControl.MouseEnter += new System.EventHandler(this.chartControl_MouseEnter);
             // 
             // lblFileName
             // 

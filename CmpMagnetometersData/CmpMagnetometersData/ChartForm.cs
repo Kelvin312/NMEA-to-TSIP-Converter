@@ -34,6 +34,7 @@ namespace CmpMagnetometersData
             _ptrAxisX = _ptrChartArea.AxisX;
             _ptrAxisY = _ptrChartArea.AxisY;
             ChartControlInit();
+            SetTimeView();
 
             ReadFile(_filePath);
         }
@@ -57,62 +58,26 @@ namespace CmpMagnetometersData
             _ptrChartArea.CursorY.IsUserSelectionEnabled = true;
             _ptrAxisY.ScrollBar.Enabled = false;
             //Mouse
-           // _chartControl.MouseEnter += ChartControl_MouseEnter;
-           // _chartControl.MouseLeave += ChartControl_MouseLeave;
-           // _chartControl.MouseWheel += ChartControl_MouseWheel;
             _chartControl.MouseDown += ChartControl_MouseDown;
             _chartControl.MouseMove += ChartControl_MouseMove;
             _chartControl.AxisViewChanged += ChartControl_AxisViewChanged;
         }
-
-        private void ChartForm_MouseEnter(object sender, EventArgs e)
-        {
-            Focus();
-        }
-        private void ChartForm_MouseLeave(object sender, EventArgs e)
-        {
-            Parent.Focus();
-        }
-
-        private void ChartForm_MouseWheel(object sender, MouseEventArgs e)
-        {
-            if (ModifierKeys != Keys.Control) return;
-            var child = GetChildAtPoint(e.Location);
-            if (!_chartControl.Equals(child)) return;
-
-            ChartRect newZoom = new ChartRect(_ptrChartArea);
-            ScaleViewZoom(e.Delta, ref newZoom.X, Config.XMinZoom);
-            ScaleViewZoom(e.Delta, ref newZoom.Y, Config.YMinZoom);
-            UpdateAxis(newZoom, true);
-            ScaleViewChanged?.Invoke(this, newZoom);
-        }
-
-
         #region ChartEvents
 
         private bool _mouseDowned;
         private double _xStart, _yStart;
 
-        private void ChartControl_MouseEnter(object sender, EventArgs e)
+        private void chartControl_MouseEnter(object sender, EventArgs e)
         {
-            _chartControl.Focus();
+            this.OnMouseEnter(e);
         }
 
-        private void ChartControl_MouseLeave(object sender, EventArgs e)
+        public void ChartControl_MouseWheel(int delta)
         {
-            _mouseDowned = false;
-            _chartControl.Parent.Focus();
-        }
-
-        public void ChartControl_MouseWheel(object sender, MouseEventArgs e)
-        {
-            if (ModifierKeys != Keys.Control) return;
-            var child = GetChildAtPoint(e.Location);
-            if (!_chartControl.Equals(child)) return;
             ChartRect newZoom = new ChartRect(_ptrChartArea);
 
-            ScaleViewZoom(e.Delta, ref newZoom.X, Config.XMinZoom);
-            ScaleViewZoom(e.Delta, ref newZoom.Y, Config.YMinZoom);
+            ScaleViewZoom(delta, ref newZoom.X, Config.XMinZoom);
+            ScaleViewZoom(delta, ref newZoom.Y, Config.YMinZoom);
             UpdateAxis(newZoom, true);
             ScaleViewChanged?.Invoke(this, newZoom);
         }
@@ -209,6 +174,7 @@ namespace CmpMagnetometersData
         private void cbEnable_CheckedChanged(object sender, EventArgs e)
         {
             if (!IsValid) cbEnable.Checked = false;
+            else OtherEvent?.Invoke(this, false);
         }
 
         private void btnReOpen_Click(object sender, EventArgs e)
@@ -221,6 +187,8 @@ namespace CmpMagnetometersData
         {
             throw new NotImplementedException();
         }
+
+        
 
         private void btnTurn_Click(object sender, EventArgs e)
         {

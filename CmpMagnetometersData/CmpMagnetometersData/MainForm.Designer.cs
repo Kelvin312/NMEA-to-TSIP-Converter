@@ -37,7 +37,6 @@
             this.toolStripSeparator2 = new System.Windows.Forms.ToolStripSeparator();
             this.btnConfig = new System.Windows.Forms.ToolStripButton();
             this.ofdAddFile = new System.Windows.Forms.OpenFileDialog();
-            this.tlbContent = new System.Windows.Forms.TableLayoutPanel();
             this.tableLayoutPanel1 = new System.Windows.Forms.TableLayoutPanel();
             this.panel1 = new System.Windows.Forms.Panel();
             this.btnCalculate = new System.Windows.Forms.Button();
@@ -45,7 +44,8 @@
             this.btnCheck = new System.Windows.Forms.Button();
             this.txtValues = new System.Windows.Forms.TextBox();
             this.lblValues = new System.Windows.Forms.Label();
-            this.panelContent = new CustomPanel();
+            this.panelContent = new CmpMagnetometersData.CustomPanel();
+            this.tlbContent = new System.Windows.Forms.TableLayoutPanel();
             this.toolStrip1.SuspendLayout();
             this.tableLayoutPanel1.SuspendLayout();
             this.panel1.SuspendLayout();
@@ -113,6 +113,7 @@
             this.btnConfig.Name = "btnConfig";
             this.btnConfig.Size = new System.Drawing.Size(87, 22);
             this.btnConfig.Text = "Настройки";
+            this.btnConfig.Click += new System.EventHandler(this.btnConfig_Click);
             // 
             // ofdAddFile
             // 
@@ -120,28 +121,11 @@
             this.ofdAddFile.Multiselect = true;
             this.ofdAddFile.Title = "Добавить файл";
             // 
-            // tlbContent
-            // 
-            this.tlbContent.AutoSize = true;
-            this.tlbContent.ColumnCount = 1;
-            this.tlbContent.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 100F));
-            this.tlbContent.Dock = System.Windows.Forms.DockStyle.Fill;
-            this.tlbContent.Location = new System.Drawing.Point(0, 0);
-            this.tlbContent.Margin = new System.Windows.Forms.Padding(0);
-            this.tlbContent.Name = "tlbContent";
-            this.tlbContent.RowCount = 1;
-            this.tlbContent.RowStyles.Add(new System.Windows.Forms.RowStyle());
-            this.tlbContent.RowStyles.Add(new System.Windows.Forms.RowStyle());
-            this.tlbContent.RowStyles.Add(new System.Windows.Forms.RowStyle());
-            this.tlbContent.RowStyles.Add(new System.Windows.Forms.RowStyle());
-            this.tlbContent.Size = new System.Drawing.Size(831, 363);
-            this.tlbContent.TabIndex = 2;
-            // 
             // tableLayoutPanel1
             // 
             this.tableLayoutPanel1.ColumnCount = 2;
             this.tableLayoutPanel1.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 100F));
-            this.tableLayoutPanel1.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Absolute, 150F));
+            this.tableLayoutPanel1.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Absolute, 145F));
             this.tableLayoutPanel1.Controls.Add(this.panel1, 1, 0);
             this.tableLayoutPanel1.Controls.Add(this.panelContent, 0, 0);
             this.tableLayoutPanel1.Dock = System.Windows.Forms.DockStyle.Fill;
@@ -161,10 +145,10 @@
             this.panel1.Controls.Add(this.txtValues);
             this.panel1.Controls.Add(this.lblValues);
             this.panel1.Dock = System.Windows.Forms.DockStyle.Fill;
-            this.panel1.Location = new System.Drawing.Point(837, 0);
+            this.panel1.Location = new System.Drawing.Point(842, 0);
             this.panel1.Margin = new System.Windows.Forms.Padding(0);
             this.panel1.Name = "panel1";
-            this.panel1.Size = new System.Drawing.Size(150, 369);
+            this.panel1.Size = new System.Drawing.Size(145, 369);
             this.panel1.TabIndex = 0;
             // 
             // btnCalculate
@@ -208,7 +192,7 @@
             this.txtValues.Multiline = true;
             this.txtValues.Name = "txtValues";
             this.txtValues.ScrollBars = System.Windows.Forms.ScrollBars.Vertical;
-            this.txtValues.Size = new System.Drawing.Size(141, 263);
+            this.txtValues.Size = new System.Drawing.Size(136, 263);
             this.txtValues.TabIndex = 1;
             // 
             // lblValues
@@ -227,8 +211,25 @@
             this.panelContent.Dock = System.Windows.Forms.DockStyle.Fill;
             this.panelContent.Location = new System.Drawing.Point(3, 3);
             this.panelContent.Name = "panelContent";
-            this.panelContent.Size = new System.Drawing.Size(831, 363);
+            this.panelContent.Size = new System.Drawing.Size(836, 363);
             this.panelContent.TabIndex = 1;
+            // 
+            // tlbContent
+            // 
+            this.tlbContent.AutoSize = true;
+            this.tlbContent.ColumnCount = 1;
+            this.tlbContent.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 100F));
+            this.tlbContent.Dock = System.Windows.Forms.DockStyle.Fill;
+            this.tlbContent.Location = new System.Drawing.Point(0, 0);
+            this.tlbContent.Margin = new System.Windows.Forms.Padding(0);
+            this.tlbContent.Name = "tlbContent";
+            this.tlbContent.RowCount = 1;
+            this.tlbContent.RowStyles.Add(new System.Windows.Forms.RowStyle());
+            this.tlbContent.RowStyles.Add(new System.Windows.Forms.RowStyle());
+            this.tlbContent.RowStyles.Add(new System.Windows.Forms.RowStyle());
+            this.tlbContent.RowStyles.Add(new System.Windows.Forms.RowStyle());
+            this.tlbContent.Size = new System.Drawing.Size(836, 363);
+            this.tlbContent.TabIndex = 2;
             // 
             // MainForm
             // 

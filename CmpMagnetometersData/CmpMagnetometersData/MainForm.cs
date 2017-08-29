@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Drawing;
 using System.Linq;
 using System.Runtime.CompilerServices;
+using System.Text;
 using System.Windows.Forms;
 
 namespace CmpMagnetometersData
@@ -27,19 +28,20 @@ namespace CmpMagnetometersData
                 var resetZoomList = new List<ChartForm>();
                 foreach (var fPath in ofdAddFile.FileNames)
                 {
-                        var chartForm = new ChartForm(fPath);
-                        if (chartForm.IsValid)
-                        {
-                            resetZoomList.Add(chartForm);
-                            Config.GlobalBorder.Union(chartForm.Border);
-                            chartForm.ScaleViewChanged += ChartForm_ScaleViewChanged;
-                            chartForm.OtherEvent += ChartForm_OtherEvent;
+                    var chartForm = new ChartForm(fPath);
+                    if (chartForm.IsValid)
+                    {
+                        resetZoomList.Add(chartForm);
+                        Config.GlobalBorder.Union(chartForm.Border);
+                        chartForm.ScaleViewChanged += ChartForm_ScaleViewChanged;
+                        chartForm.OtherEvent += ChartForm_OtherEvent;
+                        chartForm.MouseEnter += ChartForm_MouseEnter;
 
-                            chartForm.Dock = DockStyle.Fill;
-                            tlbContent.RowCount++;
-                            tlbContent.RowStyles.Add(new RowStyle(SizeType.Percent, 100F));
-                            tlbContent.Controls.Add(chartForm, 0, tlbContent.RowCount - 1);
-                        }
+                        chartForm.Dock = DockStyle.Fill;
+                        tlbContent.RowCount++;
+                        tlbContent.RowStyles.Add(new RowStyle(SizeType.Percent, 100F));
+                        tlbContent.Controls.Add(chartForm, 0, tlbContent.RowCount - 1);
+                    }
                 }
                 var scrollMinSize = 0;
                 foreach (ChartForm chartForm in tlbContent.Controls)
@@ -54,6 +56,8 @@ namespace CmpMagnetometersData
                 resetZoomList.Clear();
             }
         }
+
+        
 
         private void ChartForm_ScaleViewChanged(object sender, ChartRect e)
         {
@@ -102,10 +106,13 @@ namespace CmpMagnetometersData
                     scrollMinSize += chartForm.MinimumSize.Height;
                 }
                 panelContent.AutoScrollMinSize = new Size(0, scrollMinSize);
+
+                btnDelete.Enabled = false;
+                btnCalculate.Enabled = false;
             }
         }
 
-        private void MagneticFieldChanged()
+        private void RefreshChartForms(bool isResetZoom = false)
         {
             Config.GlobalBorder = new ChartRect();
             foreach (ChartForm chartForm in tlbContent.Controls)
@@ -113,7 +120,7 @@ namespace CmpMagnetometersData
                 if (chartForm.IsValid)
                 {
                     chartForm.RefreshData();
-                    if (chartForm.IsEnable)
+                    if (chartForm.IsValid && chartForm.IsEnable)
                     {
                         Config.GlobalBorder.Union(chartForm.Border);
                     }
@@ -121,7 +128,7 @@ namespace CmpMagnetometersData
             }
             foreach (ChartForm chartForm in tlbContent.Controls)
             {
-                chartForm.UpdateAxis(null, false, true, true);
+                chartForm.UpdateAxis(null, false, isResetZoom, true);
             }
         }
 
@@ -132,7 +139,7 @@ namespace CmpMagnetometersData
                 btnRmsDeviation.Checked = false;
                 btnMagneticField.Checked = true;
                 Config.IsMagneticField = btnMagneticField.Checked;
-                MagneticFieldChanged();
+                RefreshChartForms(true);
             }
         }
 
@@ -143,7 +150,7 @@ namespace CmpMagnetometersData
                 btnRmsDeviation.Checked = true;
                 btnMagneticField.Checked = false;
                 Config.IsMagneticField = btnMagneticField.Checked;
-                MagneticFieldChanged();
+                RefreshChartForms(true);
             }
         }
 
@@ -151,106 +158,141 @@ namespace CmpMagnetometersData
         private SortedSet<KeyValueHolder<double, int>> _removeXlist = new SortedSet<KeyValueHolder<double, int>>();
         private void btnCheck_Click(object sender, EventArgs e)
         {
-            //if(tlbContent.Controls.Count < 2) return;
-            //var intersectXlist = new SortedSet<KeyValueHolder<double, int>>(_chartForms[0].GetXList());
-            //var unionXlist = new SortedSet<KeyValueHolder<double, int>>();
+            if(tlbContent.Controls.Count < 2) return;
+            
+            SortedSet<KeyValueHolder<double, int>> intersectXlist = null;
+            var unionXlist = new SortedSet<KeyValueHolder<double, int>>();
+            int enableCount = 0;
 
-            //for (int si = 1; si < _chartForms.Count; si++)
-            //{
-            //    var secondXlist = _chartForms[si].GetXList();
-            //    intersectXlist.IntersectWith(secondXlist);
-            //    unionXlist.UnionWith(secondXlist);
-            //}
-            //unionXlist.ExceptWith(intersectXlist);
-            //lblValues.Text = "Проверено";
-            //txtValues.Text = "";
-            //if (unionXlist.Count > 0)
-            //{
-            //    _removeXlist = unionXlist;
-            //    lblValues.Text = "Не совпадают";
-            //    btnDelete.Enabled = true;
-            //    foreach (var item in unionXlist)
-            //    {
-            //        txtValues.AppendText(DateTime.FromOADate(item.Key).ToString(Config.ViewTimeFormat) + "\r\n");
-            //    }
-            //}
-            //else
-            //{
-            //    btnCalculate.Enabled = true;
-            //}
+            foreach (ChartForm chartForm in tlbContent.Controls)
+            {
+                if (chartForm.IsValid && chartForm.IsEnable)
+                {
+                    enableCount++;
+                    if (intersectXlist == null)
+                        intersectXlist = new SortedSet<KeyValueHolder<double, int>>(chartForm.GetXList());
+                    else
+                        intersectXlist.IntersectWith(chartForm.GetXList());
+                    unionXlist.UnionWith(chartForm.GetXList());
+                }
+            }
+            if(enableCount < 2) return;
+
+            unionXlist.ExceptWith(intersectXlist);
+            lblValues.Text = "Проверено";
+            txtValues.Text = "";
+            if (unionXlist.Count > 0)
+            {
+                _removeXlist = unionXlist;
+                lblValues.Text = "Не совпадают";
+                btnDelete.Enabled = true;
+                StringBuilder text = new StringBuilder();
+                foreach (var item in unionXlist)
+                {
+                    text.AppendFormat("{0:"+ Config.ViewTimeText+"}\r\n", DateTime.FromOADate(item.Key));
+                }
+                txtValues.AppendText(text.ToString());
+            }
+            else
+            {
+                btnCalculate.Enabled = true;
+            }
         }
 
         private void btnDelete_Click(object sender, EventArgs e)
         {
-            //btnDelete.Enabled = false;
+            btnDelete.Enabled = false;
 
-            //foreach (var form in _chartForms)
-            //{
-            //    form.GetPoints().RemoveAll(p => _removeXlist.Contains(
-            //        new KeyValueHolder<double, int>(p.Time.ToOADate())));
-            //    form.RefreshData();
-            //}
-            //RemoveChartForm();
+            foreach (ChartForm chartForm in tlbContent.Controls)
+            {
+                chartForm.RemovePoints(_removeXlist);
+            }
+            RefreshChartForms();
 
-            //btnCalculate.Enabled = true;
-            //lblValues.Text = "Удалено";
-            //txtValues.Text = "";
+            btnCalculate.Enabled = true;
+            lblValues.Text = "Удалено";
+            txtValues.Text = "";
         }
 
         private void btnCalculate_Click(object sender, EventArgs e)
         {
-            //btnCalculate.Enabled = false;
-            //lblValues.Text = "коэффициент корреляции";
-            //txtValues.Text = "";
+            btnCalculate.Enabled = false;
+            lblValues.Text = "коэффициент корреляции";
+            txtValues.Text = "";
+            var formCount = tlbContent.Controls.Count;
+            StringBuilder text = new StringBuilder();
 
-            //for (int fi = 0; fi < _chartForms.Count; fi++)
-            //{
-            //    var fp = _chartForms[fi].GetPoints();
-            //    for (int si = fi+1; si < _chartForms.Count; si++)
-            //    {
-            //        var sp = _chartForms[si].GetPoints();
-            //        double sumA = 0, sumB = 0, sumAB = 0, sumAA = 0, sumBB = 0;
-            //        long a, b, n = fp.Count;
-            //        for (int i = 0; i < n; i++)
-            //        {
-            //            a = (Config.IsMagneticField ? fp[i].MagneticField : fp[i].RmsDeviation);
-            //            b = (Config.IsMagneticField ? sp[i].MagneticField : sp[i].RmsDeviation);
-            //            sumA += a;
-            //            sumB += b;
-            //            sumAB += a * b;
-            //            sumAA += a * a;
-            //            sumBB += b * b;
-            //        }
-            //        double res = (n * sumAB - sumA * sumB) /
-            //                     Math.Sqrt((n * sumAA - sumA * sumA) * (n * sumBB - sumB * sumB));
-            //        txtValues.AppendText(
-            //            _chartForms[fi].GetFileName() 
-            //            + " и " 
-            //            + _chartForms[si].GetFileName() 
-            //            + " = " 
-            //            + res.ToString("F") 
-            //            + "\r\n\r\n");
-            //    }
-            //}
+            for (int fi = 0; fi < formCount; fi++)
+            {
+                var firsForm = tlbContent.Controls[fi] as ChartForm;
+                if (firsForm.IsValid && firsForm.IsEnable)
+                    for (int si = fi+1; si < formCount; si++)
+                    {
+                        var secondForm = tlbContent.Controls[si] as ChartForm;
+                        if (secondForm.IsValid && secondForm.IsEnable)
+                        {
+                            double sumA = 0, sumB = 0, sumAB = 0, sumAA = 0, sumBB = 0;
+                            long a, b, n = firsForm.GetCount();
+                            for (int i = 0; i < n; i++)
+                            {
+                                a = firsForm.GetValue(i);
+                                b = secondForm.GetValue(i);
+                                sumA += a;
+                                sumB += b;
+                                sumAB += a * b;
+                                sumAA += a * a;
+                                sumBB += b * b;
+                            }
+                            double res = (n * sumAB - sumA * sumB) /
+                                         Math.Sqrt((n * sumAA - sumA * sumA) * (n * sumBB - sumB * sumB));
+                            text.AppendFormat("{0} и {1} = {2:F}\r\n\r\n",
+                                firsForm.FileName,secondForm.FileName, res);
+                        }
+                    }
+            }
+            txtValues.AppendText(text.ToString());
+        }
+
+        private void ChartForm_MouseEnter(object sender, EventArgs e)
+        {
+            panelContent.Focus();
+        }
+
+        private void btnConfig_Click(object sender, EventArgs e)
+        {
+            var configForm = new ConfigForm();
+            if (configForm.ShowDialog() == DialogResult.OK)
+            {
+                foreach (ChartForm chartForm in tlbContent.Controls)
+                {
+                    chartForm.SetTimeView();
+                    if(configForm.isColorChange) chartForm.RefreshData();
+                }
+            }
         }
     }
 
 
     public class CustomPanel : Panel
     {
-        public CustomPanel()
-        {
-            this.MouseEnter += CustomPanel_MouseEnter;
-        }
-
-        private void CustomPanel_MouseEnter(object sender, EventArgs e)
-        {
-            throw new NotImplementedException();
-        }
-
         protected override void OnMouseWheel(MouseEventArgs e)
         {
            if(ModifierKeys == Keys.None) base.OnMouseWheel(e);
+           else if (ModifierKeys == Keys.Control)
+           {
+               Point cursorPos = e.Location;
+               Control child = this;
+               while ((child = child.GetChildAtPoint(cursorPos)) != null)
+               {
+                   cursorPos.X -= child.Location.X;
+                   cursorPos.Y -= child.Location.Y;
+                   if (child.Name == "chartControl")
+                   {
+                       (child.Parent as ChartForm)?.ChartControl_MouseWheel(e.Delta);
+                       break;
+                   }
+               }
+           }
         }
     }
 }
