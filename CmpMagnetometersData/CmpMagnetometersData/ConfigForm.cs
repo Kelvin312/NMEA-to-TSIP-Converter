@@ -19,35 +19,35 @@ namespace CmpMagnetometersData
 
         private void ConfigForm_Load(object sender, EventArgs e)
         {
-            txtNormalColor.BackColor = Config.NormalColor;
-            txtWarningColor.BackColor = Config.WarningColor;
-            txtErrorColor.BackColor = Config.ErrorColor;
-            txtViewTimeDtp.Text = Config.ViewTimeDtp;
-            txtViewTimeChart.Text = Config.ViewTimeChart;
-            txtViewTimeText.Text = Config.ViewTimeText;
+            txtNormalColor.BackColor = Properties.Settings.Default.NormalColor;
+            txtWarningColor.BackColor = Properties.Settings.Default.WarningColor;
+            txtErrorColor.BackColor = Properties.Settings.Default.ErrorColor;
+            txtViewTimeDtp.Text = Properties.Settings.Default.ViewTimeDtp;
+            txtViewTimeChart.Text = Properties.Settings.Default.ViewTimeChart;
+            txtViewTimeText.Text = Properties.Settings.Default.ViewTimeText;
         }
 
-        public bool isColorChange = false;
+        public bool IsColorChange = false;
         private void btnOk_Click(object sender, EventArgs e)
         {
-            if (Config.NormalColor != txtNormalColor.BackColor)
+            if (Properties.Settings.Default.NormalColor != txtNormalColor.BackColor)
             {
-                Config.NormalColor = txtNormalColor.BackColor;
-                isColorChange |= true;
+                Properties.Settings.Default.NormalColor = txtNormalColor.BackColor;
+                IsColorChange = true;
             }
-            if (Config.WarningColor != txtWarningColor.BackColor)
+            if (Properties.Settings.Default.WarningColor != txtWarningColor.BackColor)
             {
-                Config.WarningColor = txtWarningColor.BackColor;
-                isColorChange |= true;
+                Properties.Settings.Default.WarningColor = txtWarningColor.BackColor;
+                IsColorChange = true;
             }
-            if (Config.ErrorColor != txtErrorColor.BackColor)
+            if (Properties.Settings.Default.ErrorColor != txtErrorColor.BackColor)
             {
-                Config.ErrorColor = txtErrorColor.BackColor;
-                isColorChange |= true;
+                Properties.Settings.Default.ErrorColor = txtErrorColor.BackColor;
+                IsColorChange = true;
             }
-            Config.ViewTimeDtp = txtViewTimeDtp.Text;
-            Config.ViewTimeChart = txtViewTimeChart.Text;
-            Config.ViewTimeText = txtViewTimeText.Text;
+            Properties.Settings.Default.ViewTimeDtp = txtViewTimeDtp.Text;
+            Properties.Settings.Default.ViewTimeChart = txtViewTimeChart.Text;
+            Properties.Settings.Default.ViewTimeText = txtViewTimeText.Text;
 
             this.DialogResult = DialogResult.OK;
         }

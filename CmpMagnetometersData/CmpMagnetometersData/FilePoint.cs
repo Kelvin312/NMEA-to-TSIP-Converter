@@ -19,9 +19,9 @@ namespace CmpMagnetometersData
         {
             DataPoint result = new DataPoint();
             result.SetValueXY(Time.ToOADate(), Config.IsMagneticField ? MagneticField : RmsDeviation);
-            result.Color = Config.ErrorColor;
-            if ((StateCode & 0x80) != 0) result.Color = Config.WarningColor;
-            if (StateCode == 0x80) result.Color = Config.NormalColor;
+            result.Color = Properties.Settings.Default.ErrorColor;
+            if ((StateCode & 0x80) != 0) result.Color = Properties.Settings.Default.WarningColor;
+            if (StateCode == 0x80) result.Color = Properties.Settings.Default.NormalColor;
             return result;
         }
         public void TextParse(string txt)

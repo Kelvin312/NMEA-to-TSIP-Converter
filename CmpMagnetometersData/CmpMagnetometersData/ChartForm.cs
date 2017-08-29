@@ -84,7 +84,7 @@ namespace CmpMagnetometersData
 
         private void ScaleViewZoom(int delta, ref AxisSize axis, double minZoom)
         {
-            var deltaPos = axis.Size * Config.ZoomSpeed;
+            var deltaPos = axis.Size * Properties.Settings.Default.ZoomSpeed;
             if (delta > 0)
             {
                 if (axis.Size <= minZoom) return;

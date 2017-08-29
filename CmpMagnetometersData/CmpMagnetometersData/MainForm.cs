@@ -18,6 +18,11 @@ namespace CmpMagnetometersData
             tlbContent.RowCount = 0;
         }
 
+        private void MainForm_Load(object sender, EventArgs e)
+        {
+            Size = Properties.Settings.Default.MainFormSize;
+        }
+
         private void btnAdd_Click(object sender, EventArgs e)
         {
             if (ofdAddFile.ShowDialog() == DialogResult.OK)
@@ -189,7 +194,8 @@ namespace CmpMagnetometersData
                 StringBuilder text = new StringBuilder();
                 foreach (var item in unionXlist)
                 {
-                    text.AppendFormat("{0:"+ Config.ViewTimeText+"}\r\n", DateTime.FromOADate(item.Key));
+                    text.AppendFormat("{0:"+ Properties.Settings.Default.ViewTimeText+"}\r\n",
+                        DateTime.FromOADate(item.Key));
                 }
                 txtValues.AppendText(text.ToString());
             }
@@ -266,9 +272,16 @@ namespace CmpMagnetometersData
                 foreach (ChartForm chartForm in tlbContent.Controls)
                 {
                     chartForm.SetTimeView();
-                    if(configForm.isColorChange) chartForm.RefreshData();
+                    if(configForm.IsColorChange) chartForm.RefreshData();
                 }
+                Properties.Settings.Default.Save();
             }
+        }
+
+        private void MainForm_FormClosing(object sender, FormClosingEventArgs e)
+        {
+            Properties.Settings.Default.MainFormSize = Size;
+            Properties.Settings.Default.Save();
         }
     }
 

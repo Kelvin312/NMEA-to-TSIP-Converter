@@ -47,8 +47,8 @@ namespace CmpMagnetometersData
 
         public void SetTimeView()
         {
-            _ptrAxisX.LabelStyle.Format = Config.ViewTimeChart;
-            dtpStartX.CustomFormat = Config.ViewTimeDtp;
+            _ptrAxisX.LabelStyle.Format = Properties.Settings.Default.ViewTimeChart;
+            dtpStartX.CustomFormat = Properties.Settings.Default.ViewTimeDtp;
         }
 
         private void ReadFile(string filePath)
@@ -150,13 +150,13 @@ namespace CmpMagnetometersData
                     {
                         curView.Y = newView.Y;
                     }
-                    else if (Config.IsYSyncZoom)
+                    else if (Properties.Settings.Default.IsYSyncZoom)
                     {
                         curView.Y.Size = newView.Y.Size;
                     }
                 }
                 //Y
-                if (Config.IsYAutoScroll)
+                if (Properties.Settings.Default.IsYAutoScroll)
                 {
                     var bet = _xList.GetViewBetween(
                            new KeyValueHolder<double, int>(curView.X.Min),
