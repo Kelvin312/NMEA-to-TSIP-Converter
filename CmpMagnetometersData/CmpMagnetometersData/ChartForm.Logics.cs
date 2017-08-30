@@ -7,7 +7,7 @@ using System.Windows.Forms;
 
 namespace CmpMagnetometersData
 {
-    public partial class ChartForm
+    public partial class ChartBaseForm
     {
         public ChartRect Border { get; private set; }
         public bool IsMinimize { get; private set; }
@@ -18,7 +18,7 @@ namespace CmpMagnetometersData
         }
         public bool IsValid { get; private set; }
 
-        public readonly string FileName;
+        public string FileName { get; }
 
         private List<FilePoint> _pointsList = new List<FilePoint>();
         private SortedSet<KeyValueHolder<double, int>> _xList = new SortedSet<KeyValueHolder<double, int>>();
@@ -26,6 +26,10 @@ namespace CmpMagnetometersData
         public event EventHandler<ChartRect> ScaleViewChanged;
 
         public event EventHandler<bool> OtherEvent;
+
+        public event EventHandler<EventArgs> CreateChart;
+
+        public int ChartType { get; }
 
         public SortedSet<KeyValueHolder<double, int>> GetXList() => _xList;
 

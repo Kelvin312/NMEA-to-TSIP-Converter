@@ -30,10 +30,10 @@ namespace CmpMagnetometersData
                 btnDelete.Enabled = false;
                 btnCalculate.Enabled = false;
 
-                var resetZoomList = new List<ChartForm>();
+                var resetZoomList = new List<ChartBaseForm>();
                 foreach (var fPath in ofdAddFile.FileNames)
                 {
-                    var chartForm = new ChartForm(fPath);
+                    var chartForm = new ChartBaseForm(fPath);
                     if (chartForm.IsValid)
                     {
                         resetZoomList.Add(chartForm);
@@ -41,6 +41,7 @@ namespace CmpMagnetometersData
                         chartForm.ScaleViewChanged += ChartForm_ScaleViewChanged;
                         chartForm.OtherEvent += ChartForm_OtherEvent;
                         chartForm.MouseEnter += ChartForm_MouseEnter;
+                        chartForm.CreateChart += ChartForm_CreateChart;
 
                         chartForm.Dock = DockStyle.Fill;
                         tlbContent.RowCount++;
@@ -49,7 +50,7 @@ namespace CmpMagnetometersData
                     }
                 }
                 var scrollMinSize = 0;
-                foreach (ChartForm chartForm in tlbContent.Controls)
+                foreach (ChartBaseForm chartForm in tlbContent.Controls)
                 {
                     if (chartForm.IsValid && chartForm.IsEnable)
                     {
@@ -64,10 +65,31 @@ namespace CmpMagnetometersData
 
         
 
+        private void ChartForm_CreateChart(object sender, EventArgs e)
+        {
+            var form = new CreateForm
+            {
+                cmbType = {SelectedIndex = 0},
+                txtA = {Text = (sender as ChartBaseForm).FileName}
+            };
+            foreach (ChartBaseForm chartForm in tlbContent.Controls)
+            {
+                if (chartForm.IsValid && chartForm.IsEnable)
+                {
+                    if(!chartForm.Equals(sender))
+                    form.cmbB.Items.Add(new CmbItem(chartForm));
+                }
+            }
+            if (form.ShowDialog() == DialogResult.OK)
+            {
+
+            }
+        }
+
         private void ChartForm_ScaleViewChanged(object sender, ChartRect e)
         {
-            if (!((ChartForm) sender).IsValid || !((ChartForm) sender).IsEnable) return;
-            foreach (ChartForm chartForm in tlbContent.Controls)
+            if (!((ChartBaseForm) sender).IsValid || !((ChartBaseForm) sender).IsEnable) return;
+            foreach (ChartBaseForm chartForm in tlbContent.Controls)
             {
                 if (!sender.Equals(chartForm)) chartForm.UpdateAxis(e);
             }
@@ -77,7 +99,7 @@ namespace CmpMagnetometersData
         {
             if (e)
             {
-                foreach (ChartForm chartForm in tlbContent.Controls)
+                foreach (ChartBaseForm chartForm in tlbContent.Controls)
                 {
                     if (chartForm.IsValid)
                     {
@@ -87,14 +109,14 @@ namespace CmpMagnetometersData
             }
             else
             {
-                var senderCf = (ChartForm) sender;
+                var senderCf = (ChartBaseForm) sender;
                 tlbContent.RowStyles[tlbContent.GetRow(senderCf)] =
                     senderCf.IsMinimize ? 
                     new RowStyle(SizeType.Absolute, senderCf.MinimumSize.Height) : 
                     new RowStyle(SizeType.Percent, 100F);
 
                 Config.GlobalBorder = new ChartRect();
-                foreach (ChartForm chartForm in tlbContent.Controls)
+                foreach (ChartBaseForm chartForm in tlbContent.Controls)
                 {
                     if (chartForm.IsValid && chartForm.IsEnable)
                     {
@@ -102,7 +124,7 @@ namespace CmpMagnetometersData
                     }
                 }
                 var scrollMinSize = 0;
-                foreach (ChartForm chartForm in tlbContent.Controls)
+                foreach (ChartBaseForm chartForm in tlbContent.Controls)
                 {
                     if (chartForm.IsValid && chartForm.IsEnable)
                     {
@@ -120,7 +142,7 @@ namespace CmpMagnetometersData
         private void RefreshChartForms(bool isResetZoom = false)
         {
             Config.GlobalBorder = new ChartRect();
-            foreach (ChartForm chartForm in tlbContent.Controls)
+            foreach (ChartBaseForm chartForm in tlbContent.Controls)
             {
                 if (chartForm.IsValid)
                 {
@@ -131,7 +153,7 @@ namespace CmpMagnetometersData
                     }
                 }
             }
-            foreach (ChartForm chartForm in tlbContent.Controls)
+            foreach (ChartBaseForm chartForm in tlbContent.Controls)
             {
                 chartForm.UpdateAxis(null, false, isResetZoom, true);
             }
@@ -169,7 +191,7 @@ namespace CmpMagnetometersData
             var unionXlist = new SortedSet<KeyValueHolder<double, int>>();
             int enableCount = 0;
 
-            foreach (ChartForm chartForm in tlbContent.Controls)
+            foreach (ChartBaseForm chartForm in tlbContent.Controls)
             {
                 if (chartForm.IsValid && chartForm.IsEnable)
                 {
@@ -209,7 +231,7 @@ namespace CmpMagnetometersData
         {
             btnDelete.Enabled = false;
 
-            foreach (ChartForm chartForm in tlbContent.Controls)
+            foreach (ChartBaseForm chartForm in tlbContent.Controls)
             {
                 chartForm.RemovePoints(_removeXlist);
             }
@@ -230,11 +252,11 @@ namespace CmpMagnetometersData
 
             for (int fi = 0; fi < formCount; fi++)
             {
-                var firsForm = tlbContent.Controls[fi] as ChartForm;
+                var firsForm = tlbContent.Controls[fi] as ChartBaseForm;
                 if (firsForm.IsValid && firsForm.IsEnable)
                     for (int si = fi+1; si < formCount; si++)
                     {
-                        var secondForm = tlbContent.Controls[si] as ChartForm;
+                        var secondForm = tlbContent.Controls[si] as ChartBaseForm;
                         if (secondForm.IsValid && secondForm.IsEnable)
                         {
                             double sumA = 0, sumB = 0, sumAB = 0, sumAA = 0, sumBB = 0;
@@ -269,7 +291,7 @@ namespace CmpMagnetometersData
             var configForm = new ConfigForm();
             if (configForm.ShowDialog() == DialogResult.OK)
             {
-                foreach (ChartForm chartForm in tlbContent.Controls)
+                foreach (ChartBaseForm chartForm in tlbContent.Controls)
                 {
                     chartForm.SetTimeView();
                     if(configForm.IsColorChange) chartForm.RefreshData();
@@ -301,11 +323,24 @@ namespace CmpMagnetometersData
                    cursorPos.Y -= child.Location.Y;
                    if (child.Name == "chartControl")
                    {
-                       (child.Parent as ChartForm)?.ChartControl_MouseWheel(e.Delta);
+                       (child.Parent as ChartBaseForm)?.ChartControl_MouseWheel(e.Delta);
                        break;
                    }
                }
            }
+        }
+    }
+
+    public class CmbItem
+    {
+        public CmbItem(ChartBaseForm chartForm)
+        {
+            PtrChartForm = chartForm;
+        }
+        public readonly ChartBaseForm PtrChartForm;
+        public override string ToString()
+        {
+            return PtrChartForm.FileName;
         }
     }
 }

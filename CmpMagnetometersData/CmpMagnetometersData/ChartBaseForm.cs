@@ -1,16 +1,14 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Drawing;
 using System.IO;
 using System.Linq;
 using System.Text;
-using System.Threading.Tasks;
 using System.Windows.Forms;
 using System.Windows.Forms.DataVisualization.Charting;
 
 namespace CmpMagnetometersData
 {
-    public partial class ChartForm:ChartBaseForm
+    public partial class ChartBaseForm : UserControl
     {
         private readonly Chart _chartControl;
         private readonly Series _ptrSeries;
@@ -21,6 +19,8 @@ namespace CmpMagnetometersData
 
         public ChartBaseForm(string filePath)
         {
+            InitializeComponent();
+
             ChartType = 0;
             IsMinimize = false;
             IsEnable = true;
