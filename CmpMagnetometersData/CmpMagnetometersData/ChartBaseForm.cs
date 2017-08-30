@@ -42,13 +42,17 @@ namespace CmpMagnetometersData
 
         private void ChartControlInit()
         {
-            //Настраиваем формат данных и вид меток
+            
             _ptrSeries.XValueType = ChartValueType.DateTime;
+
+            _ptrSeries.YValueType = ChartValueType.Int32;
+            _ptrAxisY.LabelStyle.Format = "#";
+
+
+            //X
             _ptrAxisX.LabelStyle.IsEndLabelVisible = false;
             _ptrAxisX.IntervalAutoMode = IntervalAutoMode.VariableCount;
             //Y
-            _ptrSeries.YValueType = ChartValueType.Int32;
-            _ptrAxisY.LabelStyle.Format = "#";
             _ptrAxisY.LabelStyle.IsEndLabelVisible = false;
             _ptrAxisY.IntervalAutoMode = IntervalAutoMode.VariableCount;
             //Настраиваем масштабирование и скролл
