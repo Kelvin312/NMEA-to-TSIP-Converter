@@ -47,16 +47,17 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="ChartFormBase.cs">
+    <Compile Include="ChartBaseForm.cs">
       <SubType>UserControl</SubType>
     </Compile>
-    <Compile Include="ChartFormBase.Designer.cs">
-      <DependentUpon>ChartFormBase.cs</DependentUpon>
+    <Compile Include="ChartBaseForm.Designer.cs">
+      <DependentUpon>ChartBaseForm.cs</DependentUpon>
     </Compile>
+    <Compile Include="ChartRect.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <EmbeddedResource Include="ChartFormBase.resx">
-      <DependentUpon>ChartFormBase.cs</DependentUpon>
+    <EmbeddedResource Include="ChartBaseForm.resx">
+      <DependentUpon>ChartBaseForm.cs</DependentUpon>
     </EmbeddedResource>
     <EmbeddedResource Include="Properties\Resources.resx">
       <Generator>PublicResXFileCodeGenerator</Generator>

@@ -1,6 +1,6 @@
 ﻿namespace Test
 {
-    partial class ChartFormBase
+    partial class ChartBaseForm
     {
         /// <summary> 
         /// Обязательная переменная конструктора.

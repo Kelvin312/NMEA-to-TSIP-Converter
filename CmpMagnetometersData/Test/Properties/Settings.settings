@@ -3,5 +3,36 @@
   <Profiles>
     <Profile Name="(Default)" />
   </Profiles>
-  <Settings />
+  <Settings>
+    <Setting Name="NormalColor" Type="System.Drawing.Color" Scope="User">
+      <Value Profile="(Default)">DarkGreen</Value>
+    </Setting>
+    <Setting Name="WarningColor" Type="System.Drawing.Color" Scope="User">
+      <Value Profile="(Default)">Orange</Value>
+    </Setting>
+    <Setting Name="ErrorColor" Type="System.Drawing.Color" Scope="User">
+      <Value Profile="(Default)">Red</Value>
+    </Setting>
+    <Setting Name="ViewTimeDtp" Type="System.String" Scope="User">
+      <Value Profile="(Default)">yy.MM.dd-HH:mm:ss</Value>
+    </Setting>
+    <Setting Name="ViewTimeChart" Type="System.String" Scope="User">
+      <Value Profile="(Default)">yy.MM.dd-HH:mm:ss</Value>
+    </Setting>
+    <Setting Name="ViewTimeText" Type="System.String" Scope="User">
+      <Value Profile="(Default)">yy.MM.dd-HH:mm:ss</Value>
+    </Setting>
+    <Setting Name="IsYAutoScroll" Type="System.Boolean" Scope="User">
+      <Value Profile="(Default)">False</Value>
+    </Setting>
+    <Setting Name="IsYSyncZoom" Type="System.Boolean" Scope="User">
+      <Value Profile="(Default)">False</Value>
+    </Setting>
+    <Setting Name="ZoomSpeed" Type="System.Double" Scope="User">
+      <Value Profile="(Default)">0.125</Value>
+    </Setting>
+    <Setting Name="MainFormSize" Type="System.Drawing.Size" Scope="User">
+      <Value Profile="(Default)">1000, 600</Value>
+    </Setting>
+  </Settings>
 </SettingsFile>

@@ -1,21 +1,13 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.ComponentModel;
-using System.Drawing;
-using System.Data;
-using System.Linq;
-using System.Runtime.CompilerServices;
-using System.Text;
-using System.Threading.Tasks;
 using System.Windows.Forms;
 using System.Windows.Forms.DataVisualization.Charting;
 using Test.Properties;
 
 namespace Test
 {
-    public partial class ChartFormBase : UserControl
+    public partial class ChartBaseForm : UserControl
     {
-        public ChartFormBase(string chartName, double xMinSize, double yMinSize)
+        public ChartBaseForm(string chartName)
         {
             InitializeComponent();
             IsMinimize = false;
@@ -26,8 +18,6 @@ namespace Test
             _ptrChartArea = chartControl.ChartAreas[0];
             _ptrAxisX = _ptrChartArea.AxisX;
             _ptrAxisY = _ptrChartArea.AxisY;
-            _XMinSize = xMinSize;
-            _YMinSize = yMinSize;
             ChartControlInit();
         }
         public bool IsMinimize { get; private set; }
@@ -39,10 +29,8 @@ namespace Test
         protected readonly Axis _ptrAxisX;
         protected readonly Axis _ptrAxisY;
 
-        protected readonly double _XMinSize;
-        protected readonly double _YMinSize;
 
-        protected void UpdateControls()
+        protected virtual void UpdateControls()
         {
             if (IsMinimize)
             {
@@ -61,7 +49,7 @@ namespace Test
             lblChartNameHide.Text = ChartName;
         }
 
-        protected void ChartControlInit()
+        protected virtual void ChartControlInit()
         {
             //X
             _ptrAxisX.LabelStyle.IsEndLabelVisible = false;
@@ -83,19 +71,15 @@ namespace Test
         public void ChartControl_MouseWheel(int delta)
         {
             ChartRect newZoom = new ChartRect(_ptrChartArea);
-            ScaleViewZoom(delta, ref newZoom.X, _XMinSize);
-            ScaleViewZoom(delta, ref newZoom.Y, _YMinSize);
+            ScaleViewZoom(delta, ref newZoom.X);
+            ScaleViewZoom(delta, ref newZoom.Y);
             OnScaleViewChanged();
         }
 
-        private void ScaleViewZoom(int delta, ref AxisSize axis, double minSize)
+        private void ScaleViewZoom(int delta, ref AxisSize axis)
         {
             var deltaPos = axis.Size * Settings.Default.ZoomSpeed;
-            if (delta > 0)
-            {
-                if (axis.Size <= minSize) return;
-                deltaPos = -deltaPos;
-            }
+            if (delta > 0) deltaPos = -deltaPos;
             axis.Size = axis.Size + deltaPos;
         }
 
@@ -125,7 +109,7 @@ namespace Test
                     }
                     break;
                 case MouseButtons.Right:
-                    OtherEvent?.Invoke(this, true);
+                    OnResetZoom();
                     break;
             }
         }
@@ -167,7 +151,12 @@ namespace Test
         }
 
 
-        protected void OnScaleViewChanged()
+        protected virtual void OnScaleViewChanged()
+        {
+            
+        }
+
+        protected virtual void OnResetZoom()
         {
             
         }
