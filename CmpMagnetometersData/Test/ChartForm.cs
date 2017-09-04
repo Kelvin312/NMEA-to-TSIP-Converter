@@ -5,23 +5,23 @@ using Test.Properties;
 
 namespace Test
 {
-    public partial class ChartBaseForm : UserControl
+    public partial class ChartForm : UserControl
     {
-        public ChartBaseForm(string chartName)
+        public ChartForm(string chartName)
         {
             InitializeComponent();
             IsMinimize = false;
             IsEnable = true;
             ChartName = chartName;
-            UpdateControls();
+            UpdateBaseControls();
             _ptrSeries = chartControl.Series[0];
             _ptrChartArea = chartControl.ChartAreas[0];
             _ptrAxisX = _ptrChartArea.AxisX;
             _ptrAxisY = _ptrChartArea.AxisY;
             ChartControlInit();
         }
-        public bool IsMinimize { get; private set; }
-        public bool IsEnable { get; private set; }
+        public bool IsMinimize { get; protected set; }
+        public bool IsEnable { get; protected set; }
         public string ChartName { get; }
 
         protected readonly Series _ptrSeries;
@@ -30,7 +30,7 @@ namespace Test
         protected readonly Axis _ptrAxisY;
 
 
-        protected virtual void UpdateControls()
+        protected void UpdateBaseControls()
         {
             if (IsMinimize)
             {
@@ -49,7 +49,7 @@ namespace Test
             lblChartNameHide.Text = ChartName;
         }
 
-        protected virtual void ChartControlInit()
+        protected void ChartControlInit()
         {
             //X
             _ptrAxisX.LabelStyle.IsEndLabelVisible = false;
@@ -73,7 +73,7 @@ namespace Test
             ChartRect newZoom = new ChartRect(_ptrChartArea);
             ScaleViewZoom(delta, ref newZoom.X);
             ScaleViewZoom(delta, ref newZoom.Y);
-            OnScaleViewChanged();
+            OnScaleViewChanged(newZoom);
         }
 
         private void ScaleViewZoom(int delta, ref AxisSize axis)
@@ -150,8 +150,19 @@ namespace Test
             OnScaleViewChanged();
         }
 
+        protected virtual void btnMinimize_Click(object sender, EventArgs e)
+        {
+            IsMinimize ^= true;
+            UpdateBaseControls();
+        }
 
-        protected virtual void OnScaleViewChanged()
+        protected virtual void cbEnable_CheckedChanged(object sender, EventArgs e)
+        {
+            IsEnable ^= true;
+            UpdateBaseControls();
+        }
+
+        protected virtual void OnScaleViewChanged(ChartRect newZoom = null)
         {
             
         }
@@ -160,5 +171,28 @@ namespace Test
         {
             
         }
+
+        private void dtp_ValueChanged(object sender, EventArgs e)
+        {
+            _isDtpValueChanged = true;
+        }
+
+        private void dtp_Leave(object sender, EventArgs e)
+        {
+            if (_isDtpValueChanged)
+            {
+                OnDtpValueChanged((sender as DateTimePicker).Value);
+                _isDtpValueChanged = false;
+            }
+        }
+
+        protected virtual void OnDtpValueChanged(DateTime newTime)
+        {
+            
+        }
+
+        private bool _isDtpValueChanged = false;
+
+
     }
 }

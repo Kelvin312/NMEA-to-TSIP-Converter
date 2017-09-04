@@ -1,6 +1,6 @@
 ﻿namespace Test
 {
-    partial class ChartBaseForm
+    partial class ChartForm
     {
         /// <summary> 
         /// Обязательная переменная конструктора.
@@ -28,8 +28,8 @@
         /// </summary>
         private void InitializeComponent()
         {
-            System.Windows.Forms.DataVisualization.Charting.ChartArea chartArea1 = new System.Windows.Forms.DataVisualization.Charting.ChartArea();
-            System.Windows.Forms.DataVisualization.Charting.Series series1 = new System.Windows.Forms.DataVisualization.Charting.Series();
+            System.Windows.Forms.DataVisualization.Charting.ChartArea chartArea6 = new System.Windows.Forms.DataVisualization.Charting.ChartArea();
+            System.Windows.Forms.DataVisualization.Charting.Series series6 = new System.Windows.Forms.DataVisualization.Charting.Series();
             this.chartControl = new System.Windows.Forms.DataVisualization.Charting.Chart();
             this.cbEnable = new System.Windows.Forms.CheckBox();
             this.lblChartName = new System.Windows.Forms.Label();
@@ -38,8 +38,8 @@
             this.btnSave = new System.Windows.Forms.Button();
             this.btnReopen = new System.Windows.Forms.Button();
             this.btnMinimize = new System.Windows.Forms.Button();
-            this.dateTimePicker1 = new System.Windows.Forms.DateTimePicker();
-            this.dateTimePicker2 = new System.Windows.Forms.DateTimePicker();
+            this.dtpDate = new System.Windows.Forms.DateTimePicker();
+            this.dtpTime = new System.Windows.Forms.DateTimePicker();
             ((System.ComponentModel.ISupportInitialize)(this.chartControl)).BeginInit();
             this.SuspendLayout();
             // 
@@ -48,14 +48,14 @@
             this.chartControl.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
             | System.Windows.Forms.AnchorStyles.Left) 
             | System.Windows.Forms.AnchorStyles.Right)));
-            chartArea1.Name = "main";
-            this.chartControl.ChartAreas.Add(chartArea1);
+            chartArea6.Name = "main";
+            this.chartControl.ChartAreas.Add(chartArea6);
             this.chartControl.Location = new System.Drawing.Point(99, 3);
             this.chartControl.Name = "chartControl";
-            series1.ChartArea = "main";
-            series1.ChartType = System.Windows.Forms.DataVisualization.Charting.SeriesChartType.Line;
-            series1.Name = "main";
-            this.chartControl.Series.Add(series1);
+            series6.ChartArea = "main";
+            series6.ChartType = System.Windows.Forms.DataVisualization.Charting.SeriesChartType.Line;
+            series6.Name = "main";
+            this.chartControl.Series.Add(series6);
             this.chartControl.Size = new System.Drawing.Size(498, 244);
             this.chartControl.TabIndex = 1;
             // 
@@ -71,6 +71,7 @@
             this.cbEnable.Text = "Включить";
             this.cbEnable.TextImageRelation = System.Windows.Forms.TextImageRelation.ImageBeforeText;
             this.cbEnable.UseVisualStyleBackColor = true;
+            this.cbEnable.CheckedChanged += new System.EventHandler(this.cbEnable_CheckedChanged);
             // 
             // lblChartName
             // 
@@ -134,33 +135,38 @@
             this.btnMinimize.Text = "Свернуть";
             this.btnMinimize.TextImageRelation = System.Windows.Forms.TextImageRelation.ImageBeforeText;
             this.btnMinimize.UseVisualStyleBackColor = true;
+            this.btnMinimize.Click += new System.EventHandler(this.btnMinimize_Click);
             // 
-            // dateTimePicker1
+            // dtpDate
             // 
-            this.dateTimePicker1.CustomFormat = "dd/MM/yy hh:mm:ss";
-            this.dateTimePicker1.Format = System.Windows.Forms.DateTimePickerFormat.Short;
-            this.dateTimePicker1.Location = new System.Drawing.Point(3, 108);
-            this.dateTimePicker1.Name = "dateTimePicker1";
-            this.dateTimePicker1.ShowUpDown = true;
-            this.dateTimePicker1.Size = new System.Drawing.Size(90, 20);
-            this.dateTimePicker1.TabIndex = 8;
+            this.dtpDate.CustomFormat = "dd/MM/yy hh:mm:ss";
+            this.dtpDate.Format = System.Windows.Forms.DateTimePickerFormat.Short;
+            this.dtpDate.Location = new System.Drawing.Point(3, 108);
+            this.dtpDate.Name = "dtpDate";
+            this.dtpDate.ShowUpDown = true;
+            this.dtpDate.Size = new System.Drawing.Size(90, 20);
+            this.dtpDate.TabIndex = 8;
+            this.dtpDate.ValueChanged += new System.EventHandler(this.dtp_ValueChanged);
+            this.dtpDate.Leave += new System.EventHandler(this.dtp_Leave);
             // 
-            // dateTimePicker2
+            // dtpTime
             // 
-            this.dateTimePicker2.CustomFormat = "dd/MM/yy HH:mm:ss";
-            this.dateTimePicker2.Format = System.Windows.Forms.DateTimePickerFormat.Time;
-            this.dateTimePicker2.Location = new System.Drawing.Point(3, 134);
-            this.dateTimePicker2.Name = "dateTimePicker2";
-            this.dateTimePicker2.ShowUpDown = true;
-            this.dateTimePicker2.Size = new System.Drawing.Size(90, 20);
-            this.dateTimePicker2.TabIndex = 9;
+            this.dtpTime.CustomFormat = "dd/MM/yy HH:mm:ss";
+            this.dtpTime.Format = System.Windows.Forms.DateTimePickerFormat.Time;
+            this.dtpTime.Location = new System.Drawing.Point(3, 134);
+            this.dtpTime.Name = "dtpTime";
+            this.dtpTime.ShowUpDown = true;
+            this.dtpTime.Size = new System.Drawing.Size(90, 20);
+            this.dtpTime.TabIndex = 9;
+            this.dtpTime.ValueChanged += new System.EventHandler(this.dtp_ValueChanged);
+            this.dtpTime.Leave += new System.EventHandler(this.dtp_Leave);
             // 
-            // ChartFormBase
+            // ChartForm
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.Controls.Add(this.dateTimePicker2);
-            this.Controls.Add(this.dateTimePicker1);
+            this.Controls.Add(this.dtpTime);
+            this.Controls.Add(this.dtpDate);
             this.Controls.Add(this.btnSave);
             this.Controls.Add(this.btnCreate);
             this.Controls.Add(this.btnReopen);
@@ -170,7 +176,7 @@
             this.Controls.Add(this.chartControl);
             this.Controls.Add(this.btnMinimize);
             this.MinimumSize = new System.Drawing.Size(600, 250);
-            this.Name = "ChartFormBase";
+            this.Name = "ChartForm";
             this.Size = new System.Drawing.Size(600, 250);
             ((System.ComponentModel.ISupportInitialize)(this.chartControl)).EndInit();
             this.ResumeLayout(false);
@@ -187,7 +193,7 @@
         protected System.Windows.Forms.Button btnReopen;
         protected System.Windows.Forms.Button btnCreate;
         protected System.Windows.Forms.Button btnSave;
-        protected System.Windows.Forms.DateTimePicker dateTimePicker1;
-        protected System.Windows.Forms.DateTimePicker dateTimePicker2;
+        protected System.Windows.Forms.DateTimePicker dtpDate;
+        protected System.Windows.Forms.DateTimePicker dtpTime;
     }
 }
