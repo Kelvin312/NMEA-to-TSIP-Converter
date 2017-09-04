@@ -73,6 +73,7 @@ namespace Test
             ChartRect newZoom = new ChartRect(_ptrChartArea);
             ScaleViewZoom(delta, ref newZoom.X);
             ScaleViewZoom(delta, ref newZoom.Y);
+            
             OnScaleViewChanged(newZoom);
         }
 
@@ -172,6 +173,9 @@ namespace Test
             
         }
 
+
+        private bool _isDtpValueChanged = false;
+
         private void dtp_ValueChanged(object sender, EventArgs e)
         {
             _isDtpValueChanged = true;
@@ -191,7 +195,7 @@ namespace Test
             
         }
 
-        private bool _isDtpValueChanged = false;
+        
 
 
     }
