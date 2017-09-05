@@ -19,38 +19,21 @@ namespace Test
             _ptrChartArea.CursorX.IntervalType = DateTimeIntervalType.Seconds;
             _ptrSeries.YValueType = ChartValueType.Int32;
             _ptrAxisY.LabelStyle.Format = "#";
+            XMinZoom = Config.XMinZoom;
+            YMinZoom = Config.YMinZoom;
             ReadFile(_filePath);
         }
 
-        public void UpdateControls()
+        public override void UpdateControls()
         {
             _ptrAxisX.LabelStyle.Format = Settings.Default.ViewTimeChart;
-            if(!_isValid) return;
-            dtpDate.Value = _pointsList[0].Time;
-            dtpTime.Value = _pointsList[0].Time;
+            base.UpdateControls();
         }
 
         protected override void OnDtpValueChanged(DateTime newTime)
         {
             RefreshData(newTime);
-            OtherEvent?.Invoke(this, false);
-        }
-
-        protected override void OnScaleViewChanged(ChartRect newZoom)
-        {
-            if (newZoom != null)
-            {
-                UpdateAxis(newZoom, true);
-            }
-            else
-            {
-                UpdateAxis();
-            }
-        }
-
-        protected override void OnResetZoom()
-        {
-            OtherEvent?.Invoke(this, true);
+            OnOtherEvent(OtherEventType.DataChanged);
         }
 
         private readonly string _filePath;
@@ -65,21 +48,13 @@ namespace Test
         }
         public int GetCount() => _pointsList.Count;
 
-        private bool _isValid = false;
+        public bool IsValid = false;
 
-        public ChartRect Border { get; private set; }
-
-      
-        public event EventHandler<ChartRect> ScaleViewChanged;
-
-        public event EventHandler<bool> OtherEvent;
-
-        public event EventHandler<EventArgs> CreateChart;
-
-
-      
-
-        
+        protected override void cbEnable_CheckedChanged(object sender, EventArgs e)
+        {
+            if (!IsValid) cbEnable.Checked = false;
+            base.cbEnable_CheckedChanged(sender,e);
+        }
 
         public void RemovePoints(SortedSet<KeyValueHolder<double, int>> rlist)
         {
@@ -117,7 +92,7 @@ namespace Test
             }
             catch (Exception ex)
             {
-                _isValid = false;
+                IsValid = false;
                 MessageBox.Show(ChartName + "\r\n" + ex.Message,
                     "Ошибка открытия файла",
                     MessageBoxButtons.OK,
@@ -129,15 +104,15 @@ namespace Test
 
         public void RefreshData(DateTime? newTime = null)
         {
-            _isValid = _pointsList.Count > 1;
+            IsValid = _pointsList.Count > 1;
             _ptrSeries.Points.Clear();
             _xList.Clear();
             Border = new ChartRect();
             TimeSpan deltaTime = new TimeSpan();
-            if (!_isValid)
+            if (!IsValid)
             {
                 IsEnable = false;
-                base.UpdateBaseControls();
+                base.UpdateControls();
                 return;
             }
             if (newTime != null)
@@ -157,70 +132,31 @@ namespace Test
                 Border.Union(pix.XValue, pix.YValues.First());
             }
 
-
+            dtpDate.Value = _pointsList[0].Time;
+            dtpTime.Value = _pointsList[0].Time;
         }
 
-        public void UpdateAxis(ChartRect newView = null, bool isUpdateY = false, bool isResetZoom = false, bool isUpdateBorder = false)
+        public override void OnOtherEvent(object sender, OtherEventType e)
         {
-            var curView = new ChartRect(_ptrChartArea);
-            var globalBorder = new ChartRect(_ptrChartArea, true);
+            if (e == OtherEventType.ResetZoom && !this.Equals(sender))
+            {
+                UpdateAxis(null, false, true);
+            }
+            if (e == OtherEventType.DataChanged)
+            {
+                UpdateAxis(null,false,false,true);
+            }
+        }
 
-            if (isUpdateBorder)
-            {
-                globalBorder = new ChartRect(Config.GlobalBorder);
-                globalBorder.Y.Min -= 2;
-                globalBorder.Y.Max += Config.YMinZoom * 10.0;
-                _ptrAxisX.Minimum = globalBorder.X.Min;
-                _ptrAxisX.Maximum = globalBorder.X.Max;
-                _ptrAxisY.Minimum = globalBorder.Y.Min;
-                _ptrAxisY.Maximum = globalBorder.Y.Max;
-            }
-            if (isResetZoom)
-            {
-                curView.X = globalBorder.X;
-                curView.Y = Border.Y;
-            }
-            else
-            {
-                if (newView != null)
-                {
-                    //X
-                    curView.X = newView.X;
-                    //Y
-                    if (isUpdateY)
-                    {
-                        curView.Y = newView.Y;
-                    }
-                    else if (Settings.Default.IsYSyncZoom)
-                    {
-                        curView.Y.Size = newView.Y.Size;
-                    }
-                }
-                //Y
-                if (Settings.Default.IsYAutoScroll)
-                {
-                    var bet = _xList.GetViewBetween(
-                        new KeyValueHolder<double, int>(curView.X.Min),
-                        new KeyValueHolder<double, int>(curView.X.Max));
-                    if (bet.Count > 0)
-                    {
-                        var yf = _ptrSeries.Points[bet.First().Value].YValues.First();
-                        var yl = _ptrSeries.Points[bet.Last().Value].YValues.First();
-                        var isYMove = curView.Y.Min > Math.Max(yf, yl)
-                                      || curView.Y.Max < Math.Min(yf, yl);
-                        if (isYMove) curView.Y.Middle = (yf + yl) / 2;
-                    }
-                }
-            }
-            var oldView = new ChartRect(_ptrChartArea);
-            if (curView.X.Check(oldView.X, Config.XMinZoom, globalBorder.X))
-            {
-                _ptrAxisX.ScaleView.Zoom(curView.X.Min, curView.X.Max);
-            }
-            if (curView.Y.Check(oldView.Y, Config.YMinZoom, globalBorder.Y))
-            {
-                _ptrAxisY.ScaleView.Zoom(curView.Y.Min, curView.Y.Max);
-            }
+        public override void OnScaleViewChanged(object sender, ChartRect e)
+        {
+           if(!this.Equals(sender)) UpdateAxis(e);
+        }
+
+        protected override void ViewChanged(bool isResetZoom = false)
+        {
+            if(isResetZoom) OnOtherEvent(OtherEventType.ResetZoom);
+            else OnScaleViewChanged();
         }
     }
 }

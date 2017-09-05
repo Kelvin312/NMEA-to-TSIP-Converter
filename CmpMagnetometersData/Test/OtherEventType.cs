@@ -10,8 +10,10 @@ namespace Test
 {
     public enum OtherEventType
     {
-        MinimizeChange,
+        MinimizeChanged,
+        DataChanged,
         Delete,
-        BorderChange
+        CreateChart,
+        ResetZoom
     }
 }

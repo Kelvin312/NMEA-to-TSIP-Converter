@@ -13,7 +13,7 @@ namespace Test
             IsMinimize = false;
             IsEnable = true;
             ChartName = chartName;
-            UpdateBaseControls();
+            UpdateControls();
             _ptrSeries = chartControl.Series[0];
             _ptrChartArea = chartControl.ChartAreas[0];
             _ptrAxisX = _ptrChartArea.AxisX;
@@ -24,23 +24,100 @@ namespace Test
         public bool IsEnable { get; protected set; }
         public string ChartName { get; }
 
+        public int MinimumHeight { get; protected set; }
+
+        public ChartRect Border { get; protected set; }
+
+        public event EventHandler<ChartRect> ScaleViewChanged;
+
+        public event EventHandler<OtherEventType> OtherEvent;
+
+        protected void OnScaleViewChanged(ChartRect e = null)
+        {
+            if (e == null) e = new ChartRect(_ptrChartArea);
+            ScaleViewChanged?.Invoke(this, e);
+        }
+
+        public virtual void OnScaleViewChanged(object sender, ChartRect e)
+        {
+            
+        }
+
+        protected void OnOtherEvent(OtherEventType e)
+        {
+            OtherEvent?.Invoke(this, e);
+        }
+
+        public virtual void OnOtherEvent(object sender, OtherEventType e)
+        {
+
+        }
+
+        protected double XMinZoom, YMinZoom;
+
+        protected void UpdateAxis(ChartRect newView = null, bool isUpdateY = false, bool isResetZoom = false, bool isUpdateBorder = false)
+        {
+            var curView = new ChartRect(_ptrChartArea);
+            var globalBorder = new ChartRect(_ptrChartArea, true);
+
+            if (isUpdateBorder)
+            {
+                globalBorder = new ChartRect(Config.GlobalBorder);
+                globalBorder.Y.Min -= 2;
+                globalBorder.Y.Max += YMinZoom * 10.0;
+                _ptrAxisX.Minimum = globalBorder.X.Min;
+                _ptrAxisX.Maximum = globalBorder.X.Max;
+                _ptrAxisY.Minimum = globalBorder.Y.Min;
+                _ptrAxisY.Maximum = globalBorder.Y.Max;
+            }
+            if (isResetZoom)
+            {
+                curView.X = globalBorder.X;
+                curView.Y = Border.Y;
+            }
+            else
+            {
+                if (newView != null)
+                {
+                    //X
+                    curView.X = newView.X;
+                    //Y
+                    if (isUpdateY)
+                    {
+                        curView.Y = newView.Y;
+                    }
+                }
+            }
+            var oldView = new ChartRect(_ptrChartArea);
+            if (curView.X.Check(oldView.X, XMinZoom, globalBorder.X))
+            {
+                _ptrAxisX.ScaleView.Zoom(curView.X.Min, curView.X.Max);
+            }
+            if (curView.Y.Check(oldView.Y, YMinZoom, globalBorder.Y))
+            {
+                _ptrAxisY.ScaleView.Zoom(curView.Y.Min, curView.Y.Max);
+            }
+        }
+
         protected readonly Series _ptrSeries;
         protected readonly ChartArea _ptrChartArea;
         protected readonly Axis _ptrAxisX;
         protected readonly Axis _ptrAxisY;
 
 
-        protected void UpdateBaseControls()
+        public virtual void UpdateControls()
         {
             if (IsMinimize)
             {
                 btnMinimize.Text = "Развернуть";
                 btnMinimize.Image = Resources.maximize;
+                MinimumHeight = 29;
             }
             else
             {
                 btnMinimize.Text = "Свернуть";
                 btnMinimize.Image = Resources.minimize;
+                MinimumHeight = 250;
             }
             chartControl.Visible = !IsMinimize;
             lblChartNameHide.Visible = IsMinimize;
@@ -73,8 +150,8 @@ namespace Test
             ChartRect newZoom = new ChartRect(_ptrChartArea);
             ScaleViewZoom(delta, ref newZoom.X);
             ScaleViewZoom(delta, ref newZoom.Y);
-            
-            OnScaleViewChanged(newZoom);
+            UpdateAxis(newZoom, true);
+            ViewChanged();
         }
 
         private void ScaleViewZoom(int delta, ref AxisSize axis)
@@ -110,7 +187,8 @@ namespace Test
                     }
                     break;
                 case MouseButtons.Right:
-                    OnResetZoom();
+                    UpdateAxis(null, false, true);
+                    ViewChanged(true);
                     break;
             }
         }
@@ -142,35 +220,34 @@ namespace Test
 
                 _ptrAxisX.ScaleView.Scroll(newX);
                 _ptrAxisY.ScaleView.Scroll(newY);
-                OnScaleViewChanged();
+                ViewChanged();
             }
         }
 
         private void ChartControl_AxisViewChanged(object sender, ViewEventArgs e)
         {
-            OnScaleViewChanged();
+            ViewChanged();
         }
+
+        protected virtual void ViewChanged(bool isResetZoom = false)
+        {
+            
+        }
+
+
+
 
         protected virtual void btnMinimize_Click(object sender, EventArgs e)
         {
             IsMinimize ^= true;
-            UpdateBaseControls();
+            UpdateControls();
+            OnOtherEvent(OtherEventType.MinimizeChanged);
         }
 
         protected virtual void cbEnable_CheckedChanged(object sender, EventArgs e)
         {
             IsEnable ^= true;
-            UpdateBaseControls();
-        }
-
-        protected virtual void OnScaleViewChanged(ChartRect newZoom = null)
-        {
-            
-        }
-
-        protected virtual void OnResetZoom()
-        {
-            
+            UpdateControls();
         }
 
 
@@ -194,9 +271,6 @@ namespace Test
         {
             
         }
-
-        
-
 
     }
 }
