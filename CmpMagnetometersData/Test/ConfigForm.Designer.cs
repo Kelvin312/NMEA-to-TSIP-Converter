@@ -1,4 +1,4 @@
-﻿namespace CmpMagnetometersData
+﻿namespace Test
 {
     partial class ConfigForm
     {

@@ -8,7 +8,7 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 
-namespace CmpMagnetometersData
+namespace Test
 {
     public partial class CreateForm : Form
     {

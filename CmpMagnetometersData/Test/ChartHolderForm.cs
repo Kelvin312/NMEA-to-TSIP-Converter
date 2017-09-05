@@ -15,6 +15,9 @@ namespace Test
         public ChartHolderForm()
         {
             InitializeComponent();
+            tlbContent.Controls.Clear();
+            tlbContent.RowStyles.Clear();
+            tlbContent.RowCount = 0;
         }
 
         public void AddChart(ChartForm chartForm)
@@ -77,7 +80,7 @@ namespace Test
         }
 
 
-        private void UpdateScrollSize()
+        public void UpdateScrollSize()
         {
             var scrollMinSize = 0;
             foreach (ChartForm chartForm in tlbContent.Controls)
@@ -91,6 +94,11 @@ namespace Test
         private void ChartForm_MouseEnter(object sender, EventArgs e)
         {
             this.Focus();
+        }
+
+        protected override Point ScrollToControl(Control activeControl)
+        {
+            return this.DisplayRectangle.Location;
         }
 
         protected override void OnMouseWheel(MouseEventArgs e)

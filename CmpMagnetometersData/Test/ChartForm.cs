@@ -13,12 +13,12 @@ namespace Test
             IsMinimize = false;
             IsEnable = true;
             ChartName = chartName;
-            UpdateControls();
             _ptrSeries = chartControl.Series[0];
             _ptrChartArea = chartControl.ChartAreas[0];
             _ptrAxisX = _ptrChartArea.AxisX;
             _ptrAxisY = _ptrChartArea.AxisY;
             ChartControlInit();
+            UpdateControls();
         }
         public bool IsMinimize { get; protected set; }
         public bool IsEnable { get; protected set; }

@@ -10,7 +10,7 @@ using Test.Properties;
 
 namespace Test
 {
-    public class FileForm:ChartForm
+    public class FileForm : ChartForm
     {
         public FileForm(string filePath):base(Path.GetFileNameWithoutExtension(filePath))
         {
