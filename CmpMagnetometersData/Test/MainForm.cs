@@ -17,6 +17,8 @@ namespace Test
             holderForm.Dock = DockStyle.Fill;
             tableLayoutPanel1.Controls.Add(holderForm,0,0);
         }
+
+
         ChartHolderForm holderForm = new ChartHolderForm();
 
         private void MainForm_Load(object sender, EventArgs e)

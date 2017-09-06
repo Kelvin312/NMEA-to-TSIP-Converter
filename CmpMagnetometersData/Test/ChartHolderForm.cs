@@ -71,11 +71,39 @@ namespace Test
             if (e == OtherEventType.MinimizeChanged)
             {
                 var senderCf = (ChartForm)sender;
-                tlbContent.RowStyles[tlbContent.GetRow(senderCf)] =
+                tlbContent.RowStyles[tlbContent.GetRow((Control)sender)] =
                     senderCf.IsMinimize ?
                         new RowStyle(SizeType.Absolute, senderCf.MinimumHeight) :
                         new RowStyle(SizeType.Percent, 100F);
                 UpdateScrollSize();
+            }
+            if (e == OtherEventType.CreateChart)
+            {
+                var form = new CreateForm
+                {
+                    cmbType = {SelectedIndex = 0},
+                    txtA = {Text = (sender as ChartForm).ChartName}
+                };
+                foreach (ChartForm chartForm in tlbContent.Controls)
+                {
+
+                    if (chartForm is FileForm && chartForm.IsEnable && !chartForm.Equals(sender))
+                    {
+                        form.cmbB.Items.Add(new CmbItem(chartForm));
+                    }
+
+                }
+                if (form.ShowDialog() == DialogResult.OK)
+                {
+                    if (form.cmbType.SelectedIndex == 0)
+                    {
+                        var cnt = int.Parse(form.txtX.Text);
+                        AddChart(new DistributionForm(sender as FileForm, cnt));
+                        UpdateScrollSize();
+                    }
+                }
+                
+
             }
         }
 
@@ -103,6 +131,7 @@ namespace Test
 
         protected override void OnMouseWheel(MouseEventArgs e)
         {
+            
             if (ModifierKeys == Keys.None) base.OnMouseWheel(e);
             else if (ModifierKeys == Keys.Control)
             {

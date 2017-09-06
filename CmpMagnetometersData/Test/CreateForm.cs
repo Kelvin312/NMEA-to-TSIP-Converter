@@ -16,5 +16,23 @@ namespace Test
         {
             InitializeComponent();
         }
+
+        private void btnOk_Click(object sender, EventArgs e)
+        {
+            DialogResult = DialogResult.OK;
+        }
+    }
+
+    public class CmbItem
+    {
+        public CmbItem(ChartForm chartForm)
+        {
+            PtrChartForm = chartForm;
+        }
+        public readonly ChartForm PtrChartForm;
+        public override string ToString()
+        {
+            return PtrChartForm.ChartName;
+        }
     }
 }

@@ -81,6 +81,9 @@
     <Compile Include="CreateForm.Designer.cs">
       <DependentUpon>CreateForm.cs</DependentUpon>
     </Compile>
+    <Compile Include="DistributionForm.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
     <Compile Include="FileForm.cs">
       <SubType>UserControl</SubType>
     </Compile>

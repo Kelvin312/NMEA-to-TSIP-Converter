@@ -157,7 +157,7 @@
             this.btnCreate.UseVisualStyleBackColor = true;
             this.btnCreate.Click += new System.EventHandler(this.btnCreate_Click);
             // 
-            // ChartForm
+            // ChartBaseForm
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
@@ -173,7 +173,7 @@
             this.Controls.Add(this.dtpStartX);
             this.Margin = new System.Windows.Forms.Padding(0);
             this.MinimumSize = new System.Drawing.Size(600, 200);
-            this.Name = "ChartForm";
+            this.Name = "ChartBaseForm";
             this.Size = new System.Drawing.Size(600, 200);
             ((System.ComponentModel.ISupportInitialize)(this.chartControl)).EndInit();
             this.ResumeLayout(false);

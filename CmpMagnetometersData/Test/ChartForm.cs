@@ -246,7 +246,8 @@ namespace Test
 
         protected virtual void cbEnable_CheckedChanged(object sender, EventArgs e)
         {
-            IsEnable ^= true;
+            if(IsEnable == cbEnable.Checked) return;
+            IsEnable = cbEnable.Checked;
             UpdateControls();
         }
 
@@ -256,6 +257,11 @@ namespace Test
         private void dtp_ValueChanged(object sender, EventArgs e)
         {
             _isDtpValueChanged = true;
+        }
+
+        private void btnCreate_Click(object sender, EventArgs e)
+        {
+            OnOtherEvent(OtherEventType.CreateChart);
         }
 
         private void dtp_Leave(object sender, EventArgs e)

@@ -49,6 +49,7 @@
             this.btnOk.TabIndex = 0;
             this.btnOk.Text = "Ок";
             this.btnOk.UseVisualStyleBackColor = true;
+            this.btnOk.Click += new System.EventHandler(this.btnOk_Click);
             // 
             // btnCancel
             // 
@@ -105,9 +106,9 @@
             this.label4.AutoSize = true;
             this.label4.Location = new System.Drawing.Point(10, 95);
             this.label4.Name = "label4";
-            this.label4.Size = new System.Drawing.Size(12, 13);
+            this.label4.Size = new System.Drawing.Size(55, 13);
             this.label4.TabIndex = 6;
-            this.label4.Text = "x";
+            this.label4.Text = "Столбцов";
             // 
             // cmbB
             // 

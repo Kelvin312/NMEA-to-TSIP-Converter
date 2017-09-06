@@ -28,8 +28,8 @@
         /// </summary>
         private void InitializeComponent()
         {
-            System.Windows.Forms.DataVisualization.Charting.ChartArea chartArea6 = new System.Windows.Forms.DataVisualization.Charting.ChartArea();
-            System.Windows.Forms.DataVisualization.Charting.Series series6 = new System.Windows.Forms.DataVisualization.Charting.Series();
+            System.Windows.Forms.DataVisualization.Charting.ChartArea chartArea1 = new System.Windows.Forms.DataVisualization.Charting.ChartArea();
+            System.Windows.Forms.DataVisualization.Charting.Series series1 = new System.Windows.Forms.DataVisualization.Charting.Series();
             this.chartControl = new System.Windows.Forms.DataVisualization.Charting.Chart();
             this.cbEnable = new System.Windows.Forms.CheckBox();
             this.lblChartName = new System.Windows.Forms.Label();
@@ -48,14 +48,14 @@
             this.chartControl.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
             | System.Windows.Forms.AnchorStyles.Left) 
             | System.Windows.Forms.AnchorStyles.Right)));
-            chartArea6.Name = "main";
-            this.chartControl.ChartAreas.Add(chartArea6);
+            chartArea1.Name = "main";
+            this.chartControl.ChartAreas.Add(chartArea1);
             this.chartControl.Location = new System.Drawing.Point(99, 3);
             this.chartControl.Name = "chartControl";
-            series6.ChartArea = "main";
-            series6.ChartType = System.Windows.Forms.DataVisualization.Charting.SeriesChartType.Line;
-            series6.Name = "main";
-            this.chartControl.Series.Add(series6);
+            series1.ChartArea = "main";
+            series1.ChartType = System.Windows.Forms.DataVisualization.Charting.SeriesChartType.Line;
+            series1.Name = "main";
+            this.chartControl.Series.Add(series1);
             this.chartControl.Size = new System.Drawing.Size(498, 244);
             this.chartControl.TabIndex = 1;
             // 
@@ -102,6 +102,7 @@
             this.btnCreate.Text = "Создать";
             this.btnCreate.TextImageRelation = System.Windows.Forms.TextImageRelation.ImageBeforeText;
             this.btnCreate.UseVisualStyleBackColor = true;
+            this.btnCreate.Click += new System.EventHandler(this.btnCreate_Click);
             // 
             // btnSave
             // 
