@@ -2,7 +2,7 @@
 using System.Globalization;
 using System.Windows.Forms.DataVisualization.Charting;
 
-namespace CmpMagnetometersData
+namespace Test
 {
     public class FilePoint
     {

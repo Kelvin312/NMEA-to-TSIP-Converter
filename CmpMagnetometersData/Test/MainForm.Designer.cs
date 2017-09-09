@@ -1,4 +1,4 @@
-﻿namespace CmpMagnetometersData
+﻿namespace Test
 {
     partial class MainForm
     {
@@ -44,12 +44,10 @@
             this.btnCheck = new System.Windows.Forms.Button();
             this.txtValues = new System.Windows.Forms.TextBox();
             this.lblValues = new System.Windows.Forms.Label();
-            this.panelContent = new CmpMagnetometersData.CustomPanel();
             this.tlbContent = new System.Windows.Forms.TableLayoutPanel();
             this.toolStrip1.SuspendLayout();
             this.tableLayoutPanel1.SuspendLayout();
             this.panel1.SuspendLayout();
-            this.panelContent.SuspendLayout();
             this.SuspendLayout();
             // 
             // toolStrip1
@@ -69,7 +67,7 @@
             // 
             // btnAdd
             // 
-            this.btnAdd.Image = ((System.Drawing.Image)(resources.GetObject("btnAdd.Image")));
+            this.btnAdd.Image = global::Test.Properties.Resources.add;
             this.btnAdd.ImageTransparentColor = System.Drawing.Color.Magenta;
             this.btnAdd.Name = "btnAdd";
             this.btnAdd.Size = new System.Drawing.Size(79, 22);
@@ -85,7 +83,7 @@
             // 
             this.btnMagneticField.Checked = true;
             this.btnMagneticField.CheckState = System.Windows.Forms.CheckState.Checked;
-            this.btnMagneticField.Image = ((System.Drawing.Image)(resources.GetObject("btnMagneticField.Image")));
+            this.btnMagneticField.Image = global::Test.Properties.Resources.magnetic_field;
             this.btnMagneticField.ImageTransparentColor = System.Drawing.Color.Magenta;
             this.btnMagneticField.Name = "btnMagneticField";
             this.btnMagneticField.Size = new System.Drawing.Size(118, 22);
@@ -94,7 +92,7 @@
             // 
             // btnRmsDeviation
             // 
-            this.btnRmsDeviation.Image = ((System.Drawing.Image)(resources.GetObject("btnRmsDeviation.Image")));
+            this.btnRmsDeviation.Image = global::Test.Properties.Resources.rms_deviation;
             this.btnRmsDeviation.ImageTransparentColor = System.Drawing.Color.Magenta;
             this.btnRmsDeviation.Name = "btnRmsDeviation";
             this.btnRmsDeviation.Size = new System.Drawing.Size(51, 22);
@@ -108,7 +106,7 @@
             // 
             // btnConfig
             // 
-            this.btnConfig.Image = ((System.Drawing.Image)(resources.GetObject("btnConfig.Image")));
+            this.btnConfig.Image = global::Test.Properties.Resources.settings;
             this.btnConfig.ImageTransparentColor = System.Drawing.Color.Magenta;
             this.btnConfig.Name = "btnConfig";
             this.btnConfig.Size = new System.Drawing.Size(87, 22);
@@ -127,7 +125,6 @@
             this.tableLayoutPanel1.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 100F));
             this.tableLayoutPanel1.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Absolute, 145F));
             this.tableLayoutPanel1.Controls.Add(this.panel1, 1, 0);
-            this.tableLayoutPanel1.Controls.Add(this.panelContent, 0, 0);
             this.tableLayoutPanel1.Dock = System.Windows.Forms.DockStyle.Fill;
             this.tableLayoutPanel1.Location = new System.Drawing.Point(0, 25);
             this.tableLayoutPanel1.Margin = new System.Windows.Forms.Padding(0);
@@ -204,16 +201,6 @@
             this.lblValues.TabIndex = 0;
             this.lblValues.Text = "коэффициент корреляции";
             // 
-            // panelContent
-            // 
-            this.panelContent.AutoScroll = true;
-            this.panelContent.Controls.Add(this.tlbContent);
-            this.panelContent.Dock = System.Windows.Forms.DockStyle.Fill;
-            this.panelContent.Location = new System.Drawing.Point(3, 3);
-            this.panelContent.Name = "panelContent";
-            this.panelContent.Size = new System.Drawing.Size(836, 363);
-            this.panelContent.TabIndex = 1;
-            // 
             // tlbContent
             // 
             this.tlbContent.AutoSize = true;
@@ -249,8 +236,6 @@
             this.tableLayoutPanel1.ResumeLayout(false);
             this.panel1.ResumeLayout(false);
             this.panel1.PerformLayout();
-            this.panelContent.ResumeLayout(false);
-            this.panelContent.PerformLayout();
             this.ResumeLayout(false);
             this.PerformLayout();
 
@@ -273,7 +258,6 @@
         private System.Windows.Forms.Button btnCalculate;
         private System.Windows.Forms.Button btnDelete;
         private System.Windows.Forms.Button btnCheck;
-        private CustomPanel panelContent;
     }
 }
 

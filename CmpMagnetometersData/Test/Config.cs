@@ -1,7 +1,7 @@
 ﻿using System.Drawing;
 
 
-namespace CmpMagnetometersData
+namespace Test
 {
     public static class Config
     {

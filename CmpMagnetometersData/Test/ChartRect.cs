@@ -1,8 +1,7 @@
-using System;
-using System.Drawing;
+﻿using System;
 using System.Windows.Forms.DataVisualization.Charting;
 
-namespace CmpMagnetometersData
+namespace Test
 {
     public struct AxisSize
     {
@@ -109,7 +108,7 @@ namespace CmpMagnetometersData
                 Y = new AxisSize(ca.AxisY.ScaleView);
             }
         }
-        
+
         public void Union(ChartRect rect)
         {
             X.Min = Math.Min(X.Min, rect.X.Min);

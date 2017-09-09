@@ -1,6 +1,6 @@
 ﻿namespace CmpMagnetometersData
 {
-    partial class ChartForm
+    partial class ChartBaseForm
     {
         /// <summary> 
         /// Обязательная переменная конструктора.
@@ -28,17 +28,19 @@
         /// </summary>
         private void InitializeComponent()
         {
-            System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(ChartForm));
+            System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(ChartBaseForm));
             System.Windows.Forms.DataVisualization.Charting.ChartArea chartArea1 = new System.Windows.Forms.DataVisualization.Charting.ChartArea();
             System.Windows.Forms.DataVisualization.Charting.Series series1 = new System.Windows.Forms.DataVisualization.Charting.Series();
             this.btnSave = new System.Windows.Forms.Button();
-            this.btnDelete = new System.Windows.Forms.Button();
             this.label1 = new System.Windows.Forms.Label();
             this.dtpStartX = new System.Windows.Forms.DateTimePicker();
             this.chartControl = new System.Windows.Forms.DataVisualization.Charting.Chart();
             this.lblFileName = new System.Windows.Forms.Label();
             this.btnTurn = new System.Windows.Forms.Button();
             this.lblFileNameHid = new System.Windows.Forms.Label();
+            this.btnReOpen = new System.Windows.Forms.Button();
+            this.cbEnable = new System.Windows.Forms.CheckBox();
+            this.btnCreate = new System.Windows.Forms.Button();
             ((System.ComponentModel.ISupportInitialize)(this.chartControl)).BeginInit();
             this.SuspendLayout();
             // 
@@ -52,18 +54,7 @@
             this.btnSave.Text = "Сохранить";
             this.btnSave.TextImageRelation = System.Windows.Forms.TextImageRelation.ImageBeforeText;
             this.btnSave.UseVisualStyleBackColor = true;
-            // 
-            // btnDelete
-            // 
-            this.btnDelete.Image = ((System.Drawing.Image)(resources.GetObject("btnDelete.Image")));
-            this.btnDelete.Location = new System.Drawing.Point(3, 118);
-            this.btnDelete.Name = "btnDelete";
-            this.btnDelete.Size = new System.Drawing.Size(85, 23);
-            this.btnDelete.TabIndex = 4;
-            this.btnDelete.Text = "Убрать";
-            this.btnDelete.TextImageRelation = System.Windows.Forms.TextImageRelation.ImageBeforeText;
-            this.btnDelete.UseVisualStyleBackColor = true;
-            this.btnDelete.Click += new System.EventHandler(this.btnDelete_Click);
+            this.btnSave.Click += new System.EventHandler(this.btnSave_Click);
             // 
             // label1
             // 
@@ -76,8 +67,6 @@
             // 
             // dtpStartX
             // 
-            this.dtpStartX.Checked = false;
-            this.dtpStartX.CustomFormat = "yy.MM.dd/HH:mm:ss";
             this.dtpStartX.Format = System.Windows.Forms.DateTimePickerFormat.Custom;
             this.dtpStartX.Location = new System.Drawing.Point(3, 63);
             this.dtpStartX.Name = "dtpStartX";
@@ -96,13 +85,15 @@
             this.chartControl.ChartAreas.Add(chartArea1);
             this.chartControl.Location = new System.Drawing.Point(132, 3);
             this.chartControl.Name = "chartControl";
+            this.chartControl.Palette = System.Windows.Forms.DataVisualization.Charting.ChartColorPalette.None;
             series1.ChartArea = "ChartArea1";
-            series1.ChartType = System.Windows.Forms.DataVisualization.Charting.SeriesChartType.Spline;
+            series1.ChartType = System.Windows.Forms.DataVisualization.Charting.SeriesChartType.Line;
             series1.Name = "Series1";
             this.chartControl.Series.Add(series1);
-            this.chartControl.Size = new System.Drawing.Size(465, 139);
+            this.chartControl.Size = new System.Drawing.Size(465, 194);
             this.chartControl.TabIndex = 6;
             this.chartControl.Text = "chart1";
+            this.chartControl.MouseEnter += new System.EventHandler(this.chartControl_MouseEnter);
             // 
             // lblFileName
             // 
@@ -133,23 +124,57 @@
             this.lblFileNameHid.Text = "hid";
             this.lblFileNameHid.Visible = false;
             // 
-            // ChartForm
+            // btnReOpen
+            // 
+            this.btnReOpen.Location = new System.Drawing.Point(3, 118);
+            this.btnReOpen.Name = "btnReOpen";
+            this.btnReOpen.Size = new System.Drawing.Size(83, 23);
+            this.btnReOpen.TabIndex = 10;
+            this.btnReOpen.Text = "Переоткрыть";
+            this.btnReOpen.UseVisualStyleBackColor = true;
+            this.btnReOpen.Click += new System.EventHandler(this.btnReOpen_Click);
+            // 
+            // cbEnable
+            // 
+            this.cbEnable.AutoSize = true;
+            this.cbEnable.Checked = true;
+            this.cbEnable.CheckState = System.Windows.Forms.CheckState.Checked;
+            this.cbEnable.Location = new System.Drawing.Point(4, 147);
+            this.cbEnable.Name = "cbEnable";
+            this.cbEnable.Size = new System.Drawing.Size(75, 17);
+            this.cbEnable.TabIndex = 11;
+            this.cbEnable.Text = "Включить";
+            this.cbEnable.UseVisualStyleBackColor = true;
+            this.cbEnable.CheckedChanged += new System.EventHandler(this.cbEnable_CheckedChanged);
+            // 
+            // btnCreate
+            // 
+            this.btnCreate.Location = new System.Drawing.Point(3, 170);
+            this.btnCreate.Name = "btnCreate";
+            this.btnCreate.Size = new System.Drawing.Size(83, 23);
+            this.btnCreate.TabIndex = 12;
+            this.btnCreate.Text = "Создать";
+            this.btnCreate.UseVisualStyleBackColor = true;
+            this.btnCreate.Click += new System.EventHandler(this.btnCreate_Click);
+            // 
+            // ChartBaseForm
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
+            this.Controls.Add(this.btnCreate);
+            this.Controls.Add(this.cbEnable);
+            this.Controls.Add(this.btnReOpen);
             this.Controls.Add(this.lblFileNameHid);
             this.Controls.Add(this.btnTurn);
             this.Controls.Add(this.lblFileName);
             this.Controls.Add(this.chartControl);
             this.Controls.Add(this.btnSave);
-            this.Controls.Add(this.btnDelete);
             this.Controls.Add(this.label1);
             this.Controls.Add(this.dtpStartX);
             this.Margin = new System.Windows.Forms.Padding(0);
-            this.Name = "ChartForm";
-            this.Size = new System.Drawing.Size(600, 145);
-            this.Load += new System.EventHandler(this.ChartForm_Load);
-            this.Resize += new System.EventHandler(this.ChartForm_Resize);
+            this.MinimumSize = new System.Drawing.Size(600, 200);
+            this.Name = "ChartBaseForm";
+            this.Size = new System.Drawing.Size(600, 200);
             ((System.ComponentModel.ISupportInitialize)(this.chartControl)).EndInit();
             this.ResumeLayout(false);
             this.PerformLayout();
@@ -158,12 +183,14 @@
 
         #endregion
         private System.Windows.Forms.Button btnSave;
-        private System.Windows.Forms.Button btnDelete;
         private System.Windows.Forms.Label label1;
         private System.Windows.Forms.DateTimePicker dtpStartX;
         private System.Windows.Forms.DataVisualization.Charting.Chart chartControl;
         private System.Windows.Forms.Label lblFileName;
         private System.Windows.Forms.Button btnTurn;
         private System.Windows.Forms.Label lblFileNameHid;
+        private System.Windows.Forms.Button btnReOpen;
+        private System.Windows.Forms.CheckBox cbEnable;
+        private System.Windows.Forms.Button btnCreate;
     }
 }
