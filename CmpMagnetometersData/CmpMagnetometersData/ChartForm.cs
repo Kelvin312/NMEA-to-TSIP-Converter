@@ -1,98 +1,153 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Drawing;
-using System.IO;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using System.Windows.Forms;
 using System.Windows.Forms.DataVisualization.Charting;
+using CmpMagnetometersData.Properties;
 
 namespace CmpMagnetometersData
 {
-    public partial class ChartForm:ChartBaseForm
+    public partial class ChartForm : UserControl
     {
-        private readonly Chart _chartControl;
-        private readonly Series _ptrSeries;
-        private readonly ChartArea _ptrChartArea;
-        private readonly Axis _ptrAxisX;
-        private readonly Axis _ptrAxisY;
-        private readonly string _filePath;
-
-        public ChartBaseForm(string filePath)
+        public ChartForm(string chartName)
         {
-            ChartType = 0;
+            InitializeComponent();
             IsMinimize = false;
             IsEnable = true;
-            _filePath = filePath;
-            FileName = Path.GetFileNameWithoutExtension(_filePath);
-            lblFileName.Text = FileName;
-            lblFileNameHid.Text = FileName;
-
-            _chartControl = chartControl;
-            _ptrSeries = _chartControl.Series[0];
-            _ptrChartArea = _chartControl.ChartAreas[0];
+            ChartName = chartName;
+            _ptrSeries = chartControl.Series[0];
+            _ptrChartArea = chartControl.ChartAreas[0];
             _ptrAxisX = _ptrChartArea.AxisX;
             _ptrAxisY = _ptrChartArea.AxisY;
             ChartControlInit();
-            SetTimeView();
+        }
+        public bool IsMinimize { get; protected set; }
+        public bool IsEnable { get; protected set; }
+        public string ChartName { get; }
 
-            ReadFile(_filePath);
+        public int MinimumHeight { get; protected set; }
+
+        public ChartRect Border { get; protected set; }
+
+        public event EventHandler<ChartRect> ScaleViewChanged;
+
+        public event EventHandler<OtherEventType> OtherEvent;
+
+        protected void OnScaleViewChanged(ChartRect e = null)
+        {
+            if (e == null) e = new ChartRect(_ptrChartArea);
+            ScaleViewChanged?.Invoke(this, e);
         }
 
-        private void ChartControlInit()
+        public virtual void OnScaleViewChanged(object sender, ChartRect e)
         {
-            //Настраиваем формат данных и вид меток
-            _ptrSeries.XValueType = ChartValueType.DateTime;
+            
+        }
+
+        protected void OnOtherEvent(OtherEventType e)
+        {
+            OtherEvent?.Invoke(this, e);
+        }
+
+        public virtual void OnOtherEvent(object sender, OtherEventType e)
+        {
+
+        }
+
+        protected double XMinZoom, YMinZoom;
+
+        protected void UpdateAxis(ChartRect newView = null, bool isUpdateY = false, bool isResetZoom = false, bool isUpdateBorder = false)
+        {
+            var curView = new ChartRect(_ptrChartArea);
+            var globalBorder = new ChartRect(_ptrChartArea, true);
+
+            if (isUpdateBorder)
+            {
+                globalBorder = new ChartRect(Config.GlobalBorder);
+                globalBorder.Y.Min -= 2;
+                globalBorder.Y.Max += YMinZoom * 10.0;
+                _ptrAxisX.Minimum = globalBorder.X.Min;
+                _ptrAxisX.Maximum = globalBorder.X.Max;
+                _ptrAxisY.Minimum = globalBorder.Y.Min;
+                _ptrAxisY.Maximum = globalBorder.Y.Max;
+            }
+            if (isResetZoom)
+            {
+                curView.X = globalBorder.X;
+                curView.Y = Border.Y;
+            }
+            else
+            {
+                if (newView != null)
+                {
+                    //X
+                    curView.X = newView.X;
+                    //Y
+                    if (isUpdateY)
+                    {
+                        curView.Y = newView.Y;
+                    }
+                }
+            }
+            var oldView = new ChartRect(_ptrChartArea);
+            if (curView.X.Check(oldView.X, XMinZoom, globalBorder.X))
+            {
+                _ptrAxisX.ScaleView.Zoom(curView.X.Min, curView.X.Max);
+            }
+            if (curView.Y.Check(oldView.Y, YMinZoom, globalBorder.Y))
+            {
+                _ptrAxisY.ScaleView.Zoom(curView.Y.Min, curView.Y.Max);
+            }
+        }
+
+        protected readonly Series _ptrSeries;
+        protected readonly ChartArea _ptrChartArea;
+        protected readonly Axis _ptrAxisX;
+        protected readonly Axis _ptrAxisY;
+
+
+       
+
+        protected void ChartControlInit()
+        {
+            //X
             _ptrAxisX.LabelStyle.IsEndLabelVisible = false;
             _ptrAxisX.IntervalAutoMode = IntervalAutoMode.VariableCount;
-            //Y
-            _ptrSeries.YValueType = ChartValueType.Int32;
-            _ptrAxisY.LabelStyle.Format = "#";
-            _ptrAxisY.LabelStyle.IsEndLabelVisible = false;
-            _ptrAxisY.IntervalAutoMode = IntervalAutoMode.VariableCount;
-            //Настраиваем масштабирование и скролл
             _ptrChartArea.CursorX.IsUserSelectionEnabled = true;
-            _ptrChartArea.CursorX.IntervalType = DateTimeIntervalType.Seconds;
             _ptrAxisX.ScrollBar.Enabled = false;
             //Y
+            _ptrAxisY.LabelStyle.IsEndLabelVisible = false;
+            _ptrAxisY.IntervalAutoMode = IntervalAutoMode.VariableCount;
             _ptrChartArea.CursorY.IsUserSelectionEnabled = true;
             _ptrAxisY.ScrollBar.Enabled = false;
             //Mouse
-            _chartControl.MouseDown += ChartControl_MouseDown;
-            _chartControl.MouseMove += ChartControl_MouseMove;
-            _chartControl.AxisViewChanged += ChartControl_AxisViewChanged;
-        }
-        #region ChartEvents
-
-        private bool _mouseDowned;
-        private double _xStart, _yStart;
-
-        private void chartControl_MouseEnter(object sender, EventArgs e)
-        {
-            this.OnMouseEnter(e);
+            chartControl.MouseEnter += ChartControl_MouseEnter;
+            chartControl.MouseDown += ChartControl_MouseDown;
+            chartControl.MouseMove += ChartControl_MouseMove;
+            chartControl.AxisViewChanged += ChartControl_AxisViewChanged;
         }
 
         public void ChartControl_MouseWheel(int delta)
         {
             ChartRect newZoom = new ChartRect(_ptrChartArea);
-
-            ScaleViewZoom(delta, ref newZoom.X, Config.XMinZoom);
-            ScaleViewZoom(delta, ref newZoom.Y, Config.YMinZoom);
+            ScaleViewZoom(delta, ref newZoom.X);
+            ScaleViewZoom(delta, ref newZoom.Y);
             UpdateAxis(newZoom, true);
-            ScaleViewChanged?.Invoke(this, newZoom);
+            ViewChanged();
         }
 
-        private void ScaleViewZoom(int delta, ref AxisSize axis, double minZoom)
+        private void ScaleViewZoom(int delta, ref AxisSize axis)
         {
-            var deltaPos = axis.Size * Properties.Settings.Default.ZoomSpeed;
-            if (delta > 0)
-            {
-                if (axis.Size <= minZoom) return;
-                deltaPos = -deltaPos;
-            }
+            var deltaPos = axis.Size * Settings.Default.ZoomSpeed;
+            if (delta > 0) deltaPos = -deltaPos;
             axis.Size = axis.Size + deltaPos;
         }
+
+        private void ChartControl_MouseEnter(object sender, EventArgs e)
+        {
+            this.OnMouseEnter(e);
+        }
+
+        private bool _mouseDowned;
+        private double _xStart, _yStart;
 
         private void ChartControl_MouseDown(object sender, MouseEventArgs e)
         {
@@ -112,7 +167,8 @@ namespace CmpMagnetometersData
                     }
                     break;
                 case MouseButtons.Right:
-                    OtherEvent?.Invoke(this, true);
+                    UpdateAxis(null, false, true);
+                    ViewChanged(true);
                     break;
             }
         }
@@ -144,68 +200,48 @@ namespace CmpMagnetometersData
 
                 _ptrAxisX.ScaleView.Scroll(newX);
                 _ptrAxisY.ScaleView.Scroll(newY);
-                UpdateAxis();
-                _chartControl.Refresh();
-                ScaleViewChanged?.Invoke(this, new ChartRect(_ptrChartArea));
+                ViewChanged();
             }
         }
 
         private void ChartControl_AxisViewChanged(object sender, ViewEventArgs e)
         {
-            UpdateAxis();
-            ScaleViewChanged?.Invoke(this, new ChartRect(_ptrChartArea));
+            ViewChanged();
         }
 
-        #endregion
+        protected virtual void ViewChanged(bool isResetZoom = false)
+        {
+            
+        }
+
+
+        
 
         private bool _isDtpValueChanged = false;
-        private void dtpStartX_ValueChanged(object sender, EventArgs e)
+
+        private void dtp_ValueChanged(object sender, EventArgs e)
         {
             _isDtpValueChanged = true;
         }
 
-        private void dtpStartX_Leave(object sender, EventArgs e)
-        {
-            if (!_isDtpValueChanged) return;
-            _isDtpValueChanged = false;
-            RefreshData(dtpStartX.Value);
-            OtherEvent?.Invoke(this, false);
-        }
-
-        private void cbEnable_CheckedChanged(object sender, EventArgs e)
-        {
-            if (!IsValid) cbEnable.Checked = false;
-            else OtherEvent?.Invoke(this, false);
-        }
-
-        private void btnReOpen_Click(object sender, EventArgs e)
-        {
-            ReadFile(_filePath);
-            OtherEvent?.Invoke(this, false);
-        }
-
-        private void btnSave_Click(object sender, EventArgs e)
-        {
-            throw new NotImplementedException();
-        }
-
         private void btnCreate_Click(object sender, EventArgs e)
         {
-            CreateChart?.Invoke(this, null);
+            OnOtherEvent(OtherEventType.CreateChart);
         }
 
-        private void btnTurn_Click(object sender, EventArgs e)
+        private void dtp_Leave(object sender, EventArgs e)
         {
-            IsMinimize ^= true;
-            foreach (Control c in this.Controls)
+            if (_isDtpValueChanged)
             {
-                c.Visible = !IsMinimize;
+                OnDtpValueChanged((sender as DateTimePicker).Value);
+                _isDtpValueChanged = false;
             }
-            btnTurn.Visible = true;
-            lblFileNameHid.Visible = IsMinimize;
-            btnTurn.Text = IsMinimize ? "Развернуть" : "Свернуть";
-            MinimumSize = new Size(MinimumSize.Width, IsMinimize ? 30 : 200);
-            OtherEvent?.Invoke(this, false);
         }
+
+        protected virtual void OnDtpValueChanged(DateTime newTime)
+        {
+            
+        }
+
     }
 }
