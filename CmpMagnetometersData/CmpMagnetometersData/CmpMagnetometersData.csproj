@@ -50,22 +50,8 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="BarForm.cs">
-      <SubType>UserControl</SubType>
-    </Compile>
-    <Compile Include="BarForm.Designer.cs">
-      <DependentUpon>BarForm.cs</DependentUpon>
-    </Compile>
-    <Compile Include="BaseDC.cs" />
-    <Compile Include="ChartForm.cs">
-      <SubType>UserControl</SubType>
-    </Compile>
-    <Compile Include="ChartForm.Designer.cs">
-      <DependentUpon>ChartForm.cs</DependentUpon>
-    </Compile>
     <Compile Include="ChartRect.cs" />
     <Compile Include="Config.cs" />
-    <Compile Include="DistributionDC.cs" />
     <Compile Include="KeyValueHolder.cs" />
     <Compile Include="MainForm.cs">
       <SubType>Form</SubType>
@@ -73,15 +59,8 @@
     <Compile Include="MainForm.Designer.cs">
       <DependentUpon>MainForm.cs</DependentUpon>
     </Compile>
-    <Compile Include="OtherEventType.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <EmbeddedResource Include="BarForm.resx">
-      <DependentUpon>BarForm.cs</DependentUpon>
-    </EmbeddedResource>
-    <EmbeddedResource Include="ChartForm.resx">
-      <DependentUpon>ChartForm.cs</DependentUpon>
-    </EmbeddedResource>
     <EmbeddedResource Include="MainForm.resx">
       <DependentUpon>MainForm.cs</DependentUpon>
     </EmbeddedResource>
