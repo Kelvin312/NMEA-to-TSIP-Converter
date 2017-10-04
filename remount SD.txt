@@ -1,0 +1,14 @@
+#!/bin/sh
+cd /
+cd dev
+sdname=`ls mmcblk0p*`
+if test -z $sdname
+then
+echo "No SD card!"
+else
+umount sdname
+rm -rf /mnt/{$sdname}
+mkdir /mnt/mmcblk0p1
+mount $sdname /mnt/mmcblk0p1
+fi
+cd
