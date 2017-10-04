@@ -1,4 +1,5 @@
 #!/bin/sh
+
 cd /dev
 sdname=\`ls mmcblk0p*\`
 cd
