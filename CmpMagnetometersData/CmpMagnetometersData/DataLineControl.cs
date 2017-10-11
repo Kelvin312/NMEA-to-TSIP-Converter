@@ -50,18 +50,19 @@ namespace CmpMagnetometersData
 
         public void UpdateChart(TableLayoutPanel tlb)
         {
-            int row = tlb.GetRow(_chartControl);
-            if (row!=-1 && !cbVisible.Checked)
+            var row = tlb.Controls.Contains(_chartControl);
+            if ( !cbVisible.Checked)
             {
                 tlb.Controls.Remove(_chartControl);
             }
-            if (row == -1 && cbVisible.Checked)
+            if ( cbVisible.Checked)
             {
-                tlb.Controls.Add(_chartControl);
+                _chartControl._ptrSeries.Points.Clear();
                 foreach (var dp in DataPixels)
                 {
                     _chartControl._ptrSeries.Points.Add(dp.GetDataPoint());
                 }
+                tlb.Controls.Add(_chartControl);
             }
         }
     }
@@ -74,7 +75,7 @@ namespace CmpMagnetometersData
 
         public DataPoint GetDataPoint()
         {
-            var res = new DataPoint(Val,Time.ToOADate());
+            var res = new DataPoint(Time.ToOADate(),Val);
             res.Color = Color;
             return res;
         }

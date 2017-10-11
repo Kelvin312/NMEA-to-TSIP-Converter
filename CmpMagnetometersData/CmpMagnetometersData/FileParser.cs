@@ -20,7 +20,6 @@ namespace CmpMagnetometersData
         public FileParser(string filePath, int loadIndex = -1)
         {
             ReadFile(filePath);
-
             if (_pointsList.Count < 2) return;
              
             if (loadIndex == -1 || loadIndex == 0)
@@ -71,9 +70,10 @@ namespace CmpMagnetometersData
                             var p = new FilePoint(str);
                             _pointsList.Add(p);
                         }
-                        catch (Exception)
+                        catch (Exception ex)
                         {
                             // throw;
+                            MessageBox.Show("error" + ex.Message +" " +ex.HResult.ToString());
                         }
                     }
                 }
