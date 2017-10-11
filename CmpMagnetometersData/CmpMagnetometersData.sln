@@ -5,8 +5,6 @@ VisualStudioVersion = 14.0.25420.1
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CmpMagnetometersData", "CmpMagnetometersData\CmpMagnetometersData.csproj", "{51C7E2FF-E023-4F74-A4E1-969E1C79A473}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Test", "Test\Test.csproj", "{0EFFF565-9904-4A6C-9114-5FA86F131E3F}"
-EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -17,10 +15,6 @@ Global
 		{51C7E2FF-E023-4F74-A4E1-969E1C79A473}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{51C7E2FF-E023-4F74-A4E1-969E1C79A473}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{51C7E2FF-E023-4F74-A4E1-969E1C79A473}.Release|Any CPU.Build.0 = Release|Any CPU
-		{0EFFF565-9904-4A6C-9114-5FA86F131E3F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{0EFFF565-9904-4A6C-9114-5FA86F131E3F}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{0EFFF565-9904-4A6C-9114-5FA86F131E3F}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{0EFFF565-9904-4A6C-9114-5FA86F131E3F}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

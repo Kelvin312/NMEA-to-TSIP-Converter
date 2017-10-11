@@ -7,8 +7,12 @@ if test -z \$sdname
 then
 echo "No SD card!"
 else
+if test \$sdname != mmcblk0p1
+then
 umount /dev/\$sdname
 rm -rf /mnt/\$sdname
+rm -rf /mnt/mmcblk0p1
 mkdir /mnt/mmcblk0p1
 mount /dev/\$sdname /mnt/mmcblk0p1
+fi
 fi
