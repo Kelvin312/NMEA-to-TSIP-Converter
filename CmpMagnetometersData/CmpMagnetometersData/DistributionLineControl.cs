@@ -19,12 +19,15 @@ namespace CmpMagnetometersData
             _chartControl.ch.Series.Add(new Series());
             _ptrSeries2 = _chartControl.ch.Series[1];
             _ptrSeries2.ChartType = SeriesChartType.Column;
-            _ptrSeries2.Color = Color.DarkBlue;
+            _chartControl._ptrSeries.Color = Color.DarkGreen;
+            _ptrSeries2.Color = Color.DarkViolet;
 
-            _chartControl._ptrSeries.XValueType = ChartValueType.Int32;
+            _chartControl._ptrSeries.XValueType = ChartValueType.Double;
             _chartControl._ptrChartArea.CursorX.IntervalType = DateTimeIntervalType.Auto;
-            _ptrSeries2.XValueType = ChartValueType.Int32;
+            _ptrSeries2.XValueType = ChartValueType.Double;
             _chartControl._ptrAxisX.LabelStyle.Format = "#";
+            _chartControl._ptrAxisY.LabelStyle.Format = "F4";
+            _chartControl._ptrChartArea.CursorY.Interval = 1e-6;
 
         }
 
@@ -53,6 +56,7 @@ namespace CmpMagnetometersData
             countValues = 0;
             foreach (var dp in dpList)
             {
+                ++countValues;
                 dispersionValues += (Math.Pow(dp.Val - meanValues, 2.0) - dispersionValues) / countValues;
             }
             dispersionValues *= 2;
@@ -60,9 +64,9 @@ namespace CmpMagnetometersData
             _distList.Clear();
             for (int i = 0; i < steps; i++)
             {
-                var v = minVal + stepSize / 2 + stepSize * i;
-                var normal = (int) Math.Round(Math.Exp(-Math.Pow(v - meanValues, 2.0) / dispersionValues) /
-                                              Math.Sqrt(Math.PI * dispersionValues));
+                var v = minVal + stepSize / 2.0 + stepSize * i;
+                var normal = Math.Exp(-Math.Pow(v - meanValues, 2.0) / dispersionValues) /
+                                              Math.Sqrt(Math.PI * dispersionValues);
                 _distList.Add(new DistPixel() {Count = 0, Normal = normal, ValX = v});
             }
             foreach (var dp in dpList)
@@ -70,7 +74,11 @@ namespace CmpMagnetometersData
                 var i = (dp.Val - minVal) / stepSize;
                 _distList[i].Count++;
             }
-           
+            foreach (var dl in _distList)
+            {
+                dl.Count /= dpList.Count;
+            }
+            
         }
 
         public override void UpdateChart(TableLayoutPanel tlb, ref int hSize)
@@ -102,8 +110,8 @@ namespace CmpMagnetometersData
 
     public class DistPixel
     {
-        public int ValX;
-        public int Count;
-        public int Normal;
+        public double ValX;
+        public double Count;
+        public double Normal;
     }
 }

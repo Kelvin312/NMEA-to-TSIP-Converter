@@ -228,7 +228,7 @@ namespace CmpMagnetometersData
                     {
                         var res = (count * mulsum - fsum * ssum) /
                                   Math.Sqrt((count * fsqsum - fsum * fsum) * (count * ssqsum - ssum * ssum));
-                        resList.AppendFormat("{0:F}\r\n", res);
+                        resList.AppendFormat("{0:F8}\r\n", res);
                     }
 
                 }
