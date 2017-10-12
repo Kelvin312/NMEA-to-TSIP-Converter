@@ -22,7 +22,7 @@ namespace CmpMagnetometersData
         public event EventHandler<SendEventArgs> SendEvent;
 
 
-        public void ReadEvent(object sender, SendEventArgs e)
+        public virtual void ReadEvent(object sender, SendEventArgs e)
         {
             if (e.TypeEvent == SendEventArgs.TypeEventE.RbtnClick)
             {
@@ -32,7 +32,7 @@ namespace CmpMagnetometersData
         }
 
         public List<DataPixel> DataPixels = new List<DataPixel>();
-        private ChartControl _chartControl = new ChartControl();
+        protected ChartControl _chartControl = new ChartControl();
 
         public string ReloadPath { get; set; }
         public int ReloadIndex { get; set; }
@@ -60,7 +60,7 @@ namespace CmpMagnetometersData
             _chartControl.lblName.Text = txtDataLineName.Text;
         }
 
-        public void UpdateChart(TableLayoutPanel tlb, ref int hSize)
+        public virtual void UpdateChart(TableLayoutPanel tlb, ref int hSize)
         {
             var contains = tlb.Controls.Contains(_chartControl);
             if (contains && !cbVisible.Checked)

@@ -57,6 +57,9 @@
       <DependentUpon>ChartControl.cs</DependentUpon>
     </Compile>
     <Compile Include="ChartRect.cs" />
+    <Compile Include="DistributionLineControl.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
     <Compile Include="FileParser.cs" />
     <Compile Include="MainForm.cs">
       <SubType>Form</SubType>

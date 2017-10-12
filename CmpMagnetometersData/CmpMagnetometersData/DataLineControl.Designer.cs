@@ -123,13 +123,12 @@
         }
 
         #endregion
-
-        private System.Windows.Forms.CheckBox cbVisible;
         private System.Windows.Forms.TextBox txtDataLineName;
         private System.Windows.Forms.Button btnSave;
         private System.Windows.Forms.Button btnReload;
         private System.Windows.Forms.Button btnDelete;
         public System.Windows.Forms.RadioButton rbFirstSelect;
         public System.Windows.Forms.CheckBox cbSecondSelect;
+        public System.Windows.Forms.CheckBox cbVisible;
     }
 }

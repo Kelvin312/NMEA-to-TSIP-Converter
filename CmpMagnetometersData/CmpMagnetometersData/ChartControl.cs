@@ -31,9 +31,9 @@ namespace CmpMagnetometersData
         }
 
         public readonly Series _ptrSeries;
-        protected readonly ChartArea _ptrChartArea;
-        protected readonly Axis _ptrAxisX;
-        protected readonly Axis _ptrAxisY;
+        public readonly ChartArea _ptrChartArea;
+        public readonly Axis _ptrAxisX;
+        public readonly Axis _ptrAxisY;
 
         public ChartRect Border { get; protected set; }
         protected double XMinZoom, YMinZoom;

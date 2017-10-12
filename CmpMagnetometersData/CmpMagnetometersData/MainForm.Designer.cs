@@ -32,12 +32,15 @@
             this.panel1 = new System.Windows.Forms.Panel();
             this.tableLayoutPanel2 = new System.Windows.Forms.TableLayoutPanel();
             this.panel2 = new System.Windows.Forms.Panel();
+            this.btnCorrelation = new System.Windows.Forms.Button();
+            this.txtDistribution = new System.Windows.Forms.TextBox();
+            this.btnDistribution = new System.Windows.Forms.Button();
+            this.btnSub = new System.Windows.Forms.Button();
             this.button1 = new System.Windows.Forms.Button();
             this.panel3 = new System.Windows.Forms.Panel();
             this.tableLayoutPanel3 = new System.Windows.Forms.TableLayoutPanel();
             this.btnAddDataLines = new System.Windows.Forms.Button();
             this.ofdDataLines = new System.Windows.Forms.OpenFileDialog();
-            this.btnSub = new System.Windows.Forms.Button();
             this.tableLayoutPanel1.SuspendLayout();
             this.panel1.SuspendLayout();
             this.panel2.SuspendLayout();
@@ -86,6 +89,9 @@
             // 
             // panel2
             // 
+            this.panel2.Controls.Add(this.btnCorrelation);
+            this.panel2.Controls.Add(this.txtDistribution);
+            this.panel2.Controls.Add(this.btnDistribution);
             this.panel2.Controls.Add(this.btnSub);
             this.panel2.Controls.Add(this.button1);
             this.panel2.Controls.Add(this.panel3);
@@ -96,6 +102,43 @@
             this.panel2.Name = "panel2";
             this.panel2.Size = new System.Drawing.Size(370, 461);
             this.panel2.TabIndex = 1;
+            // 
+            // btnCorrelation
+            // 
+            this.btnCorrelation.Location = new System.Drawing.Point(84, 34);
+            this.btnCorrelation.Name = "btnCorrelation";
+            this.btnCorrelation.Size = new System.Drawing.Size(75, 23);
+            this.btnCorrelation.TabIndex = 6;
+            this.btnCorrelation.Text = "Корреляция";
+            this.btnCorrelation.UseVisualStyleBackColor = true;
+            this.btnCorrelation.Click += new System.EventHandler(this.btnCorrelation_Click);
+            // 
+            // txtDistribution
+            // 
+            this.txtDistribution.Location = new System.Drawing.Point(246, 34);
+            this.txtDistribution.Name = "txtDistribution";
+            this.txtDistribution.Size = new System.Drawing.Size(48, 20);
+            this.txtDistribution.TabIndex = 5;
+            // 
+            // btnDistribution
+            // 
+            this.btnDistribution.Location = new System.Drawing.Point(165, 32);
+            this.btnDistribution.Name = "btnDistribution";
+            this.btnDistribution.Size = new System.Drawing.Size(75, 23);
+            this.btnDistribution.TabIndex = 4;
+            this.btnDistribution.Text = "Распределение";
+            this.btnDistribution.UseVisualStyleBackColor = true;
+            this.btnDistribution.Click += new System.EventHandler(this.btnDistribution_Click);
+            // 
+            // btnSub
+            // 
+            this.btnSub.Location = new System.Drawing.Point(165, 3);
+            this.btnSub.Name = "btnSub";
+            this.btnSub.Size = new System.Drawing.Size(75, 23);
+            this.btnSub.TabIndex = 3;
+            this.btnSub.Text = "-";
+            this.btnSub.UseVisualStyleBackColor = true;
+            this.btnSub.Click += new System.EventHandler(this.btnSub_Click);
             // 
             // button1
             // 
@@ -110,9 +153,9 @@
             // panel3
             // 
             this.panel3.Controls.Add(this.tableLayoutPanel3);
-            this.panel3.Location = new System.Drawing.Point(3, 32);
+            this.panel3.Location = new System.Drawing.Point(3, 66);
             this.panel3.Name = "panel3";
-            this.panel3.Size = new System.Drawing.Size(364, 426);
+            this.panel3.Size = new System.Drawing.Size(364, 392);
             this.panel3.TabIndex = 1;
             // 
             // tableLayoutPanel3
@@ -124,7 +167,7 @@
             this.tableLayoutPanel3.Name = "tableLayoutPanel3";
             this.tableLayoutPanel3.RowCount = 1;
             this.tableLayoutPanel3.RowStyles.Add(new System.Windows.Forms.RowStyle());
-            this.tableLayoutPanel3.Size = new System.Drawing.Size(364, 426);
+            this.tableLayoutPanel3.Size = new System.Drawing.Size(364, 392);
             this.tableLayoutPanel3.TabIndex = 1;
             // 
             // btnAddDataLines
@@ -142,16 +185,6 @@
             this.ofdDataLines.FileName = "openFileDialog1";
             this.ofdDataLines.Multiselect = true;
             // 
-            // btnSub
-            // 
-            this.btnSub.Location = new System.Drawing.Point(165, 3);
-            this.btnSub.Name = "btnSub";
-            this.btnSub.Size = new System.Drawing.Size(75, 23);
-            this.btnSub.TabIndex = 3;
-            this.btnSub.Text = "-";
-            this.btnSub.UseVisualStyleBackColor = true;
-            this.btnSub.Click += new System.EventHandler(this.btnSub_Click);
-            // 
             // MainForm
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
@@ -163,6 +196,7 @@
             this.tableLayoutPanel1.ResumeLayout(false);
             this.panel1.ResumeLayout(false);
             this.panel2.ResumeLayout(false);
+            this.panel2.PerformLayout();
             this.panel3.ResumeLayout(false);
             this.ResumeLayout(false);
 
@@ -180,5 +214,8 @@
         private System.Windows.Forms.TableLayoutPanel tableLayoutPanel3;
         private System.Windows.Forms.Button button1;
         private System.Windows.Forms.Button btnSub;
+        private System.Windows.Forms.TextBox txtDistribution;
+        private System.Windows.Forms.Button btnDistribution;
+        private System.Windows.Forms.Button btnCorrelation;
     }
 }
