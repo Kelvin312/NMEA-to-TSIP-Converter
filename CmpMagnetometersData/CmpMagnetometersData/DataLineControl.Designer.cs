@@ -53,8 +53,8 @@
             this.rbFirstSelect.Name = "rbFirstSelect";
             this.rbFirstSelect.Size = new System.Drawing.Size(14, 13);
             this.rbFirstSelect.TabIndex = 1;
-            this.rbFirstSelect.TabStop = true;
             this.rbFirstSelect.UseVisualStyleBackColor = true;
+            this.rbFirstSelect.CheckedChanged += new System.EventHandler(this.rbFirstSelect_CheckedChanged);
             // 
             // cbSecondSelect
             // 
@@ -125,11 +125,11 @@
         #endregion
 
         private System.Windows.Forms.CheckBox cbVisible;
-        private System.Windows.Forms.RadioButton rbFirstSelect;
-        private System.Windows.Forms.CheckBox cbSecondSelect;
         private System.Windows.Forms.TextBox txtDataLineName;
         private System.Windows.Forms.Button btnSave;
         private System.Windows.Forms.Button btnReload;
         private System.Windows.Forms.Button btnDelete;
+        public System.Windows.Forms.RadioButton rbFirstSelect;
+        public System.Windows.Forms.CheckBox cbSecondSelect;
     }
 }

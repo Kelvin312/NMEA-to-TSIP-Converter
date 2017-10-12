@@ -19,6 +19,18 @@ namespace CmpMagnetometersData
             InitializeComponent();
         }
 
+        public event EventHandler<SendEventArgs> SendEvent;
+
+
+        public void ReadEvent(object sender, SendEventArgs e)
+        {
+            if (e.TypeEvent == SendEventArgs.TypeEventE.RbtnClick)
+            {
+                rbFirstSelect.Checked = false;
+
+            }
+        }
+
         public List<DataPixel> DataPixels = new List<DataPixel>();
         private ChartControl _chartControl = new ChartControl();
 
@@ -48,23 +60,46 @@ namespace CmpMagnetometersData
             _chartControl.lblName.Text = txtDataLineName.Text;
         }
 
-        public void UpdateChart(TableLayoutPanel tlb)
+        public void UpdateChart(TableLayoutPanel tlb, ref int hSize)
         {
-            var row = tlb.Controls.Contains(_chartControl);
-            if ( !cbVisible.Checked)
+            var contains = tlb.Controls.Contains(_chartControl);
+            if (contains && !cbVisible.Checked)
             {
                 tlb.Controls.Remove(_chartControl);
+                tlb.RowStyles.RemoveAt(tlb.RowStyles.Count-1);
             }
-            if ( cbVisible.Checked)
+            if (!contains && cbVisible.Checked)
             {
                 _chartControl._ptrSeries.Points.Clear();
                 foreach (var dp in DataPixels)
                 {
                     _chartControl._ptrSeries.Points.Add(dp.GetDataPoint());
                 }
+                _chartControl.Dock = DockStyle.Fill;
                 tlb.Controls.Add(_chartControl);
+                tlb.RowStyles.Add(new RowStyle(SizeType.Percent,100));
             }
+            if(cbVisible.Checked) hSize += 285;
         }
+
+        private void rbFirstSelect_CheckedChanged(object sender, EventArgs e)
+        {
+            if(rbFirstSelect.Checked)
+           SendEvent?.Invoke(this, new SendEventArgs() {Args = 0, TypeEvent = SendEventArgs.TypeEventE.RbtnClick});
+        }
+    }
+
+
+    public class SendEventArgs
+    {
+        public enum TypeEventE
+        {
+            RbtnClick
+        }
+
+        public TypeEventE TypeEvent;
+        public int Args;
+
     }
 
     public class DataPixel
