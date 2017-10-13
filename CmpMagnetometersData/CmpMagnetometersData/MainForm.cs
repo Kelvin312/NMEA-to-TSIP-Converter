@@ -42,7 +42,7 @@ namespace CmpMagnetometersData
                 if ((ModifierKeys & Keys.Control) == Keys.Control)
                 {
                     hWnd = WindowFromPoint(pos);
-                    m.Result = IntPtr.Zero;
+                   // m.Result = IntPtr.Zero;
                 }
                 else
                 {
@@ -86,6 +86,8 @@ namespace CmpMagnetometersData
 
         private void DataControl_SendEvent(object sender, SendEventArgs e)
         {
+            if (e.TypeEvent == SendEventArgs.TypeEventE.ChangeZoom && cbSyncY.Checked)
+                e.TypeEvent = SendEventArgs.TypeEventE.ChangeZoomWithY;
             foreach (DataLineControl c in tableLayoutPanel3.Controls)
             {
                 if (!c.Equals(sender as DataLineControl))

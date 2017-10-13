@@ -17,6 +17,19 @@ namespace CmpMagnetometersData
         public DataLineControl()
         {
             InitializeComponent();
+            _chartControl.ViewChanged += _chartControl_ViewChanged;
+        }
+
+        protected virtual void _chartControl_ViewChanged(object sender, ChartArea e)
+        {
+            if (e == null)
+            {
+                SendEvent?.Invoke(this, new SendEventArgs() { TypeEvent = SendEventArgs.TypeEventE.ResetZoom });
+            }
+            else
+            {
+                SendEvent?.Invoke(this, new SendEventArgs() {Rect = new ChartRect(e), TypeEvent = SendEventArgs.TypeEventE.ChangeZoom });
+            }
         }
 
         public event EventHandler<SendEventArgs> SendEvent;
@@ -24,12 +37,28 @@ namespace CmpMagnetometersData
 
         public virtual void ReadEvent(object sender, SendEventArgs e)
         {
-            if (e.TypeEvent == SendEventArgs.TypeEventE.RbtnClick)
+            switch (e.TypeEvent)
             {
-                rbFirstSelect.Checked = false;
-
+                case SendEventArgs.TypeEventE.RbtnClick:
+                    rbFirstSelect.Checked = false;
+                    break;
+                case SendEventArgs.TypeEventE.ResetZoom:
+                    if(_isVisibleChart) _chartControl.UpdateAxis(null, false, true);
+                    break;
+                case SendEventArgs.TypeEventE.ChangeZoom:
+                    if (_isVisibleChart) _chartControl.UpdateAxis(e.Rect);
+                    break;
+                case SendEventArgs.TypeEventE.ChangeZoomWithY:
+                    if (_isVisibleChart) _chartControl.UpdateAxis(e.Rect, true);
+                    break;
+                case SendEventArgs.TypeEventE.UpdateBorder:
+                    _chartControl.GlobalBorder = e.Rect;
+                    if (_isVisibleChart) _chartControl.UpdateAxis(null, false, false, true);
+                    break;
             }
         }
+
+        private bool _isVisibleChart = false;
 
         public List<DataPixel> DataPixels = new List<DataPixel>();
         protected ChartControl _chartControl = new ChartControl();
@@ -62,13 +91,14 @@ namespace CmpMagnetometersData
 
         public virtual void UpdateChart(TableLayoutPanel tlb, ref int hSize)
         {
-            var contains = tlb.Controls.Contains(_chartControl);
-            if (contains && !cbVisible.Checked)
+            _isVisibleChart = tlb.Controls.Contains(_chartControl);
+            if (_isVisibleChart && !cbVisible.Checked)
             {
                 tlb.Controls.Remove(_chartControl);
                 tlb.RowStyles.RemoveAt(tlb.RowStyles.Count-1);
+                _isVisibleChart = false;
             }
-            if (!contains && cbVisible.Checked)
+            if (!_isVisibleChart && cbVisible.Checked)
             {
                 _chartControl._ptrSeries.Points.Clear();
                 foreach (var dp in DataPixels)
@@ -78,14 +108,15 @@ namespace CmpMagnetometersData
                 _chartControl.Dock = DockStyle.Fill;
                 tlb.Controls.Add(_chartControl);
                 tlb.RowStyles.Add(new RowStyle(SizeType.Percent,100));
+                _isVisibleChart = true;
             }
-            if(cbVisible.Checked) hSize += 285;
+            if(_isVisibleChart) hSize += 285;
         }
 
         private void rbFirstSelect_CheckedChanged(object sender, EventArgs e)
         {
             if(rbFirstSelect.Checked)
-           SendEvent?.Invoke(this, new SendEventArgs() {Args = 0, TypeEvent = SendEventArgs.TypeEventE.RbtnClick});
+           SendEvent?.Invoke(this, new SendEventArgs() {TypeEvent = SendEventArgs.TypeEventE.RbtnClick});
         }
     }
 
@@ -94,11 +125,15 @@ namespace CmpMagnetometersData
     {
         public enum TypeEventE
         {
-            RbtnClick
+            RbtnClick,
+            ResetZoom,
+            ChangeZoom,
+            ChangeZoomWithY,
+            UpdateBorder
         }
 
         public TypeEventE TypeEvent;
-        public int Args;
+        public ChartRect Rect = null;
 
     }
 

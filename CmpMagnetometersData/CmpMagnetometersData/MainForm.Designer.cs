@@ -41,6 +41,7 @@
             this.tableLayoutPanel3 = new System.Windows.Forms.TableLayoutPanel();
             this.btnAddDataLines = new System.Windows.Forms.Button();
             this.ofdDataLines = new System.Windows.Forms.OpenFileDialog();
+            this.cbSyncY = new System.Windows.Forms.CheckBox();
             this.tableLayoutPanel1.SuspendLayout();
             this.panel1.SuspendLayout();
             this.panel2.SuspendLayout();
@@ -89,6 +90,7 @@
             // 
             // panel2
             // 
+            this.panel2.Controls.Add(this.cbSyncY);
             this.panel2.Controls.Add(this.btnCorrelation);
             this.panel2.Controls.Add(this.txtDistribution);
             this.panel2.Controls.Add(this.btnDistribution);
@@ -185,6 +187,16 @@
             this.ofdDataLines.FileName = "openFileDialog1";
             this.ofdDataLines.Multiselect = true;
             // 
+            // cbSyncY
+            // 
+            this.cbSyncY.AutoSize = true;
+            this.cbSyncY.Location = new System.Drawing.Point(263, 7);
+            this.cbSyncY.Name = "cbSyncY";
+            this.cbSyncY.Size = new System.Drawing.Size(57, 17);
+            this.cbSyncY.TabIndex = 7;
+            this.cbSyncY.Text = "SyncY";
+            this.cbSyncY.UseVisualStyleBackColor = true;
+            // 
             // MainForm
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
@@ -217,5 +229,6 @@
         private System.Windows.Forms.TextBox txtDistribution;
         private System.Windows.Forms.Button btnDistribution;
         private System.Windows.Forms.Button btnCorrelation;
+        private System.Windows.Forms.CheckBox cbSyncY;
     }
 }

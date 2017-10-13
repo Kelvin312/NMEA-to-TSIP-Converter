@@ -36,8 +36,11 @@ namespace CmpMagnetometersData
         public readonly Axis _ptrAxisY;
 
         public ChartRect Border { get; protected set; }
-        protected double XMinZoom, YMinZoom;
+        public ChartRect GlobalBorder { get; set; }
+        protected double XMinZoom = 1e-6, YMinZoom = 1e-6;
 
+
+        public event EventHandler<ChartArea> ViewChanged;
 
         protected void ChartControlInit()
         {
@@ -67,7 +70,7 @@ namespace CmpMagnetometersData
             ScaleViewZoom(e.Delta, ref newZoom.X);
             ScaleViewZoom(e.Delta, ref newZoom.Y);
             UpdateAxis(newZoom, true);
-            //ViewChanged();
+            ViewChanged?.Invoke(this, _ptrChartArea);
         }
 
         private void ScaleViewZoom(int delta, ref AxisSize axis)
@@ -104,7 +107,7 @@ namespace CmpMagnetometersData
                     break;
                 case MouseButtons.Right:
                     UpdateAxis(null, false, true);
-                    //ViewChanged(true);
+                    ViewChanged?.Invoke(this, null);
                     break;
             }
         }
@@ -136,24 +139,24 @@ namespace CmpMagnetometersData
 
                 _ptrAxisX.ScaleView.Scroll(newX);
                 _ptrAxisY.ScaleView.Scroll(newY);
-                //ViewChanged();
+                ViewChanged?.Invoke(this, _ptrChartArea);
             }
         }
 
         private void ChartControl_AxisViewChanged(object sender, ViewEventArgs e)
         {
-            //ViewChanged();
+            ViewChanged?.Invoke(this, _ptrChartArea);
         }
 
 
-        protected void UpdateAxis(ChartRect newView = null, bool isUpdateY = false, bool isResetZoom = false, bool isUpdateBorder = false)
+        public void UpdateAxis(ChartRect newView = null, bool isUpdateY = false, bool isResetZoom = false, bool isUpdateBorder = false)
         {
             var curView = new ChartRect(_ptrChartArea);
             var globalBorder = new ChartRect(_ptrChartArea, true);
 
             if (isUpdateBorder)
             {
-               // globalBorder = new ChartRect(Config.GlobalBorder);
+                globalBorder = new ChartRect(GlobalBorder);
                 globalBorder.Y.Min -= 2;
                 globalBorder.Y.Max += YMinZoom * 10.0;
                 _ptrAxisX.Minimum = globalBorder.X.Min;

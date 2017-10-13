@@ -42,6 +42,11 @@ namespace CmpMagnetometersData
             
         }
 
+        protected override void _chartControl_ViewChanged(object sender, ChartArea e)
+        {
+            
+        }
+
         private List<DistPixel> _distList = new List<DistPixel>();
 
         public void CreateDistribution(List<DataPixel> dpList, int steps)
