@@ -44,6 +44,7 @@
             this.ch.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
             | System.Windows.Forms.AnchorStyles.Left) 
             | System.Windows.Forms.AnchorStyles.Right)));
+            chartArea1.AxisY.IsStartedFromZero = false;
             chartArea1.Name = "ChartArea1";
             this.ch.ChartAreas.Add(chartArea1);
             this.ch.Location = new System.Drawing.Point(3, 26);

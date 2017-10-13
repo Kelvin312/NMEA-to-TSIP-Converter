@@ -22,12 +22,16 @@ namespace CmpMagnetometersData
             _chartControl._ptrSeries.Color = Color.DarkGreen;
             _ptrSeries2.Color = Color.DarkViolet;
 
-            _chartControl._ptrSeries.XValueType = ChartValueType.Double;
+           
             _chartControl._ptrChartArea.CursorX.IntervalType = DateTimeIntervalType.Auto;
+            _chartControl._ptrSeries.XValueType = ChartValueType.Double;
             _ptrSeries2.XValueType = ChartValueType.Double;
             _chartControl._ptrAxisX.LabelStyle.Format = "#";
-            _chartControl._ptrAxisY.LabelStyle.Format = "F4";
+
+            _chartControl._ptrAxisY.LabelStyle.Format = "";
             _chartControl._ptrChartArea.CursorY.Interval = 1e-6;
+            _chartControl._ptrSeries.YValueType = ChartValueType.Double;
+            _ptrSeries2.YValueType = ChartValueType.Double;
 
         }
 

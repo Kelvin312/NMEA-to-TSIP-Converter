@@ -5,19 +5,60 @@ using System.Data;
 using System.Drawing;
 using System.IO;
 using System.Linq;
+using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 
 namespace CmpMagnetometersData
 {
-    public partial class MainForm : Form
+    public partial class MainForm : Form, IMessageFilter
     {
         public MainForm()
         {
             InitializeComponent();
+            Application.AddMessageFilter(this);
         }
-        
+
+        #region mouse wheel without focus
+
+        // P/Invoke declarations
+        [DllImport("user32.dll")]
+        private static extern IntPtr WindowFromPoint(Point pt);
+        [DllImport("user32.dll")]
+        private static extern IntPtr SendMessage(IntPtr hWnd, int msg, IntPtr wp, IntPtr lp);
+
+        public bool PreFilterMessage(ref Message m)
+        {
+            var scrollPanel = panel1;
+            if (m.Msg == 0x20a)
+            {
+                // WM_MOUSEWHEEL, find the control at screen position m.LParam
+                Point pos = new Point(m.LParam.ToInt32() & 0xffff, m.LParam.ToInt32() >> 16);
+                Point pA = scrollPanel.PointToScreen(new Point(0, 0));
+                Point pB = new Point(pA.X + scrollPanel.Size.Width, pA.Y + scrollPanel.Height);
+                if (pos.X < pA.X || pos.X >= pB.X || pos.Y < pA.Y || pos.Y >= pB.Y) return false;
+                IntPtr hWnd;
+                if ((ModifierKeys & Keys.Control) == Keys.Control)
+                {
+                    hWnd = WindowFromPoint(pos);
+                    m.Result = IntPtr.Zero;
+                }
+                else
+                {
+                    hWnd = scrollPanel.Handle;
+                }
+
+                if (hWnd == IntPtr.Zero || hWnd == m.HWnd || FromHandle(hWnd) == null) return false;
+                //FromHandle(hWnd).Focus();
+                SendMessage(hWnd, m.Msg, m.WParam, m.LParam);
+                return true;
+            }
+            return false;
+        }
+
+        #endregion
+
         private void btnAddDataLines_Click(object sender, EventArgs e)
         {
             if (ofdDataLines.ShowDialog() == DialogResult.OK)
@@ -228,7 +269,7 @@ namespace CmpMagnetometersData
                     {
                         var res = (count * mulsum - fsum * ssum) /
                                   Math.Sqrt((count * fsqsum - fsum * fsum) * (count * ssqsum - ssum * ssum));
-                        resList.AppendFormat("{0:F8}\r\n", res);
+                        resList.AppendFormat("{0}\r\n", res);
                     }
 
                 }

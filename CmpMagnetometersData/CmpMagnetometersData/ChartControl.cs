@@ -51,19 +51,22 @@ namespace CmpMagnetometersData
             _ptrAxisY.IntervalAutoMode = IntervalAutoMode.VariableCount;
             _ptrChartArea.CursorY.IsUserSelectionEnabled = true;
             _ptrAxisY.ScrollBar.Enabled = false;
+            _ptrAxisY.IsStartedFromZero = false;
             //Mouse
             ch.MouseEnter += ChartControl_MouseEnter;
+            ch.MouseWheel += ChartControl_MouseWheel;
             ch.MouseDown += ChartControl_MouseDown;
             ch.MouseMove += ChartControl_MouseMove;
             ch.AxisViewChanged += ChartControl_AxisViewChanged;
+           
         }
 
-        public void ChartControl_MouseWheel(int delta)
+        private void ChartControl_MouseWheel(object sender, MouseEventArgs e)
         {
             ChartRect newZoom = new ChartRect(_ptrChartArea);
-            ScaleViewZoom(delta, ref newZoom.X);
-            ScaleViewZoom(delta, ref newZoom.Y);
-            //UpdateAxis(newZoom, true);
+            ScaleViewZoom(e.Delta, ref newZoom.X);
+            ScaleViewZoom(e.Delta, ref newZoom.Y);
+            UpdateAxis(newZoom, true);
             //ViewChanged();
         }
 
@@ -76,7 +79,7 @@ namespace CmpMagnetometersData
 
         private void ChartControl_MouseEnter(object sender, EventArgs e)
         {
-            this.OnMouseEnter(e);
+           // ch.Focus();
         }
 
         private bool _mouseDowned;
@@ -100,7 +103,7 @@ namespace CmpMagnetometersData
                     }
                     break;
                 case MouseButtons.Right:
-                    //UpdateAxis(null, false, true);
+                    UpdateAxis(null, false, true);
                     //ViewChanged(true);
                     break;
             }
@@ -140,6 +143,51 @@ namespace CmpMagnetometersData
         private void ChartControl_AxisViewChanged(object sender, ViewEventArgs e)
         {
             //ViewChanged();
+        }
+
+
+        protected void UpdateAxis(ChartRect newView = null, bool isUpdateY = false, bool isResetZoom = false, bool isUpdateBorder = false)
+        {
+            var curView = new ChartRect(_ptrChartArea);
+            var globalBorder = new ChartRect(_ptrChartArea, true);
+
+            if (isUpdateBorder)
+            {
+               // globalBorder = new ChartRect(Config.GlobalBorder);
+                globalBorder.Y.Min -= 2;
+                globalBorder.Y.Max += YMinZoom * 10.0;
+                _ptrAxisX.Minimum = globalBorder.X.Min;
+                _ptrAxisX.Maximum = globalBorder.X.Max;
+                _ptrAxisY.Minimum = globalBorder.Y.Min;
+                _ptrAxisY.Maximum = globalBorder.Y.Max;
+            }
+            if (isResetZoom)
+            {
+                curView.X = globalBorder.X;
+                curView.Y = Border.Y;
+            }
+            else
+            {
+                if (newView != null)
+                {
+                    //X
+                    curView.X = newView.X;
+                    //Y
+                    if (isUpdateY)
+                    {
+                        curView.Y = newView.Y;
+                    }
+                }
+            }
+            var oldView = new ChartRect(_ptrChartArea);
+            if (curView.X.Check(oldView.X, XMinZoom, globalBorder.X))
+            {
+                _ptrAxisX.ScaleView.Zoom(curView.X.Min, curView.X.Max);
+            }
+            if (curView.Y.Check(oldView.Y, YMinZoom, globalBorder.Y))
+            {
+                _ptrAxisY.ScaleView.Zoom(curView.Y.Min, curView.Y.Max);
+            }
         }
 
     }
